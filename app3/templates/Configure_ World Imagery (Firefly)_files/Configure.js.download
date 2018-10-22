@@ -1,0 +1,461 @@
+define([
+  "dojo/_base/declare",
+  "dojo/_base/lang",
+
+  "esri/config",
+  "esri/urlUtils",
+  "esri/arcgis/Portal",
+
+  "esri/request",
+  "configure/dijit/FormBuilder",
+
+  "dojo/i18n!configure/nls/resources",
+  "dojo/on",
+
+  "dojo/dom",
+  "dojo/dom-construct",
+  "dojo/dom-class",
+
+  "dojo/cookie",
+  "dojo/query",
+
+  "dojo/_base/array",
+  "dojo/_base/connect",
+  "dojo/_base/json",
+
+  "dojo/Deferred",
+  "dojo/promise/all",
+  "dijit/registry",
+  "dojo/domReady!"
+], function (
+  declare, lang,
+  esriConfig, urlUtils, arcgisPortal,
+  esriRequest, FormBuilder,
+  bundle, on,
+  dom, domConstruct, domClass,
+  cookie, query,
+  array, connect, dojoJson,
+  Deferred, all,
+  registry
+) {
+  var Configure = declare(null, {
+    declaredClass: "configure.dijit.Configure",
+    config: {},
+    constructor: function (params, srcNodeRef) {
+
+      lang.mixin(this.params);
+
+      this._baseUrl = esriGeowConfig.baseUrl;
+      this._agoUrl = esriGeowConfig.restBaseUrl + "content/items/";
+
+      esriConfig.defaults.io.proxyUrl = esriGeowConfig.proxyServer;
+      this.i18n = bundle.configure;
+
+      this._saveBtn = dom.byId("config-save");
+      this._viewBtn = dom.byId("config-view");
+      this._cancelBtn = dom.byId("config-cancel");
+
+      this._errorHandler = lang.hitch(this, "_displayError");
+      this._loadLabels();
+      // Test to see if this uses the cssfilter module or if it needs to be added
+      this.whiteList = {
+        a: ['href', 'target', 'style'],
+        img: ['src', 'width', 'height', 'border', 'alt', 'style'],
+        video: [
+          'autoplay',
+          'controls',
+          'height',
+          'loop',
+          'muted',
+          'poster',
+          'preload',
+          'src',
+          'width'
+        ],
+        audio: ['autoplay', 'controls', 'loop', 'muted', 'preload', 'src'],
+        span: ['style'],
+        table: ['width', 'height', 'cellpadding', 'cellspacing', 'border', 'style'],
+        div: ['style', 'class'],
+        font: ['size', 'color', 'style'],
+        tr: ['height', 'valign', 'align', 'style'],
+        td: [
+          'height',
+          'width',
+          'valign',
+          'align',
+          'colspan',
+          'rowspan',
+          'nowrap',
+          'style'
+        ],
+        th: [
+          'height',
+          'width',
+          'valign',
+          'align',
+          'colspan',
+          'rowspan',
+          'nowrap',
+          'style'
+        ],
+        b: [],
+        strong: [],
+        i: [],
+        em: [],
+        br: [],
+        p: [],
+        li: [],
+        ul: [],
+        u: [],
+        tbody: []
+      };
+      var url = urlUtils.urlToObject(document.URL);
+      var appId = this._appId = (url.query && url.query.appid) || null;
+
+      // Requires appId
+      if (!appId) {
+        this._displayError(this.i18n.errors.notAvailable);
+      }
+      // Requires a token to save / retrieve app data
+      if (!this._getCookie()) {
+        window.location = this._baseUrl + "signin.html?returnUrl=" + window.location + "&error=403";
+      }
+      // Pre-cache dijit / dom nodes / handlers
+      this.previewUrl = null;
+      this._formPane = dom.byId("config-options");
+
+      // Sign in to the portal then fetch data for the form
+      var portalUrl = esriGeowConfig.restBaseUrl.substr(0, esriGeowConfig.restBaseUrl.indexOf("/sharing/"));
+      var portal = arcgisPortal.Portal(portalUrl);
+      on(portal, "ready", lang.hitch(this, function (p) {
+        portal.signIn().then(lang.hitch(this, function () {
+          this.portal = portal;
+          this._loadAppData();
+        }));
+      }));
+      return this;
+    },
+
+    startup: function (config) {},
+    destroy: function () {
+      array.forEach(this._connections, connect.disconnect);
+      this._formBuilder.destroy();
+      this._appId = this.previewUrl = this._baseUrl = this._agoUrl = this._appItem = this._formBulder = null;
+    },
+    onCancel: function () {
+      if (domClass.contains("loader", "hide")) {
+        domClass.remove("loader", "hide");
+      }
+      var cancelUrl = this._baseUrl + "item.html?id=" + this._appId;
+      window.location = cancelUrl;
+    },
+    onSave: function () {
+      // Update app config values by calling addItem with overwrite set to true.
+      // show the loading icon
+      if (domClass.contains("loader", "hide")) {
+        domClass.remove("loader", "hide");
+      }
+      var saveConfig = this._appConfiguration;
+
+      // remove any non serilazable feature layers from json
+      if (saveConfig && saveConfig.values) {
+        for (var x in saveConfig.values) {
+          if (saveConfig.values.hasOwnProperty(x)) {
+            var p = saveConfig.values[x];
+            if (p && p.hasOwnProperty("sources")) {
+              var sources = p.sources;
+              array.forEach(sources, function (s) {
+                if (s.hasOwnProperty("featureLayer")) {
+                  delete(s.featureLayer);
+                }
+              });
+            }
+          }
+        }
+      }
+
+      this._appItem.text = dojoJson.toJson(saveConfig);
+
+      var params = lang.mixin({
+        "overwrite": true
+      }, this._appItem);
+
+      // Fix issue with tags being removed after update
+      if (params && params.tags) {
+        params.tags = params.tags.join(",");
+      }
+      if (params.serviceProxyParams) {
+        params.serviceProxyParams = JSON.stringify(params.serviceProxyParams);
+      }
+      if (this._appContentUrl && this._appItem.id) {
+
+        // if categories are set, ensure we set them before making the update item call
+        // use JSON stringified array
+        if (params.categories) {
+          params.categories = JSON.stringify(params.categories);
+        }
+
+        var itemUpdateUrl = this._appContentUrl + "/items/" + this._appItem.id + "/update";
+        this._request(itemUpdateUrl, params, {
+          "usePost": true
+        }, lang.hitch(this, function (result) {
+          this.refresh();
+          this._saveBtn.disabled = true;
+
+          var frame = dom.byId("previewFrame");
+          if (frame) {
+            frame.src = this.previewUrl;
+          }
+          // remove the loading icon
+          domClass.add(dom.byId("loader"), "hide");
+        }), this._errorHandler);
+      }
+    },
+    onView: function () {
+      window.open(this.previewUrl);
+    },
+    refresh: function () {
+      var tUrl = (this._sourceTemplateUrl.indexOf("http") === -1 ? (window.location.protocol + "//" + window.location.host + this._sourceTemplateUrl) : this._sourceTemplateUrl);
+      if (window.location.protocol === "https:") {
+        tUrl = this._sourceTemplateUrl.replace("http:", "https:");
+      }
+      this.previewUrl = tUrl + "?appid=" + this._appId;
+    },
+
+    _loadAppData: function () {
+      // Loads data for the application
+      all([
+        this._request(this._agoUrl + this._appId + "/data").then(lang.hitch(this, function (result) {
+          this._appConfiguration = result;
+          this._sourceTemplate = result.source;
+        })), this._request(this._agoUrl + this._appId).then(lang.hitch(this, function (result) {
+          this._appItem = result;
+          this._appContentUrl = esriGeowConfig.restBaseUrl + "content/users/" + this._appItem.owner;
+          this._folderId = this._appItem.ownerFolder;
+
+          this._appContentUrl += this._folderId && this._folderId !== this._appItem.owner ? ("/" + this._folderId) : "";
+
+          this._sourceTemplateUrl = result.url.split("?")[0];
+          document.title = this.i18n.title + ": " + this._appItem.title;
+        }))
+      ]).then(lang.hitch(this, "_loadConfigurationData"), this._errorHandler);
+
+    },
+    _loadConfigurationData: function () {
+      // Loads data for the templates configuration using applications settings
+      all([
+        this._request(this._agoUrl + this._sourceTemplate).then(lang.hitch(this, function (result) {
+          this.refresh();
+        })), this._request(this._agoUrl + this._sourceTemplate + "/data").then(lang.hitch(this, function (result) {
+          this._templateParams = result;
+          this._templateParams.portal = this.portal;
+          if (this._templateParams && this._templateParams.configurationSettings) {
+            this._buildForm();
+          }
+        }))
+      ]).then(lang.hitch(this, function (result) {
+        if (!this._templateParams || !this._templateParams.configurationSettings) {
+          this._displayError(this.i18n.errors.notConfigurable);
+        }
+      }), this._errorHandler);
+    },
+    _updateSharedValue: function (params) {
+      array.forEach(params.configurationSettings, lang.hitch(this, function (setting) {
+        array.forEach(setting.fields, lang.hitch(this, function (field) {
+          if (field.type === "conditional" && field.items) {
+            field.items.forEach(lang.hitch(this, function (item) {
+              this._getSharedValue(item);
+            }));
+          } else {
+            this._getSharedValue(field);
+          }
+
+        }));
+      }));
+    },
+    _getSharedValue: function (field) {
+      if (this._templateParams.sharedTheme && field.sharedThemeProperty) {
+        var value = field.sharedThemeProperty.split(".").reduce(function (a, b) {
+          return a[b];
+        }, this._templateParams.sharedTheme);
+        if (value) {
+          if (value === "no-color") {
+            value = null;
+          } else {
+            this._templateParams.values[field.fieldName] = value;
+          }
+        }
+      }
+    },
+    _buildForm: function () {
+      if (this._appId) {
+        this._templateParams.appId = this._appId;
+      }
+      this._request(esriGeowConfig.restBaseUrl + "/portals/self").then(lang.hitch(this, function (result) {
+        if (result && result.helperServices) {
+          this._templateParams.helperServices = result.helperServices;
+        }
+        if (result && result.portalProperties && result.portalProperties.sharedTheme) {
+          this._templateParams.sharedTheme = result.portalProperties.sharedTheme;
+        }
+
+        if (this._templateParams && this._templateParams.configurationSettings) {
+          var sharedTheme = true;
+          // Don't do this if its an older app so we don't erase default values. 
+          if (this && this._appItem && this._appItem.created) {
+
+            var appCreated = this._appItem.created;
+            var themeStartDate = new Date("2/28/2017").getTime();
+            if (appCreated < themeStartDate) {
+              // don't update the shared values 
+              sharedTheme = false;
+            }
+          }
+          if (sharedTheme) {
+            this._updateSharedValue(this._templateParams);
+          }
+          this._updateSharedValue(this._templateParams);
+
+          this._templateParams.values = lang.mixin((this._templateParams.values || {}), this._appConfiguration.values);
+          this._appConfiguration.values = lang.mixin((this._templateParams.values) || {}, this._appConfiguration.values);
+        }
+        this._templateParams.appUrl = this._sourceTemplateUrl + "?appid=" + this._appId;
+        this._formBuilder = new FormBuilder(this._templateParams, this._formPane);
+        this._formBuilder.startup();
+        this._loadConnections();
+        //  this.onSave();
+      }));
+    },
+    _request: function (url, params, options, loadHandler, errorHandler) {
+      var content = lang.mixin(lang.mixin({}, this._requestParams), params || {});
+      return esriRequest({
+        url: url,
+        content: content,
+        callbackParamName: "callback",
+        load: loadHandler,
+        error: errorHandler
+      }, options);
+    },
+    _getCookie: function () {
+      // Extracts the token from the cookie, and adds to generic request params
+      var cookieValue = cookie("esri_auth");
+      if (cookieValue && cookieValue.length > 0) {
+        var userInfo = this._userInfo = dojoJson.fromJson(cookie("esri_auth"));
+        this._userToken = userInfo.token || null;
+        this._requestParams = {
+          "f": "json",
+          "token": this._userToken
+        };
+        return true;
+      }
+      return false;
+    },
+    _getFolder: function () {
+      var cookieValue = cookie("ESRI_Content");
+      if (cookieValue && cookieValue.length > 0) {
+        return dojoJson.fromJson(cookieValue).folderId;
+      }
+      return null;
+    },
+    _displayError: function (error) {
+      var msg = error ? (error.msg || error) : this.i18n.errors.error;
+      domConstruct.create("span", {
+        innerHTML: msg
+      }, this._formPane);
+      console.log(msg);
+      //hide the loading icon
+      domClass.remove(dom.byId("loader"), "hide");
+
+    },
+
+
+    _loadConnections: function () {
+
+      this._connections = [
+        on(this._cancelBtn, "click", lang.hitch(this, "onCancel")), on(this._viewBtn, "click", lang.hitch(this, "onView")), on(this._saveBtn, "click", lang.hitch(this, "onSave")),
+        connect.connect(this._formBuilder, "onFieldChange", lang.hitch(this, function (widgetName, val) {
+
+          if (val && typeof val === "object") {
+            var existing = this._appConfiguration.values[widgetName];
+            if (val.fields && val.fields[0] && val.fields[0].id) {
+              if (existing.fields) {
+                var found = false;
+                array.forEach(existing.fields, lang.hitch(this, function (f) {
+                  if (f.id === val.fields[0].id) {
+                    found = true;
+                    lang.mixin(f, val.fields[0]);
+                  }
+                }));
+                if (!found) {
+                  //add new
+                  existing.fields.push(val.fields[0]);
+                }
+              }
+              this._appConfiguration.values[widgetName] = existing;
+            } else {
+              this._appConfiguration.values[widgetName] = val;
+            }
+          } else {
+            if (typeof (val) === "string") {
+              val = window.filterXSS(val, {
+                "whiteList": this.whiteList
+              });
+            }
+            this._appConfiguration.values[widgetName] = val;
+          }
+
+          //When an item on the config form is updated set the save button to true
+          this._saveBtn.disabled = false;
+
+        })), connect.connect(this._formBuilder, "onItemSelected", lang.hitch(this, function (item) {
+          //Store the web map then re-create the layer and field options.
+          //Update the text that defines the currently displayed web map.
+          this._appConfiguration.values[item.type] = item.id;
+
+          //When an item on the config form is updated set the save and reset buttons to true
+          //and change the text on the cancel button to Cancel.
+          this._saveBtn.disabled = false;
+
+          //Update the text that defines the currently displayed web map.
+          //Update any smart options (layers, fields).
+
+          if (item) {
+            this._formBuilder.updateConfigurationPanel(item);
+            this.onSave();
+          }
+        })), connect.connect(this._formBuilder, "onSave", lang.hitch(this, function (item) {
+
+          //When an item on the config form is updated set the save and reset buttons to true
+          //and change the text on the cancel button to Cancel.
+          this._saveBtn.disabled = false;
+
+
+          //save immediately
+          //Store the web map then re-create the layer and field options.
+          //Update the text that defines the currently displayed web map.
+
+          //Update the text that defines the currently displayed web map.
+          //Update any smart options (layers, fields).
+
+          if (item) {
+            this._appConfiguration.values[item.type] = item.id;
+            this._formBuilder.updateConfigurationPanel(item);
+          }
+          this.onSave();
+
+        }))
+      ];
+    },
+    _loadLabels: function () {
+      document.title = this.i18n.title;
+      this._viewBtn.innerHTML = "<span class='btn-text'>" + this.i18n.view.label + "</span>";
+      this._viewBtn.title = this.i18n.view.tooltip;
+      this._saveBtn.innerHTML = "<span class='btn-text'>" + this.i18n.save.label + "</span>";
+      this._saveBtn.title = this.i18n.save.tooltip;
+      this._cancelBtn.innerHTML = "<span class='btn-text'>" + this.i18n.cancel.label + "</span>";
+      this._cancelBtn.title = this.i18n.cancel.tooltip;
+    }
+
+  });
+  return Configure;
+});

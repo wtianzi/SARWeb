@@ -1,0 +1,319 @@
+define(["dojo/Evented", "dojo/ready", "dojo/_base/declare", "dojo/_base/lang", "dojo/_base/array", "dojo/on", "dojo/dom", "dojo/dom-style", "dojo/Deferred", "dojo/promise/all", "dijit/registry", "dijit/Tree", "dijit/form/CheckBox", "dojo/data/ItemFileReadStore", "dijit/tree/ForestStoreModel", "esri/request", "dojo/_base/connect", "dojo/dom-construct"], function (
+  Evented, ready, declare, lang, array, on, dom, domStyle, Deferred, all, registry, Tree, CheckBox, ItemFileReadStore, ForestStoreModel, esriRequest, connect, domConstruct) {
+  return declare([Evented], {
+    map: null,
+    layers: null,
+    layerStore: null,
+    fieldName: null,
+    childList: null,
+    validFieldTypes: "esriFieldTypeInteger" + "," + "esriFieldTypeSmallInteger" + "," + "esriFieldTypeDouble" + "," + "esriFieldTypeSingle" + "," + "esriFieldTypeString" + "," + "esriFieldTypeDate" + "," + "esriFieldTypeGeometry" + "," + "esriFieldTypeOID" + "," + "esriFieldTypeBlob" + "," + "esriFieldTypeGlobalID" + "," + "esriFieldTypeRaster" + "," + "esriFieldTypeGUID" + "," + "esriFieldTypeXML",
+    geometryTypes: null,
+    layersOnly: false,
+    constructor: function (map, layers, field) {
+      this.map = map;
+      this.layers = layers;
+      this.fieldName = field;
+    },
+
+    startup: function () {
+      var deferred = new Deferred();
+      this.layerStore = null;
+      this.layerStore = [];
+
+      connect.subscribe("layercontrol-checkbox-click", lang.hitch(this, this._itemClicked));
+      var promises = [],
+        dataItem = null;
+      array.forEach(this.layers, lang.hitch(this, function (layer) {
+        if (layer.type && layer.type === "Feature Layer") {
+          dataItem = {
+            label: layer.name || layer.id,
+            id: layer.id,
+            url: layer.url,
+            fieldName: this.fieldName,
+            type: "FeatureLayer",
+            checked: false,
+            children: []
+          };
+          promises.push(this._getLayerInfo(dataItem));
+        } else if (layer.layerInfos) {
+          this.childList = [];
+          array.forEach(layer.layerInfos, lang.hitch(this, function (subLyr) {
+            var subDataItem = {
+              label: subLyr.name,
+              id: layer.id + "." + subLyr.id,
+              url: layer.url + "/" + subLyr.id,
+              type: "Layer",
+              fieldName: this.fieldName,
+              checked: false,
+              children: []
+            };
+            this.childList.push(subDataItem);
+            promises.push(this._getLayerInfo(subDataItem));
+
+          }));
+          dataItem = {
+            label: layer.name || layer.id,
+            id: layer.id,
+            url: layer.url,
+            type: "Service",
+            checked: false,
+
+            children: this.childList
+          };
+        } else {
+          dataItem = {
+            label: layer.name || layer.id,
+            id: layer.id,
+            url: layer.url,
+            fieldName: this.fieldName,
+            type: "VectorTileLayer",
+            checked: false,
+            children: []
+          };
+          promises.push(this._getLayerInfo(dataItem));
+        }
+        if (dataItem) {
+          this.layerStore.push(dataItem);
+        }
+      }));
+
+      all(promises).then(lang.hitch(this, function () {
+        var node = this._controlComplete();
+        deferred.resolve(node);
+      }), lang.hitch(this, function () {
+        deferred.resolve(null);
+      }));
+      return deferred.promise;
+    },
+    _updateTree: function (config) {
+      //Update the tree based on the initial config values
+      array.forEach(config, lang.hitch(this, function (configItem) {
+        if (configItem.id) {
+          //is there a widget with the id
+          var id = this.fieldName + "_" + configItem.id + "cb";
+          var widget = registry.byId(id);
+          if (widget) {
+            widget.set("checked", true);
+            array.forEach(configItem.fields, lang.hitch(this, function (field) {
+              var fieldWidget = registry.byId(this.fieldName + "_" + configItem.id + "." + field + "cb");
+              if (fieldWidget) {
+                fieldWidget.set("checked", true);
+              }
+            }));
+          }
+        }
+      }));
+    },
+    _getLayerInfo: function (dataitem) {
+      var deferred = new Deferred();
+      if (!dataitem.url || dataitem.url.length === 0) {
+        deferred.resolve();
+      } else {
+        esriRequest({
+          "url": dataitem.url,
+          "content": {
+            "f": "json"
+          },
+          "callbackParamName": "callback"
+        }).then(lang.hitch(this, function (response, io) {
+          //show field names and aliases
+          if (response.hasOwnProperty("fields") && this.layersOnly === false) {
+            var fieldInfo = array.map(response.fields, lang.hitch(this, function (f) {
+              return {
+                label: f.alias,
+                id: dataitem.id + "." + f.name,
+                name: f.name,
+                type: "Field",
+                fieldType: f.type,
+                checked: false
+              };
+            }));
+            //Update code to find fields that are in list .
+            var filteredArr = array.filter(fieldInfo, lang.hitch(this, function (fieldItem, i) {
+              return array.indexOf(this.validFieldTypes, fieldItem.fieldType) >= 0;
+            }));
+            dataitem.children = filteredArr;
+          }
+          dataitem.geometryType = response.geometryType;
+          dataitem.visible = true;
+          if (this.geometryTypes) {
+            if (!array.some(this.geometryTypes, function (gtype) {
+                if (gtype === dataitem.geometryType) {
+                  return true;
+                }
+              })) {
+              dataitem.visible = false;
+            }
+          }
+          deferred.resolve(response);
+
+        }), function (error) {
+          deferred.resolve(null);
+        });
+      }
+
+
+      return deferred.promise;
+    },
+
+    _controlComplete: function () {
+      array.forEach(this.layerStore, function (layer) {
+        if (layer.children && layer.children.length > 0) {
+          var filteredChildren = array.filter(layer.children, function (child) {
+            if (child.hasOwnProperty("visible")) {
+              return child.visible;
+            } else {
+              return true;
+            }
+
+          });
+          layer.children = filteredChildren;
+          if (layer.children && layer.children.length === 0) {
+            layer.visible = false;
+          }
+        }
+      });
+      var filteredLayers = array.filter(this.layerStore, function (layer) {
+        if (layer.hasOwnProperty("visible")) {
+          return layer.visible;
+        } else {
+          return true;
+        }
+      });
+      this.store = new ItemFileReadStore({
+        data: {
+          identifier: "id",
+          label: "label",
+          items: filteredLayers
+        }
+      });
+      var treeControl = new Tree({
+        name: "layerTree",
+        store: this.store,
+        id: this.fieldName,
+        autoExpand: true,
+        openOnClick: true,
+        showRoot: false,
+        _createTreeNode: lang.hitch(this, function (args) {
+          var tnode = new Tree._TreeNode(args);
+          if (args.label) {
+            tnode.labelNode.innerHTML = "<span class='treeNodeLabelItem'> " + args.label + "</span>";
+          }
+          var checked = false;
+          if (args.item.checked !== null) {
+
+            if (lang.isArray(args.item.checked)) {
+              checked = args.item.checked[0];
+            } else {
+              checked = args.item.checked;
+            }
+          }
+          //We don't want a checkbox for items of type service. Only for the
+          //sublayers and fields
+          if (args && args.item && args.item.type && args.item.type.length > 0 && args.item.type[0] !== "Service") {
+            var cb = new CheckBox({
+              id: this.fieldName + "_" + args.item.id + "cb",
+              checked: checked
+            }, domConstruct.create("div", {
+              id: args.item.id + ".node"
+            }));
+
+            if (args.item.type === "Field" || args.item.type[0] === "Field") {
+              cb.set("disabled", true);
+            }
+            cb.placeAt(tnode.labelNode, "first");
+
+            on(cb, "change", function () {
+
+              var treeNode = registry.getEnclosingWidget(this.domNode.parentNode);
+
+              connect.publish("layercontrol-checkbox-click", [{
+                "checkbox": this,
+                "item": treeNode.item
+              }]);
+            });
+          }
+          return tnode;
+        })
+      });
+      return treeControl;
+    },
+
+    _exportTree: function (item) {
+      var obj = [];
+      var layer = {
+        id: "",
+        fields: []
+      };
+      //We only care about checked items
+      var type = this.store.getValue(item, "type");
+      if (type === "Service") {
+        //Get dynamic layer name + "." + sub layer then loop through and get the fields.
+        array.forEach(item.children, lang.hitch(this, function (sublayer) {
+          var layer = {
+            id: "",
+            fields: []
+          };
+          if (sublayer.checked === true) {
+            layer.id = this.store.getValue(sublayer, "id");
+            layer.type = "DynamicLayer";
+            if (sublayer.children) {
+              array.forEach(sublayer.children, lang.hitch(this, function (field) {
+                if (field.checked === true) {
+                  var name = this.store.getValue(field, "name");
+                  layer.fields.push(name);
+                }
+              }));
+            }
+            obj.push(layer);
+          }
+        }));
+      } else if (type == "FeatureLayer" || item.children && item.children.length && item.children.length > 0) {
+        if (item.checked === true) {
+          layer.id = this.store.getValue(item, "id");
+          layer.type = type;
+          array.forEach(item.children, function (field) {
+            if (field.checked === true) {
+              var name = this.store.getValue(field, "name");
+              layer.fields.push(name);
+
+            }
+          }, this);
+          obj.push(layer);
+        }
+      } else {
+        if (item.checked === true) {
+          layer.id = this.store.getValue(item, "id");
+          obj.push(layer);
+        }
+      }
+      return obj;
+    },
+
+    _itemClicked: function (message) {
+
+      message.item.checked = message.checkbox.checked;
+
+      if (message.item.type[0] !== "Field") {
+        if (message.item.fieldName[0] !== this.fieldName) {
+          //don't disable if not the selected field
+          return;
+        }
+        if (message.item && message.item.children) {
+          var disable = true;
+          if (message.item.checked) {
+            disable = false;
+          }
+
+          array.forEach(message.item.children, lang.hitch(this, function (child) {
+            var cb = registry.byId(this.fieldName + "_" + child.id[0] + "cb");
+            if (cb) {
+              cb.set("disabled", disable);
+            }
+          }));
+        }
+      }
+    }
+  });
+
+});

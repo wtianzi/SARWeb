@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+{% load static %}
+<meta charset="utf-8">
+<link rel="stylesheet" type="text/css" href="{% static "mapstyle.css" %}"  />
+<body width="1000" height="1000">
+<div class="bg">
+</div>
+</body>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script>
+
+  var width = 800,
+   height = 800,
+   points = [];
+ var datax = {
+  "name": "flare",
+  "children": d3.range(25).map(function(e){
+    return {
+      name:"b-"+e,
+      size:20+200*Math.random()
+    };
+
+  })
+ };
+ var margin = 20,
+     diameter = width;
+
+ var color = d3.scale.linear()
+     .domain([-1, 5])
+     .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
+     .interpolate(d3.interpolateHcl);
+
+ var pack = d3.layout.pack()
+     .padding(2)
+     .size([diameter - margin, diameter - margin])
+     .value(function(d) { return d.size; })
+ var points2 = pack.nodes(datax).map(function(e){return [e.x,e.y];}).slice(1);
+ for (var i=0;i<2*Math.PI;i=i+0.2){points.push([width/2+width/2*Math.cos(i),height/2+height/2*Math.sin(i)]);}
+
+ points=[[0,0],[0.9*width,0],[0.85*width,0.2*height],[0.85*width,0.6*height],[0.5*width,1*height],[0,1*height]];
+// points=[[500, 250],[65.6515, 418.8657],[221.9618, 1.577],[499.135, 229.22]];
+
+ var poly1 = d3.geom.polygon(points);
+
+ var vertices = d3.range(25).map(function(d) {
+ ///var tmp = (self.brands[d]/self.biggestBrand);
+ return [20*d, 20*d];
+ //return app.countries[0].brands[d];
+ });
+
+ var voronoi = d3.geom.voronoi()
+   .clipExtent([[0, 0], [width, height]]);
+
+ var svg = d3.select('body').append("svg")
+   .attr("width", width)
+   .attr("height", height);
+  // .on("mousemove", function() { vertices[0] = d3.mouse(this); redraw(); });
+ // svg.append("defs").append("clipPath")
+ // .append("path")
+ // .attr("id","c1")
+ // .attr("d", "M"+points.join("L")+ "Z");
+ var imgs = svg.selectAll("image").data([0]);
+                 imgs.enter()
+                 .append("svg:image")
+                 .attr("xlink:href", "{% static 'img/testmap.png' %}")
+                 .attr("x", "60")
+                 .attr("y", "60")
+                 .attr("width", "20")
+                 .attr("height", "20");
+
+ var path = svg.append("g").selectAll("path");
+ // svg.selectAll("circle")
+ //     .data(vertices.slice(1))
+ //   .enter().append("circle")
+ //     .attr("transform", function(d) { return "translate(" + d + ")"; })
+ //     .attr("r", 1.5);
+
+ redraw();
+
+ function redraw() {
+ path = path.data(voronoi(points2).map(function(e) {
+ return d3.geom.polygon(e).clip(points.slice(0));
+
+ }), polygon);
+ path.exit().remove();
+ path.enter().append("path")
+ .attr("d", polygon)
+ .attr('stroke', "#000")
+ .style("fill", function(d) { return  "#fff"; });
+ path.order();
+ }
+
+ function polygon(d) {
+ return "M" + d.join("L") + "Z";
+ }
+  /*
+    polygon1 = d3.geom.polygon(polygon1);
+    polygon2 = d3.geom.polygon(polygon2);
+   polygon1.clip(polygon2);
+  */
+</script>

@@ -4,7 +4,7 @@ from django.template import loader
 
 
 def index(request):
-    template = loader.get_template('app2/graphs.html')
+    template = loader.get_template('app2/lattice.html')
     context={'title':"Hello, welcome to our lab. Testing page for app 1."}
     return HttpResponse(template.render(context,request))
 
@@ -32,5 +32,35 @@ def lattice(request):
 
 def voronoi(request):
     template = loader.get_template('app2/voronoi.html')
+    context={'title':"Hello, welcome to our lab. Testing page for app 1."}
+    return HttpResponse(template.render(context,request))
+
+def multilinevoronoi(request):
+    template = loader.get_template('app2/multilinevoronoi.html')
+    context={'title':"Hello, welcome to our lab. Testing page for app 1."}
+    return HttpResponse(template.render(context,request))
+
+def circle(request):
+    template = loader.get_template('app2/circle.html')
+    context={'title':"Hello, welcome to our lab. Testing page for app 1."}
+    return HttpResponse(template.render(context,request))
+
+def d3v3voronoi(request):
+    template = loader.get_template('app2/d3v3voronoi.html')
+    context={'title':"Hello, welcome to our lab. Testing page for app 1."}
+    return HttpResponse(template.render(context,request))
+
+def arcgis(request):
+    template = loader.get_template('app2/ArcGISAPI.html')
+    context={'title':"Hello, welcome to our lab. Testing page for app 1."}
+    return HttpResponse(template.render(context,request))
+
+def arcgisc(request):
+    template = loader.get_template('app2/ArcGISAPICircle.html')
+    context={'title':"Hello, welcome to our lab. Testing page for app 1."}
+    return HttpResponse(template.render(context,request))
+
+def arcgisv(request):
+    template = loader.get_template('app2/ArcGISVoronoi.html')
     context={'title':"Hello, welcome to our lab. Testing page for app 1."}
     return HttpResponse(template.render(context,request))

@@ -1,0 +1,4 @@
+id,nombre,direccion,comuna,barrio,circunscri,longitude,latitude,geojson
+1,Comisaría 1,451 LAVALLE,COMUNA 1,SAN NICOLAS,I,-58.3732,-34.6019,"{""type"":""Point"",""coordinates"":[-58.37324,-34.60191]}"
+2,Comisaría 2,1050 PERU,COMUNA 1,SAN TELMO,I,-58.374,-34.6202,"{""type"":""Point"",""coordinates"":[-58.37405,-34.62019]}"
+3,Comisaría 3,1560 TUCUMAN,COMUNA 1,SAN NICOLAS,I,-58.3889,-34.6019,"{""type"":""Point"",""coordinates"":[-58.3889,-34.60194]}"

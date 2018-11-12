@@ -1,142 +1,91 @@
 <!DOCTYPE html>
-<html>
+{% load static %}
 <head>
-    <title>Voronoi Diagram Testing</title>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-    <script src="//d3js.org/d3.v3.min.js"></script>
-    <style type="text/css">
-        circle {
-            stroke: #EFEDF5;
-            fill: #EFEDF5;
-            pointer-events: none;
-        }
-        line {
-            pointer-events: none;
-            stroke: #EFEDF5;
-            stroke-width: 2px;
-            opacity: .05;
-        }
-        path{
-            stroke: #EFEDF5;
-            stroke-width: 4px;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>WebGL VACSE</title>
+  <link rel="stylesheet" type="text/css" href="{% static "mapstyle.css" %}"  />
 </head>
 <body>
-<div id="chart">
-</div>
-<script type="text/javascript">
-    var w = window.innerWidth > 960 ? 960 : (window.innerWidth || 960),
-        h = window.innerHeight > 500 ? 500 : (window.innerHeight || 500),
-        radius = 5.25,
-        links = [],
-        simulate = true,
-        zoomToAdd = true,
-        // https://github.com/mbostock/d3/blob/master/lib/colorbrewer/colorbrewer.js#L105
-        color = d3.scale.quantize().domain([10000, 7250]).range(["#dadaeb","#bcbddc","#9e9ac8","#807dba","#6a51a3","#54278f","#3f007d"])
-
-    var numVertices = (w*h) / 3000;
-    var vertices = d3.range(numVertices).map(function(i) {
-        angle = radius * (i+10);
-        return {x: angle*Math.cos(angle)+(w/2), y: angle*Math.sin(angle)+(h/2)};
-    });
-    var d3_geom_voronoi = d3.geom.voronoi().x(function(d) { return d.x; }).y(function(d) { return d.y; })
-    var prevEventScale = 1;
-    var zoom = d3.behavior.zoom().on("zoom", function(d,i) {
-        if (zoomToAdd){
-          if (d3.event.scale > prevEventScale) {
-              angle = radius * vertices.length;
-              vertices.push({x: angle*Math.cos(angle)+(w/2), y: angle*Math.sin(angle)+(h/2)})
-          } else if (vertices.length > 2 && d3.event.scale != prevEventScale) {
-              vertices.pop();
-          }
-          force.nodes(vertices).start()
-        } else {
-          if (d3.event.scale > prevEventScale) {
-            radius+= .01
-          } else {
-            radius -= .01
-          }
-          vertices.forEach(function(d, i) {
-            angle = radius * (i+10);
-            vertices[i] = {x: angle*Math.cos(angle)+(w/2), y: angle*Math.sin(angle)+(h/2)};
-          });
-          force.nodes(vertices).start()
-        }
-        prevEventScale = d3.event.scale;
-    });
-
-    d3.select(window)
-      .on("keydown", function() {
-        // shift
-        if(d3.event.keyCode == 16) {
-          zoomToAdd = false
-        }
-
-        // s
-        if(d3.event.keyCode == 83) {
-          simulate = !simulate
-          if(simulate) {
-            force.start()
-          } else {
-            force.stop()
-          }
-        }
-      })
-      .on("keyup", function() {
-        zoomToAdd = true
-      })
-
-    var svg = d3.select("#chart")
-            .append("svg")
-            .attr("width", w)
-            .attr("height", h)
-            .call(zoom)
-
-    var force = d3.layout.force()
-            .charge(-300)
-            .size([w, h])
-            .on("tick", update);
-
-    force.nodes(vertices).start();
-
-    var circle = svg.selectAll("circle");
-    var path = svg.selectAll("path");
-    var link = svg.selectAll("line");
-
-    function update(e) {
-        path = path.data(d3_geom_voronoi(vertices))
-        path.enter().append("path")
-            // drag node by dragging cell
-            .call(d3.behavior.drag()
-              .on("drag", function(d, i) {
-                  vertices[i] = {x: vertices[i].x + d3.event.dx, y: vertices[i].y + d3.event.dy}
-              })
-            )
-            .style("fill", function(d, i) { return color(0) })
-        path.attr("d", function(d) { return "M" + d.join("L") + "Z"; })
-            .transition().duration(150).style("fill", function(d, i) { return color(d3.geom.polygon(d).area()) })
-        path.exit().remove();
-
-        circle = circle.data(vertices)
-        circle.enter().append("circle")
-              .attr("r", 0)
-              .transition().duration(1000).attr("r", 5);
-        circle.attr("cx", function(d) { return d.x; })
-              .attr("cy", function(d) { return d.y; });
-        circle.exit().transition().attr("r", 0).remove();
-
-        link = link.data(d3_geom_voronoi.links(vertices))
-        link.enter().append("line")
-        link.attr("x1", function(d) { return d.source.x; })
-            .attr("y1", function(d) { return d.source.y; })
-            .attr("x2", function(d) { return d.target.x; })
-            .attr("y2", function(d) { return d.target.y; })
-
-        link.exit().remove()
-
-        if(!simulate) force.stop()
-    }
-</script>
+  <div class="bg">
+    <canvas width="1024" height="1024"></canvas>
+  </div>
 </body>
-</html>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var canvas = d3.select("canvas").on("touchmove mousemove", moved).node(),
+    context = canvas.getContext("2d"),
+    width = canvas.width,
+    height = canvas.height;
+
+var sites = d3.range(10)
+    .map(function(d) { return [Math.random() * width, Math.random() * height]; });
+
+var voronoi = d3.voronoi()
+    .extent([[-1, -1], [width + 1, height + 1]]);
+redraw();
+drawSite(sites);
+
+function moved() {
+  sites[0] = d3.mouse(this);
+  //redraw();
+}
+
+function redraw() {
+
+
+  var diagram = voronoi(sites),
+      links = diagram.links(),
+      polygons = diagram.polygons();
+
+  context.clearRect(0, 0, width, height);
+  context.beginPath();
+  drawCell(polygons[0]);
+  context.fillStyle = "#f00";
+  //context.fill();
+
+  context.beginPath();
+  for (var i = 0, n = polygons.length; i < n; ++i) drawCell(polygons[i]);
+  context.strokeStyle = "#000";
+  context.stroke();
+
+  context.beginPath();
+  for (var i = 0, n = links.length; i < n; ++i) drawLink(links[i]);
+  context.strokeStyle = "rgba(0,0,0,0.2)";
+  context.stroke();
+
+  context.beginPath();
+  drawSite(sites[0]);
+  context.fillStyle = "#fff";
+  context.fill();
+
+  context.beginPath();
+  for (var i = 1, n = sites.length; i < n; ++i) drawSite(sites[i]);
+  context.fillStyle = "#000";
+  context.fill();
+  context.strokeStyle = "#fff";
+  context.stroke();
+}
+
+function drawSite(site) {
+  context.moveTo(site[0] + 2.5, site[1]);
+  context.arc(site[0], site[1], 2.5, 0, 2 * Math.PI, false);
+}
+
+function drawLink(link) {
+  //context.moveTo(link.source[0], link.source[1]);
+  //context.lineTo(link.target[0], link.target[1]);
+}
+
+function drawCell(cell) {
+  if (!cell) return false;
+  context.moveTo(cell[0][0], cell[0][1]);
+  for (var j = 1, m = cell.length; j < m; ++j) {
+    context.lineTo(cell[j][0], cell[j][1]);
+  }
+  context.closePath();
+  return true;
+}
+
+</script>

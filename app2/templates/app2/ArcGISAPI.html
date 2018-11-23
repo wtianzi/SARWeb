@@ -39,6 +39,10 @@
     <script src="https://js.arcgis.com/3.26/"></script>
     <script>
 
+//spacial reference
+//large: project 101000
+//small: geometry
+
       var map, tb;
 
       require([
@@ -48,12 +52,14 @@
         "esri/graphic",
         "esri/Color", "dojo/dom", "dojo/on", "dojo/domReady!",
         "esri/geometry/Polygon"
+        //,
+        //"esri/geometry/SpatialReference"
       ], function(
         Map, Draw,
         SimpleMarkerSymbol, SimpleLineSymbol,
         PictureFillSymbol, CartographicLineSymbol,
         Graphic,
-        Color, dom, on,Polygon
+        Color, dom, on,Polygon//,SpatialReference
       ) {
         map = new Map("mapDiv", {
           basemap: "satellite",
@@ -126,6 +132,7 @@
           }
 
           map.graphics.add(new Graphic(evt.geometry, symbol));
+          console.log(evt.geometry);
         }
       });
     </script>

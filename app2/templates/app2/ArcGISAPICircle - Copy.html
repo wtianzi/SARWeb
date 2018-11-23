@@ -57,8 +57,8 @@
 
 
 
-      var width=1600;
-      var height=900;
+      var width=1600*1.5;
+      var height=900*1.5;
 
       var scale=17;
       var gcx=-80.5665968;
@@ -66,14 +66,14 @@
 
 //  wkid: 102100 vs wkid: 4326
 //wkid 102100/pix =1.5 (2444,1366/1600,900)
-//wkid 102100: left-top (-8970062.142, 4467672.843), right-bottom (-8967625.712	4466311.309)
+//wkid 102100: left-top (-8970062.142, 4467672.843), right-bottom (-8967625.712,	4466311.309)
 
 
       setUpView();
       console.log(width);
       var sites = d3.range(10)
       .map(function(d) { return [Math.random() * width, Math.random() * height]; });
-      var voronoi = d3.voronoi().extent([[-1, -1], [width + 1, height + 1]]);
+      var voronoi = d3.voronoi().extent([[-1, -1], [width + 1, height + 1]]);//.extent([[-8970062.142, 4467672.843], [-8967625.712,	4466311.309]]);
       var diagram = voronoi(sites),
           links = diagram.links(),
           vpolygons = diagram.polygons();
@@ -104,9 +104,12 @@
       });
 
 
+//center x,y: -8968838.254,4466990.583
+
+
       function TransPolyToGIS(x,y,pw,ph,gcx,gcy,scale){
-        tx=(x-pw/2)*0.0004/scale+gcx;
-        ty=(y-ph/2)*0.0004/scale+gcy;
+        tx=(x-pw/2)+gcx;
+        ty=(y-ph/2)+gcy;
         return [tx,ty];
       }
       // Add new development polygon graphic and boundary polygon graphics
@@ -116,7 +119,9 @@
 
         for (var i = 0; i < vpolygons.length; i=i+1) {
           tempr=[];
-          for (var j=0;j<vpolygons[i].length; j=j+1) tempr.push(TransPolyToGIS(vpolygons[i][j][0],vpolygons[i][j][1],width,height,gcx,gcy,scale));
+          for (var j=0;j<vpolygons[i].length; j=j+1){
+            tempr.push(TransPolyToGIS(vpolygons[i][j][0],vpolygons[i][j][1],width,height,-8968838.254,4466990.583,scale));
+          }
 
           tempr.push(tempr[0]);
           vrings.push(tempr);
@@ -136,12 +141,30 @@
           [-97.06326,32.759,35.4]  // same as first vertex
          ]
         ];
-
+        const mpoints=[
+            [-8969595.159547715,4466816.509629287],
+            [-8969390.929362783,4466843.979186324],
+            [-8969481.698333865,4467187.9458135795],
+            [-8969408.247126916,4467306.184341663],
+            [-8968981.87182855,4467445.9207839845],
+            [-8968559.079515884,4467154.504613671],
+            [-8968476.670844771,4467165.253570773],
+            [-8968407.399787892,4467000.436228547],
+            [-8968292.744245475,4467030.294442719],
+            [-8968181.671688758,4467198.694770645],
+            [-8967898.615818413,4467535.495426498],
+            [-8967597.645019565,4467263.188513256],
+            [-8969143.106185075,4466485.680616233],
+            [-8968569.828472985,4467659.705597452],
+            [-8968437.258002063,4467825.717268244],
+            [-8969888.367210792,4467681.203511654],
+            [-8967838.89939007,4467193.917456377]
+        ];
         const polygon = new Polygon({
           hasZ: true,
           hasM: true,
           rings: vrings,
-          spatialReference: { wkid: 4326 }
+          spatialReference: { wkid: 102100 }
         });
 
 

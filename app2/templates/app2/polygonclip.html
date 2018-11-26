@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+{% load static %}
+<style>
+
+circle {
+  cursor: move;
+  fill: #fff;
+  stroke: #000;
+  stroke-width: 1px;
+}
+
+circle.active {
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+path.clip {
+  fill: rgba(0, 0, 0, 0.3);
+  stroke-dasharray: 5, 5;
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+path.subject {
+  fill: #8fbbda;
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+path.clipped {
+  fill: #000;
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+</style>
+<svg width="960" height="600"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="{% static 'js/d3-polygon-clip.js' %}"></script>
+<script>
+
+var svg = d3.select("svg"),
+    width = svg.attr("width"),
+    height = svg.attr("height");
+
+// Counter-clockwise orientation.
+var clip = [[width / 2, height / 5],
+            [width / 5, 3 * height / 5],
+            [3 * width / 5, 3 * height / 5]];
+
+// Counter-clockwise orientation.
+var subject = [[100, 400], [480, 550], [700, 400], [860, 100], [200, 250]];
+
+// d3.polygonClip modifies the input subject. Clone it first.
+var clipped = d3.polygonClip(clip, polygonClone(subject));
+
+var subjectPolygon = svg.append("path")
+    .attr("class", "subject")
+    .datum(subject);
+
+var clippedPolygon = svg.append("path")
+    .attr("class", "clipped")
+    .datum(clipped);
+
+var clipPolygon = svg.append("path")
+    .datum(clip)
+    .attr("class", "clip");
+
+// Control points for the clip polygon.
+var circle = svg.selectAll("circle")
+  .data(clip);
+
+var origin = [0, 0];
+
+circle.enter()
+  .append("circle")
+    .attr("r", 9)
+    .attr("cx", function(d) { return d[0]; })
+    .attr("cy", function(d) { return d[1]; })
+    .call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended));
+
+update();
+
+// Redraw polygons in response to control point movement.
+function update() {
+  // Ensure clip polygon has counter-clockwise orientation.
+  if (!ccw(clip)) clip.reverse();
+
+  clipPolygon.attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+  subjectPolygon.attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+  clippedPolygon.datum(d3.polygonClip(clip, polygonClone(subject)));
+  clippedPolygon.attr("d", function(d) { return "M" + d.join("L") + "Z"; });
+}
+
+function dragstarted(d) {
+  d3.select(this).classed("active", true);
+  update();
+}
+
+function dragged(d) {
+  d3.select(this)
+      .attr("cx", d[0] = d3.event.x)
+      .attr("cy", d[1] = d3.event.y);
+  update();
+}
+
+function dragended(d, i) {
+  d3.select(this).classed("active", false);
+  update();
+}
+
+function polygonClone(polygon) {
+  var cloned = [],
+      i,
+      n;
+
+  for (i = 0, n = polygon.length; i < n; i++) {
+    cloned.push([polygon[i][0], polygon[i][1]]);
+  }
+
+  return cloned;
+}
+
+// Returns true of the given polygon has counter-clockwise orientation.
+function ccw(polygon) {
+  function polygonInside(p, a, b) {
+    // Use cross product to determine orientation.
+    return (b[0] - a[0]) * (p[1] - a[1]) < (b[1] - a[1]) * (p[0] - a[0]);
+  }
+
+  return polygonInside(d3.polygonCentroid(polygon), polygon[0], polygon[1]);
+}
+
+</script>

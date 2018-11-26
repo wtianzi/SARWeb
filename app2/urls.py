@@ -1,5 +1,5 @@
 from django.urls import path
-
+from django.views.generic import TemplateView
 from . import views
 
 urlpatterns = [
@@ -15,4 +15,6 @@ urlpatterns = [
     path('arcgis', views.arcgis, name='index'),
     path('arcgisc', views.arcgisc, name='index'),
     path('arcgisv', views.arcgisv, name='index'),
+    path('arcgist',TemplateView.as_view(template_name="app2/ArcGISTriangles.html")),
+    path('polygonclip',TemplateView.as_view(template_name="app2/polygonclip.html")),
 ]

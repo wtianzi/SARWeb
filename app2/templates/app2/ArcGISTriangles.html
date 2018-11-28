@@ -171,7 +171,7 @@
       });
 
       function addVoronoi(){
-        var sites = d3.range(10)
+        var sites = d3.range(15)
         .map(function(d) { return [Math.random() * gwidth-8969950, Math.random() * gheight+4466302.948]; });
         var voronoi = d3.voronoi().extent([[-8969950,4466302.948], [-8967606.602,4467675.232]]);
         var diagram = voronoi(sites),
@@ -418,8 +418,8 @@
       }
       document.getElementById("draw-polygon").addEventListener("click",
         function() {
-          endtask==false;
-          view.graphics.removeAll();
+          endtask=false;
+          //view.graphics.removeAll();
 
           var action = draw.create("polygon");
 
@@ -434,7 +434,7 @@
           action.on("redo", drawPolygon);
           action.on("undo", drawPolygon);
           action.on("draw-complete", drawPolygon);
-          
+
         });
         $(document).ready(function(){
             $('input:checkbox').click(function() {
@@ -447,7 +447,9 @@
         document.getElementById("btngeneratearea").onclick=function() {
           endtask=true;
           view.graphics.removeAll();
+          glverticeslist=[];
           if(voronoistyle=="random"){
+
             addVoronoi();
           }
           else if(voronoistyle=="triangle"){
@@ -504,9 +506,12 @@
         labelAreas(polygon, area);
 
         if(event.type=="draw-complete"){
-          glverticeslist.push(glvertices);
           addGraphics(glvertices);
-          if(voronoistyle=="clear") addFreedraw();
+          if(endtask==false && voronoistyle=="clear"){
+
+            glverticeslist.push(glvertices);
+            addFreedraw();
+          }
         }
       }
 

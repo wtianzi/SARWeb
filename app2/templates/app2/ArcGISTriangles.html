@@ -76,18 +76,19 @@
         "esri/layers/TileLayer",
         "esri/widgets/BasemapToggle",
       "esri/widgets/FeatureForm",//-----------------------------
-      "esri/views/2d/draw/Draw"
+      "esri/views/2d/draw/Draw",
+      "esri/widgets/CoordinateConversion",
 
     ], function(
       SketchViewModel, Graphic, Map, MapView, FeatureLayer,
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
       FeatureForm,
-      Draw
+      Draw,CoordinateConversion
     ) {
       let view, sketchViewModel, graphicsLayer, boundaryPolygon,
         validSymbol, draw,
         invalidSymbol, bufferLayer, buffers, newDevelopmentGraphic,
-        instructionsExpand;
+        instructionsExpand,coordinateLayer;
       let intersects = false,
         contains = true;
 
@@ -155,7 +156,10 @@
         // Query all buffer features from the school buffers featurelayer
         bufferLayer.queryFeatures().then(function(results) {
           buffers = results.features[0].geometry;
-        });
+
+          });
+
+
 
         // Add the boundary polygon and new lot polygon graphics
         //addGraphics();
@@ -168,7 +172,10 @@
         });
 
 
-      });
+      })
+
+
+
 
       function addVoronoi(){
         var sites = d3.range(15)
@@ -372,6 +379,11 @@
           }
         });
 
+        coordinateLayer=new FeatureLayer({
+          spatialReference: { wkid: 102100  }
+        });
+
+
         graphicsLayer = new GraphicsLayer();
 
         const map = new Map({
@@ -566,6 +578,16 @@
         view.ui.add(editExpand, "top-right");
 
       }
+
+      var ccWidget = new CoordinateConversion({
+        view: view
+        //container: "coordinatesdiv"
+      });
+      view.ui.add(ccWidget, "bottom-left");
+      //view.ui.add(ccWidget,document.getElementById("coordinatesdiv"));
+
+
+
     });
 
 
@@ -589,8 +611,8 @@
     <div id="drawpolygon">
       <h3 class="list-heading">Draw</h3>
       <div>Draw and measure polygon. Finish task by double click</div>
-
     </div>
+
   </div>
   <div id="viewDiv">
     <!--div id="SARParameter" class="SARP-container">

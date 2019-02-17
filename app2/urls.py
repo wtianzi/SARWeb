@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('lattice', views.lattice, name='index'),
     path('blocks', views.blocks, name='index'),
     path('dragpoints', views.dragpoints, name='index'),
     path('lattice', views.lattice, name='index'),
@@ -15,6 +16,6 @@ urlpatterns = [
     path('arcgis', views.arcgis, name='index'),
     path('arcgisc', views.arcgisc, name='index'),
     path('arcgisv', views.arcgisv, name='index'),
-    path('arcgist',TemplateView.as_view(template_name="app2/ArcGISTriangles.html")),
+    path('arcgist',TemplateView.as_view(template_name="app2/ArcGISTriangles.html")),# this is the temporal index
     path('polygonclip',TemplateView.as_view(template_name="app2/polygonclip.html")),
 ]

@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'App1',
     'app2',
     'testing',
+    'app3',
 ]
 
 MIDDLEWARE = [
@@ -81,8 +82,14 @@ WSGI_APPLICATION = 'VACSETEST.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE':'django.db.backends.mysql',
+        'NAME':'saruser',
+        'USER': 'VACSE',
+        'PASSWORD':'VACSE529',
+        'HOST':'localhost',
+        'PORT':'3306',
+        #'ENGINE': 'django.db.backends.sqlite3',
+        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 

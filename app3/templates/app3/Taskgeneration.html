@@ -70,8 +70,8 @@
       var height=900*1.5;
 
       var scale=17;
-      var gcx=-80.5665968;
-      var gcy=37.1997589;
+      var gcx=-80.572567;
+      var gcy=37.203604;
       var gwidth=2343.398;
       var gheight=1372.284;
       var voronoistyle="clear";
@@ -171,9 +171,20 @@
       }
 
       function addVoronoi(){
+        let ltx=-8969950,
+            lty=4466302.948,
+            rbx=-8967611.602,
+            rby=4467675.232;
+
+        let tempdis=500;
+            ltx=ltx-tempdis;
+            lty=lty+tempdis;
+            rbx=rbx-tempdis;
+            rby=rby+tempdis;
+
         var sites = d3.range(15)//15
-        .map(function(d) { return [Math.random() * gwidth-8969950, Math.random() * gheight+4466302.948]; });
-        var voronoi = d3.voronoi().extent([[-8969950,4466302.948], [-8967606.602,4467675.232]]);
+        .map(function(d) { return [Math.random() * gwidth+ltx, Math.random() * gheight+lty]; });
+        var voronoi = d3.voronoi().extent([[ltx,lty], [rbx,rby]]);
         var diagram = voronoi(sites),
             links = diagram.links(),
             vpolygons = diagram.polygons();
@@ -187,8 +198,13 @@
           [-8968683.886851205, 4466670.801544131],
           [-8968375.750080956, 4466919.221886037]
         ];
+        //vpolygons=ClipPolygongsByPoints(points);
 
-        var cpy=[];
+        addGraphics(vpolygons);
+      }
+
+      function ClipPolygongsByPoints(points){
+        let cpy=[];
         for(var i=0;i<vpolygons.length;i++){
           var temp=d3.polygonClip(vpolygons[i],polygonClone(points.reverse()));
 
@@ -196,10 +212,8 @@
             cpy.push(temp);
           }
         }
-        vpolygons=cpy;
-        addGraphics(vpolygons);
+        return cpy;
       }
-
       function addTriangle(){
 
               var sites =[

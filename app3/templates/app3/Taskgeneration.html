@@ -54,13 +54,13 @@
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
       Draw,CoordinateConversion
     ) {
-      let view, sketchViewModel, graphicsLayer,
+      let view, sketchViewModel,
         validSymbol, draw,
         invalidSymbol, newDevelopmentGraphic,
         instructionsExpand,coordinateLayer;
       let intersects = false,
         contains = true;
-
+        //let graphicsLayer;
 //Transportation example:
 //https://developers.arcgis.com/javascript/latest/sample-code/sandbox/index.html?sample=intro-layers
 //Transportation service:
@@ -85,6 +85,7 @@
       let activepolygonset=[];
       let activepolygonpoints=[];
 
+      const graphicsLayer = new GraphicsLayer();
       setUpView();
       function polygonClone(polygon) {
         var cloned = [],
@@ -170,7 +171,7 @@
       }
 
       function addVoronoi(){
-        var sites = d3.range(3)//15
+        var sites = d3.range(15)//15
         .map(function(d) { return [Math.random() * gwidth-8969950, Math.random() * gheight+4466302.948]; });
         var voronoi = d3.voronoi().extent([[-8969950,4466302.948], [-8967606.602,4467675.232]]);
         var diagram = voronoi(sites),
@@ -334,7 +335,7 @@
         });
 
 
-        graphicsLayer = new GraphicsLayer();
+        //graphicsLayer = new GraphicsLayer();
 
         const map = new Map({
           basemap: "hybrid",//"hybrid",//"satellite",
@@ -548,12 +549,16 @@
         //}
         //if is the first active or not
         if (event.state=="active"){
+
+
           mover=event.toolEventInfo.mover.geometry;
           t_pointIndex=event.toolEventInfo.mover.attributes.pointIndex;
           orignalmover=event.graphics[0].geometry.rings[0][t_pointIndex];
 
           if(event.toolEventInfo.type=="reshape-start"){
+
             temppolyset=[];
+            activepolygonpoints=[];
             //selected=event.toolEventInfo.selected[0].geometry;
             for(let i=0;i<allpolygons.length;i++){
               if(geometryEngine.equals(allpolygons[i].geometry,graphic.geometry)){
@@ -561,8 +566,6 @@
                 continue;
               }
               if(geometryEngine.touches(mover,allpolygons[i].geometry)){
-                console.log("touched");
-
                 //array, start end with the two nearby points
                 //let array_points=GetPolygonPoints(mover.x,mover.y,allpolygons[i].geometry.rings[0]);
                 let array_points=GetPolygonPoints(orignalmover[0],orignalmover[1],allpolygons[i].geometry.rings[0]);
@@ -585,17 +588,18 @@
           else if(event.toolEventInfo.type=="reshape-stop"){
 
             allpolygons=allpolygons.concat(activepolygonset);
-            //console.log(allpolygons);
             activepolygonset=[];
-          }
 
+          }
           //renew the polygons
           if(activepolygonset.length>0){
 
             graphicsLayer.removeMany(activepolygonset);
             activepolygonset=GeneratePolygonBasedonPoints(mover.x,mover.y,activepolygonpoints);
             graphicsLayer.addMany(activepolygonset);
+
           }
+
         }
       }
 

@@ -77,6 +77,7 @@
       var voronoistyle="clear";
       var glvertices;
       var glverticeslist=[];
+      let maxdistanceerror = 0.0001;
 //  wkid: 102100 vs wkid: 4326
 //wkid 102100/pix =1.5 (2444,1366/1600,900)
 //wkid 102100: left-top (-8970062.142, 4467672.843), right-bottom (-8967625.712	4466311.309)
@@ -623,24 +624,33 @@
         let t_array=[];
         let i=0;
         let tlen=tpoly.length;
+        let pointofline=0;//0: not on line, 1: vertices, 2: center, 3: on the line
         for(i=0;i<tlen-1;i++){
-          entry=tpoly[i];
-          if(entry[0]==x && entry[1]==y){
+          if(Math.abs(tpoly[i][0]-x< maxdistanceerror) && Math.abs(tpoly[i][1]-y)< maxdistanceerror ){
+            pointofline=1;
             break;
+          }
+          else if (Math.abs( 0.5*( tpoly[i][0]+tpoly[i+1][0] )-x< maxdistanceerror )
+                  && Math.abs( 0.5*( tpoly[i][1]+tpoly[i+1][1] )-y < maxdistanceerror )){
+                    pointofline=2;
+                    break;
           }
         }
 
-        if(i<tlen-1){
+        if( pointofline===1 ){
           console.log("points as vertices");
           //poins as vertices of the line
-
           t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i));
           //console.log(t_array);
+        }
+        else if (pointofline===2){
+          console.log("points on line");
+          t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i+1));
         }
         else{
           //poins on the line
           //add more pass
-          console.log("points on line");
+          console.log("points not on line");
           t_array=null;
         }
         return t_array;

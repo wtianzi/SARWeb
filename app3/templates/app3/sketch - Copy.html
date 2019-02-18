@@ -51,6 +51,7 @@
       //{taskindex:1, polyv:[[,],[,],[,] , polyring=[[,],[,],[,],[,]] }
       let allpolygons=[];
       let activepolygonset=[];
+      let activepolygonpoints=[];
       let firstactivepoly=null;
       let openforregister=true;// active surrounding polygongs
 
@@ -67,7 +68,7 @@
       const boundaryLayer = new GraphicsLayer();
 
       const map = new Map({
-        basemap: "streets-night-vector",
+        basemap: "hybrid",
         layers: [bufferLayer,
           FeatureLayer({
             portalItem: {
@@ -107,10 +108,12 @@
           }
         });
 
+        activepolygonset=[];
         // Listen to sketchViewModel's update event to do
         // graphic reshape or move validation
         //on(type, listener)
         sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
+
       });
 
       function onGraphicUpdate(event) {
@@ -163,6 +166,7 @@
           }
           view.hitTest(event).then(function(response) {
             var results = response.results;
+            //console.log(results);
             // Check if the new development graphic was clicked and pass
             // the graphic to sketchViewModel.update() with reshape tool.
             results.forEach(function(result) {
@@ -286,86 +290,132 @@
       }
 
       function MapDivisionUpdateMover(event){
-        console.log(event);
-        let graphic = event.graphics[0];
-        let mover;
-
-        // start status, active surrounding regions
-        //tag: true
-        //stop status: tage: false
-        if(event.state=="start" && openforregister){
-          console.log("start");
-          openforregister=false;
-          firstactivepoly=graphic;
-
-          for (let i=0; i<allpolygons.length; i++){
-            entry=allpolygons[i];
-            if(geometryEngine.equals(entry.geometry,graphic.geometry)){
-              continue;
-            }
-            if (geometryEngine.intersects(entry.geometry,graphic.geometry)) {
-              activepolygonset.push(entry);
-              sketchViewModel.update([allpolygons[i]], {
-                tool: "reshape"
-              });
-              //console.log("other intersect");
-            }
-          }
-        }
-        else if(event.state=="complete" || event.status=="cancel"){
-          openforregister=true;
-          activepolygonset=[];
-        }
-
-        //if is the first active or not
-
-
-      }
-
-      //update other polygongs
-      function MapDivisionUpdate(event){
-        // find all matched edges in allpolygons
-        let graphic = event.graphics[0];
-        let mover=event.toolEventInfo.mover.geometry;
-
+        //console.log("event");
         //console.log(event);
-        //console.log("mover:"+event.toolEventInfo.mover.geometry.x);
+        let graphic = event.graphics[0];
+        let mover,temppolyset;
 
-        for (var i=0;i<allpolygons.length;i++){
-          if(geometryEngine.equals(allpolygons[i].geometry,graphic.geometry)){
-            allpolygons.splice(i,1);
-            return ;
+        //if(event.toolEventInfo != null){
+        //  console.log(event.toolEventInfo.mover.geometry.x +","+ event.toolEventInfo.mover.geometry.y+":"+ event.toolEventInfo.type );
+        //}
+        //if is the first active or not
+        if (event.state=="active"){
+          mover=event.toolEventInfo.mover.geometry;
+          t_pointIndex=event.toolEventInfo.mover.attributes.pointIndex;
+          orignalmover=event.graphics[0].geometry.rings[0][t_pointIndex];
+
+          if(event.toolEventInfo.type=="reshape-start"){
+            temppolyset=[];
+            //selected=event.toolEventInfo.selected[0].geometry;
+            for(let i=0;i<allpolygons.length;i++){
+              if(geometryEngine.equals(allpolygons[i].geometry,graphic.geometry)){
+                temppolyset.push(allpolygons[i]);
+                continue;
+              }
+              if(geometryEngine.touches(mover,allpolygons[i].geometry)){
+                console.log("touched");
+
+                //array, start end with the two nearby points
+                //let array_points=GetPolygonPoints(mover.x,mover.y,allpolygons[i].geometry.rings[0]);
+                let array_points=GetPolygonPoints(orignalmover[0],orignalmover[1],allpolygons[i].geometry.rings[0]);
+                activepolygonpoints.push(array_points);
+                //console.log("mover"+mover.x+","+mover.y);
+                //console.log("original"+orignalmover[0]+","+orignalmover[1]);
+                //console.log(activepolygonset);
+                activepolygonset.push(allpolygons[i]);
+
+              }
+              else{
+                temppolyset.push(allpolygons[i]);
+              }
+            }
+            allpolygons=temppolyset;
           }
+          else if(event.toolEventInfo.type=="reshape"){
+
+          }
+          else if(event.toolEventInfo.type=="reshape-stop"){
+
+            allpolygons=allpolygons.concat(activepolygonset);
+            console.log(allpolygons);
+            activepolygonset=[];
+          }
+
+          //renew the polygons
+          if(activepolygonset.length>0){
+            graphicsLayer.removeMany(activepolygonset);
+            //graphicsLayer.removeAll();
+            activepolygonset=GeneratePolygonBasedonPoints(mover.x,mover.y,activepolygonpoints);
+            graphicsLayer.addMany(activepolygonset);
+          }
+
         }
-        allpolygons.forEach(function(entry){
-          intersect=geometryEngine.intersects(entry.geometry,graphic.geometry);
-          //touch=geometryEngine.touches(entry.geometry,graphic.geometry);
-          overlap=geometryEngine.overlaps(entry.geometry,graphic.geometry);
-          //relation=geometryEngine.relate(entry.geometry,entry.geometry,"FFFFTFFFF");
-          if (intersect) {
-            console.log("intersect");
-          }
-          if(overlap){
-            //console.log(graphic);
-            clipedarea=geometryEngine.clip(entry.geometry,graphic.geometry);
-            console.log("overlap");
-          }
-          //if(touch){
-        //    console.log("two points");
-          //}
-          if (!intersect && !overlap){
-            console.log("no relationship");
-          }
-
-          console.log("--------");
-        });
 
       }
 
+      //tpoly is an array[[,],[,]]
+      function GetPolygonPoints(x,y,tpoly){
 
+        let t_array=[];
+        let i=0;
+        let tlen=tpoly.length;
+        for(i=0;i<tlen-1;i++){
+          entry=tpoly[i];
+          if(entry[0]==x && entry[1]==y){
+            break;
+          }
+        }
+
+        if(i<tlen-1){
+          console.log("points as vertices");
+          //poins as vertices of the line
+
+          t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i));
+          //console.log(t_array);
+        }
+        else{
+          //poins on the line
+          //add more pass
+          console.log("points on line");
+          t_array=null;
+        }
+        return t_array;
+      }
+
+      //update new polygon
+      function GeneratePolygonBasedonPoints(x,y,array_points){
+        let tmppolysets=[];
+        validSymbol = createSymbol([0, 170, 255, 0.8], "solid", 2, [255,
+          255, 255
+        ]);
+        //console.log(array_points);
+        if(array_points.length==0){
+          return tmppolysets;
+        }
+        for(let i=0;i<array_points.length;i++){
+          entry=array_points[i];
+
+          let vertices=[];
+          vertices=vertices.concat([[x,y]],entry,[[x,y]]);
+          //console.log(vertices);
+          //console.log("-------------");
+          let polygon = createGeometry(vertices);
+          newDevelopmentGraphic = new Graphic({
+            geometry: polygon,
+            symbol: validSymbol,
+            attributes: {
+              newDevelopment: "new store"
+            }
+          });
+          tmppolysets.push(newDevelopmentGraphic);
+        }
+
+        return tmppolysets;
+      }
 
 
     });
+
   </script>
 </head>
 

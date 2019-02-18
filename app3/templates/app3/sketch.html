@@ -68,7 +68,7 @@
       const boundaryLayer = new GraphicsLayer();
 
       const map = new Map({
-        basemap: "streets-night-vector",
+        basemap: "hybrid",
         layers: [bufferLayer,
           FeatureLayer({
             portalItem: {
@@ -291,7 +291,7 @@
 
       function MapDivisionUpdateMover(event){
         //console.log("event");
-        console.log(event);
+        //console.log(event);
         let graphic = event.graphics[0];
         let mover,temppolyset;
 
@@ -335,7 +335,9 @@
 
           }
           else if(event.toolEventInfo.type=="reshape-stop"){
-            allpolygons.concat(activepolygonset);
+
+            allpolygons=allpolygons.concat(activepolygonset);
+            console.log(allpolygons);
             activepolygonset=[];
           }
 
@@ -386,7 +388,7 @@
         validSymbol = createSymbol([0, 170, 255, 0.8], "solid", 2, [255,
           255, 255
         ]);
-        console.log(array_points);
+        //console.log(array_points);
         if(array_points.length==0){
           return tmppolysets;
         }
@@ -395,8 +397,8 @@
 
           let vertices=[];
           vertices=vertices.concat([[x,y]],entry,[[x,y]]);
-          console.log(vertices);
-          console.log("-------------");
+          //console.log(vertices);
+          //console.log("-------------");
           let polygon = createGeometry(vertices);
           newDevelopmentGraphic = new Graphic({
             geometry: polygon,

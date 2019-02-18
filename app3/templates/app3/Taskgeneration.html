@@ -45,20 +45,18 @@
       "esri/geometry/geometryEngine",
       "esri/widgets/Expand",
         "esri/layers/TileLayer",
-        "esri/widgets/BasemapToggle",
-      "esri/widgets/FeatureForm",//-----------------------------
+        "esri/widgets/BasemapToggle",//-----------------------------
       "esri/views/2d/draw/Draw",
-      "esri/widgets/CoordinateConversion",
-      "esri/widgets/Sketch"
+      "esri/widgets/CoordinateConversion"//,      "esri/widgets/Sketch"
 
     ], function(
       SketchViewModel, Graphic, Map, MapView, FeatureLayer,
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
-      FeatureForm, Draw,CoordinateConversion,Sketch
+      Draw,CoordinateConversion
     ) {
-      let view, sketchViewModel, graphicsLayer, boundaryPolygon,
+      let view, sketchViewModel, graphicsLayer,
         validSymbol, draw,
-        invalidSymbol, bufferLayer, buffers, newDevelopmentGraphic,
+        invalidSymbol, newDevelopmentGraphic,
         instructionsExpand,coordinateLayer;
       let intersects = false,
         contains = true;
@@ -82,6 +80,10 @@
 //  wkid: 102100 vs wkid: 4326
 //wkid 102100/pix =1.5 (2444,1366/1600,900)
 //wkid 102100: left-top (-8970062.142, 4467672.843), right-bottom (-8967625.712	4466311.309)
+
+      let allpolygons=[];
+      let activepolygonset=[];
+      let activepolygonpoints=[];
 
       setUpView();
       function polygonClone(polygon) {
@@ -138,12 +140,10 @@
           });
         });
       }
+      setUpGraphicClickHandler();
+
       view.when(function() {
         // Query all buffer features from the school buffers featurelayer
-        bufferLayer.queryFeatures().then(function(results) {
-          buffers = results.features[0].geometry;
-
-          });
 
         // Create a new instance of sketchViewModel and set its required properties
         sketchViewModel = new SketchViewModel({
@@ -155,56 +155,22 @@
           }
         })
 
+        activepolygonset=[];
         // Listen to sketchViewModel's update event to do
         // graphic reshape or move validation
-        //sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
+        sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
 
-        // ---add sketch editor
-        const sketch = new Sketch({
-          layer: graphicsLayer,
-          view: view
-        });
-
-        view.ui.add(sketch, "bottom-right");
-        //----- end sketch
       });
       function onGraphicUpdate(event) {
 
         // get the graphic as it is being updated
         const graphic = event.graphics[0];
-        console.log(event);
-        // check if the graphic is intersecting school buffers or is
-        // still contained by the boundary polygon as the graphic is being updated
-        intersects = geometryEngine.intersects(buffers, graphic.geometry);
-        contains = geometryEngine.contains(boundaryPolygon, graphic.geometry);
+        MapDivisionUpdateMover(event);
 
-        // change the graphic symbol to valid or invalid symbol
-        // depending the graphic location
-        graphic.symbol = (intersects) || (!contains) ? invalidSymbol :
-          validSymbol
-
-        // check if the update event's the toolEventInfo.type is move-stop or reshape-stop
-        // then it means user finished moving or reshaping the graphic, call complete method.
-        // this will change update event state to complete and we will check the validity of the graphic location.
-        if (event.toolEventInfo && (event.toolEventInfo.type ===
-            "move-stop" || event.toolEventInfo.type === "reshape-stop")) {
-          if (contains && !intersects) {
-            sketchViewModel.complete();
-          }
-        } else if ((event.state === "cancel" || event.state === "complete")) {
-          // graphic moving or reshaping has been completed or cancelled
-          // if the graphic is in an illegal spot, call sketchviewmodel's update method again
-          // giving user a chance to correct the location of the graphic
-          if ((!contains) || (intersects)) {
-            sketchViewModel.update([graphic], {
-              tool: "reshape"
-            });
-          }
-        }
       }
 
       function addVoronoi(){
-        var sites = d3.range(15)//15
+        var sites = d3.range(3)//15
         .map(function(d) { return [Math.random() * gwidth-8969950, Math.random() * gheight+4466302.948]; });
         var voronoi = d3.voronoi().extent([[-8969950,4466302.948], [-8967606.602,4467675.232]]);
         var diagram = voronoi(sites),
@@ -320,45 +286,24 @@
       function addGraphics(vtriangles) {
         // transfer the voronoi polygon:vpolygons to gispolygon
 
-        for (var i=0;i<vtriangles.length;i=i+1){
+        let validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);
+        for (var i=0;i<vtriangles.length;i++){
+
           vtriangles[i].push(vtriangles[i][0]);
+          let polygon = createGeometry(vtriangles[i]);
+          let newDevelopmentGraphic = new Graphic({
+            geometry: polygon,
+            symbol: validSymbol,
+            attributes: {
+              newDevelopment: "new store"
+            }
+          });
+          allpolygons.push(newDevelopmentGraphic);
         }
-/*
-        var polygon = new Polygon({
-          hasZ: true,
-          hasM: true,
-          rings: vtriangles,
-          spatialReference: { wkid: 102100  }
-        });
-
-     vtriangles = [
-        [-13040270.324055556, 4040357.7882640623],
-        [-13038653.725694647, 4040689.513023534],
-        [-13038063.204863824, 4038017.2028549737],
-        [-13040097.818223165, 4037990.629044359],
-        [-13040270.324055556, 4040357.7882640623]
-      ]
-*/
-      //  console.log(vtriangles);
-
-        const polygon = createGeometry(vtriangles);
-
-
-        validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,
-          255, 255
-        ]);
-        //-------------------------------
-        newDevelopmentGraphic = new Graphic({
-          geometry: polygon,
-          symbol: validSymbol,
-          attributes: {
-            newDevelopment: "new store"
-          }
-        });
         //view.graphics.add(newDevelopmentGraphic);
         //graphicsLayer.addMany([newDevelopmentGraphic]);
         //graphicsLayer.graphics.add(newDevelopmentGraphic);
-        graphicsLayer.add(newDevelopmentGraphic);
+        graphicsLayer.addMany(allpolygons);
       }
 
       function createGeometry(vertices) {
@@ -384,14 +329,6 @@
 
       // Create new view, map and layers... set up the view
       function setUpView() {
-
-        bufferLayer = new FeatureLayer({
-          id:"a1fc918a654648eb833826d1c198922e"
-          //portalItem: {
-          //  id: "a1fc918a654648eb833826d1c198922e"
-          //}
-        });
-
         coordinateLayer=new FeatureLayer({
           spatialReference: { wkid: 102100  }
         });
@@ -465,9 +402,9 @@
         });
         //generate voronoi
         document.getElementById("btngeneratearea").onclick=function() {
-          graphicsLayer.removeAll()
+          graphicsLayer.removeAll();
           view.graphics.removeAll();
-
+          allpolygons=[];
 
           glverticeslist=[];
           if(voronoistyle=="random"){
@@ -573,14 +510,6 @@
         // input boxes for the attribute editing
         editArea = document.getElementById("editArea");
 
-        // Create a new feature form and set its layer to
-        // 'incidents' featureLayer. Feature form displays
-        // attributes of the fields specified in fieldConfig.
-        featureForm = new FeatureForm({
-          container: "formDiv",
-          layer: bufferLayer,
-
-        });
 
         // Listen to the feature form's submit event.
 
@@ -606,6 +535,130 @@
       //view.ui.add(ccWidget,document.getElementById("coordinatesdiv"));
 
 
+//-----------------adding new functions here---------------------
+
+      function MapDivisionUpdateMover(event){
+        //console.log("event");
+        //console.log(event);
+        let graphic = event.graphics[0];
+        let mover,temppolyset;
+
+        //if(event.toolEventInfo != null){
+        //  console.log(event.toolEventInfo.mover.geometry.x +","+ event.toolEventInfo.mover.geometry.y+":"+ event.toolEventInfo.type );
+        //}
+        //if is the first active or not
+        if (event.state=="active"){
+          mover=event.toolEventInfo.mover.geometry;
+          t_pointIndex=event.toolEventInfo.mover.attributes.pointIndex;
+          orignalmover=event.graphics[0].geometry.rings[0][t_pointIndex];
+
+          if(event.toolEventInfo.type=="reshape-start"){
+            temppolyset=[];
+            //selected=event.toolEventInfo.selected[0].geometry;
+            for(let i=0;i<allpolygons.length;i++){
+              if(geometryEngine.equals(allpolygons[i].geometry,graphic.geometry)){
+                temppolyset.push(allpolygons[i]);
+                continue;
+              }
+              if(geometryEngine.touches(mover,allpolygons[i].geometry)){
+                console.log("touched");
+
+                //array, start end with the two nearby points
+                //let array_points=GetPolygonPoints(mover.x,mover.y,allpolygons[i].geometry.rings[0]);
+                let array_points=GetPolygonPoints(orignalmover[0],orignalmover[1],allpolygons[i].geometry.rings[0]);
+                activepolygonpoints.push(array_points);
+                //console.log("mover"+mover.x+","+mover.y);
+                //console.log("original"+orignalmover[0]+","+orignalmover[1]);
+                //console.log(activepolygonset);
+                activepolygonset.push(allpolygons[i]);
+
+              }
+              else{
+                temppolyset.push(allpolygons[i]);
+              }
+            }
+            allpolygons=temppolyset;
+          }
+          else if(event.toolEventInfo.type=="reshape"){
+
+          }
+          else if(event.toolEventInfo.type=="reshape-stop"){
+
+            allpolygons=allpolygons.concat(activepolygonset);
+            //console.log(allpolygons);
+            activepolygonset=[];
+          }
+
+          //renew the polygons
+          if(activepolygonset.length>0){
+
+            graphicsLayer.removeMany(activepolygonset);
+            activepolygonset=GeneratePolygonBasedonPoints(mover.x,mover.y,activepolygonpoints);
+            graphicsLayer.addMany(activepolygonset);
+          }
+        }
+      }
+
+      //tpoly is an array[[,],[,]]
+      function GetPolygonPoints(x,y,tpoly){
+
+        let t_array=[];
+        let i=0;
+        let tlen=tpoly.length;
+        for(i=0;i<tlen-1;i++){
+          entry=tpoly[i];
+          if(entry[0]==x && entry[1]==y){
+            break;
+          }
+        }
+
+        if(i<tlen-1){
+          console.log("points as vertices");
+          //poins as vertices of the line
+
+          t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i));
+          //console.log(t_array);
+        }
+        else{
+          //poins on the line
+          //add more pass
+          console.log("points on line");
+          t_array=null;
+        }
+        return t_array;
+      }
+
+      //update new polygon
+      function GeneratePolygonBasedonPoints(x,y,array_points){
+        let tmppolysets=[];
+        validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,
+          255, 255
+        ]);
+        //console.log(array_points);
+        if(array_points.length==0){
+          return tmppolysets;
+        }
+        for(let i=0;i<array_points.length;i++){
+          entry=array_points[i];
+
+          let vertices=[];
+          vertices=vertices.concat([[x,y]],entry,[[x,y]]);
+          //console.log(vertices);
+          //console.log("-------------");
+          let polygon = createGeometry(vertices);
+          newDevelopmentGraphic = new Graphic({
+            geometry: polygon,
+            symbol: validSymbol,
+            attributes: {
+              newDevelopment: "new store"
+            }
+          });
+          tmppolysets.push(newDevelopmentGraphic);
+        }
+
+        return tmppolysets;
+      }
+//-----------------------------------------------------
 
     });
 

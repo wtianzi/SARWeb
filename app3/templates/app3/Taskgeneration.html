@@ -7,13 +7,13 @@
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
   <title>SAR MAPPING DEMO</title>
 
-  <link rel="stylesheet" href="https://js.arcgis.com/4.9/esri/css/main.css">
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.10/esri/css/main.css">
+
 
   <script src="{% static 'js/d3.v4.min.js' %}"></script>
   <script src="{% static 'js/d3-polygon-clip.js' %}"></script>
   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-  <script src="https://js.arcgis.com/4.9/"></script>
+  <script src="https://js.arcgis.com/4.10/"></script>
 
   <link rel="stylesheet" type="text/css" href="{% static "taskgeneration.css" %}"  />
   <style>
@@ -32,7 +32,8 @@
   </style>
   <script>
 
-
+//https://developers.arcgis.com/javascript/latest/sample-code/sketch-geometries/index.html
+//https://developers.arcgis.com/javascript/latest/sample-code/sandbox/index.html?sample=sketch-update-validation
     require([
       "esri/widgets/Sketch/SketchViewModel",
       "esri/Graphic",
@@ -48,12 +49,12 @@
       "esri/widgets/FeatureForm",//-----------------------------
       "esri/views/2d/draw/Draw",
       "esri/widgets/CoordinateConversion",
+      "esri/widgets/Sketch"
 
     ], function(
       SketchViewModel, Graphic, Map, MapView, FeatureLayer,
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
-      FeatureForm,
-      Draw,CoordinateConversion
+      FeatureForm, Draw,CoordinateConversion,Sketch
     ) {
       let view, sketchViewModel, graphicsLayer, boundaryPolygon,
         validSymbol, draw,
@@ -84,16 +85,17 @@
 
       setUpView();
       function polygonClone(polygon) {
-      var cloned = [],
-          i,
-          n;
+        var cloned = [],
+            i,
+            n;
 
-      for (i = 0, n = polygon.length; i < n; i++) {
-        cloned.push([polygon[i][0], polygon[i][1]]);
+        for (i = 0, n = polygon.length; i < n; i++) {
+          cloned.push([polygon[i][0], polygon[i][1]]);
+        }
+
+        return cloned;
       }
 
-      return cloned;
-    }
       function FilterBoundary(x,y,maxx,maxy,minx,miny){
         if (x>maxx) {
           x=maxx;
@@ -112,7 +114,30 @@
 
       // creates new view and map, adds featurelayers and graphicslayer to the view
 
-
+      // This function is called when a user clicks on the view.
+      function setUpGraphicClickHandler() {
+        view.on("click", function(event) {
+          // check if the sketch's state active if it is then that means
+          // the graphic is already being updated, no action required.
+          if (sketchViewModel.state === "active") {
+            return;
+          }
+          view.hitTest(event).then(function(response) {
+            var results = response.results;
+            // Check if the new development graphic was clicked and pass
+            // the graphic to sketchViewModel.update() with reshape tool.
+            results.forEach(function(result) {
+              if (result.graphic.layer === sketchViewModel.layer &&
+                result.graphic.attributes && result.graphic.attributes
+                .newDevelopment) {
+                sketchViewModel.update([result.graphic], {
+                  tool: "reshape"
+                });
+              }
+            });
+          });
+        });
+      }
       view.when(function() {
         // Query all buffer features from the school buffers featurelayer
         bufferLayer.queryFeatures().then(function(results) {
@@ -123,14 +148,63 @@
         // Create a new instance of sketchViewModel and set its required properties
         sketchViewModel = new SketchViewModel({
           view: view,
-          layer: graphicsLayer
+          layer: graphicsLayer,
+          updateOnGraphicClick: false,
+          defaultUpdateOptions: { // set the default options for the update operations
+            toggleToolOnClick: false // only reshape operation will be enabled
+          }
+        })
+
+        // Listen to sketchViewModel's update event to do
+        // graphic reshape or move validation
+        //sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
+
+        // ---add sketch editor
+        const sketch = new Sketch({
+          layer: graphicsLayer,
+          view: view
         });
 
+        view.ui.add(sketch, "bottom-right");
+        //----- end sketch
+      });
+      function onGraphicUpdate(event) {
 
-      })
+        // get the graphic as it is being updated
+        const graphic = event.graphics[0];
+        console.log(event);
+        // check if the graphic is intersecting school buffers or is
+        // still contained by the boundary polygon as the graphic is being updated
+        intersects = geometryEngine.intersects(buffers, graphic.geometry);
+        contains = geometryEngine.contains(boundaryPolygon, graphic.geometry);
+
+        // change the graphic symbol to valid or invalid symbol
+        // depending the graphic location
+        graphic.symbol = (intersects) || (!contains) ? invalidSymbol :
+          validSymbol
+
+        // check if the update event's the toolEventInfo.type is move-stop or reshape-stop
+        // then it means user finished moving or reshaping the graphic, call complete method.
+        // this will change update event state to complete and we will check the validity of the graphic location.
+        if (event.toolEventInfo && (event.toolEventInfo.type ===
+            "move-stop" || event.toolEventInfo.type === "reshape-stop")) {
+          if (contains && !intersects) {
+            sketchViewModel.complete();
+          }
+        } else if ((event.state === "cancel" || event.state === "complete")) {
+          // graphic moving or reshaping has been completed or cancelled
+          // if the graphic is in an illegal spot, call sketchviewmodel's update method again
+          // giving user a chance to correct the location of the graphic
+          if ((!contains) || (intersects)) {
+            sketchViewModel.update([graphic], {
+              tool: "reshape"
+            });
+          }
+        }
+      }
 
       function addVoronoi(){
-        var sites = d3.range(15)
+        var sites = d3.range(15)//15
         .map(function(d) { return [Math.random() * gwidth-8969950, Math.random() * gheight+4466302.948]; });
         var voronoi = d3.voronoi().extent([[-8969950,4466302.948], [-8967606.602,4467675.232]]);
         var diagram = voronoi(sites),
@@ -167,7 +241,7 @@
                   [-8969481.698333865,4467187.9458135795],
                   [-8969408.247126916,4467306.184341663],
                   [-8968981.87182855,4467445.9207839845],
-                  [-8968559.079515884,4467154.504613671],
+                  [-8968559.079515884,4467154.504613671],//
                   [-8968476.670844771,4467165.253570773],
                   [-8968407.399787892,4467000.436228547],
                   [-8968292.744245475,4467030.294442719],
@@ -249,7 +323,7 @@
         for (var i=0;i<vtriangles.length;i=i+1){
           vtriangles[i].push(vtriangles[i][0]);
         }
-
+/*
         var polygon = new Polygon({
           hasZ: true,
           hasM: true,
@@ -257,8 +331,19 @@
           spatialReference: { wkid: 102100  }
         });
 
+     vtriangles = [
+        [-13040270.324055556, 4040357.7882640623],
+        [-13038653.725694647, 4040689.513023534],
+        [-13038063.204863824, 4038017.2028549737],
+        [-13040097.818223165, 4037990.629044359],
+        [-13040270.324055556, 4040357.7882640623]
+      ]
+*/
+      //  console.log(vtriangles);
 
-        //const polygon = createGeometry(vertices);
+        const polygon = createGeometry(vtriangles);
+
+
         validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,
           255, 255
         ]);
@@ -270,13 +355,17 @@
             newDevelopment: "new store"
           }
         });
-        view.graphics.add(newDevelopmentGraphic);
+        //view.graphics.add(newDevelopmentGraphic);
         //graphicsLayer.addMany([newDevelopmentGraphic]);
+        //graphicsLayer.graphics.add(newDevelopmentGraphic);
+        graphicsLayer.add(newDevelopmentGraphic);
       }
 
       function createGeometry(vertices) {
+
         return new Polygon({
           rings: vertices,
+          //spatialReference: {wkid: 102100 }
           spatialReference: view.spatialReference
         });
       }
@@ -297,9 +386,10 @@
       function setUpView() {
 
         bufferLayer = new FeatureLayer({
-          portalItem: {
-            id: "a1fc918a654648eb833826d1c198922e"
-          }
+          id:"a1fc918a654648eb833826d1c198922e"
+          //portalItem: {
+          //  id: "a1fc918a654648eb833826d1c198922e"
+          //}
         });
 
         coordinateLayer=new FeatureLayer({
@@ -375,18 +465,18 @@
         });
         //generate voronoi
         document.getElementById("btngeneratearea").onclick=function() {
-
+          graphicsLayer.removeAll()
           view.graphics.removeAll();
 
 
           glverticeslist=[];
           if(voronoistyle=="random"){
             addVoronoi();
-            view.complete();
+            //view.complete();
           }
           else if(voronoistyle=="triangle"){
             addTriangle();
-            view.complete();
+            //view.complete();
           }
           else if(voronoistyle=="clear"){
 
@@ -395,32 +485,11 @@
 
         };
 
-
-        function addFreedraw2(action){
-          // focus the view to activate keyboard shortcuts for drawing polygons
-          view.focus();
-
-          // listen polygonDrawAction events to give immediate visual feedback
-          // to users as the polygon is being drawn on the view.
-          action.on("vertex-add", drawPolygon);
-          action.on("cursor-update", drawPolygon);
-          action.on("vertex-remove", drawPolygon);
-          action.on("redo", drawPolygon);
-          action.on("undo", drawPolygon);
-          action.on("draw-complete", drawPolygon);
-        }
-
-        document.getElementById("btfreehandpolygon").onclick=function() {
-          draw.complete();
+        document.getElementById("btnaddpolygon").onclick=function() {
           view.graphics.removeAll();
           glverticeslist=[];
-          var action = draw.create("polygon");
-          addFreedraw2(action);
-
-          //action.deactivate();
-        };
-
-
+          addFreedraw();
+      };
 
 
       // this function is called from the polygon draw action events
@@ -552,16 +621,16 @@
       <h3 class="list-heading">Map</h3>
       <div><input type="checkbox" name="voronoi" class="check" value="random"> Random Voronoi</input></div>
       <div><input type="checkbox" name="voronoi" class="check" value="triangle"> Triangle based on vertices</input></div>
-      <div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div>
+      <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
 
       <input type="button" class="edit-button" value="Generate area" id="btngeneratearea">
     </div>
     <div>
     </div>
     <div id="draw">
-      <h3 class="list-heading">Draw</h3>
-      <div>Draw and measure polygon. Finish task by double click</div>
-      <div><input type="button" class="edit-button" value="Draw Polygong" id="btfreehandpolygon">Draw Polygong</input></div>
+      <h3 class="list-heading">Add Freehand Polygon</h3>
+      <div>Add a freehand polygon and measure polygon. Finish task by double click</div>
+      <div><input type="button" class="edit-button" value="Add Polygon" id="btnaddpolygon"></input></div>
     </div>
 
   </div>

@@ -47,15 +47,12 @@
         "esri/layers/TileLayer",
         "esri/widgets/BasemapToggle",//-----------------------------
       "esri/views/2d/draw/Draw",
-      "esri/widgets/CoordinateConversion",//,      "esri/widgets/Sketch"
-      "esri/widgets/DistanceMeasurement2D",
-      "esri/widgets/AreaMeasurement2D"
+      "esri/widgets/CoordinateConversion"//,      "esri/widgets/Sketch"
 
     ], function(
       SketchViewModel, Graphic, Map, MapView, FeatureLayer,
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
-      Draw,CoordinateConversion,
-      DistanceMeasurement2D,AreaMeasurement2D
+      Draw,CoordinateConversion
     ) {
       let view, sketchViewModel,
         validSymbol, draw,
@@ -75,18 +72,12 @@
       var scale=17;
       var gcx=-80.572567;
       var gcy=37.203604;
-      var gwidth=10;
-      var gheight=10;
+      var gwidth=2343.398;
+      var gheight=1372.284;
       var voronoistyle="clear";
       var glvertices;
       var glverticeslist=[];
       let maxdistanceerror = 0.000001;
-
-      //acer
-
-      let eacharea=60;
-      let wholetask;
-      var activeWidget = null;
 //  wkid: 102100 vs wkid: 4326
 //wkid 102100/pix =1.5 (2444,1366/1600,900)
 //wkid 102100: left-top (-8970062.142, 4467672.843), right-bottom (-8967625.712	4466311.309)
@@ -181,19 +172,20 @@
       }
 
       function addVoronoi(){
+        let ltx=-8969950,
+            lty=4466302.948,
+            rbx=-8967611.602,
+            rby=4467675.232;
 
-        let wholearea=wholetask.area;//metric   240  : acre  60
-
-        let lbx=wholetask.geometry.extent.xmin,
-            lby=wholetask.geometry.extent.ymin,
-            rtx=wholetask.geometry.extent.xmax,
-            rty=wholetask.geometry.extent.ymax,
-            gwidth=wholetask.geometry.extent.width;
-            gheight=wholetask.geometry.extent.height;
+        let tempdis=500;
+            ltx=ltx-tempdis;
+            lty=lty+tempdis;
+            rbx=rbx-tempdis;
+            rby=rby+tempdis;
 
         var sites = d3.range(15)//15
-        .map(function(d) { return [Math.random() * gwidth+lbx, Math.random() * gheight+lby]; });
-        var voronoi = d3.voronoi().extent([[lbx,lby], [rtx,rty]]);
+        .map(function(d) { return [Math.random() * gwidth+ltx, Math.random() * gheight+lty]; });
+        var voronoi = d3.voronoi().extent([[ltx,lty], [rbx,rby]]);
         var diagram = voronoi(sites),
             links = diagram.links(),
             vpolygons = diagram.polygons();
@@ -207,16 +199,12 @@
           [-8968683.886851205, 4466670.801544131],
           [-8968375.750080956, 4466919.221886037]
         ];
-
-        vpolygons=ClipPolygongsByPoints(vpolygons,wholetask.geometry.rings[0].slice(0,wholetask.geometry.rings[0].length-1));
+        //vpolygons=ClipPolygongsByPoints(points);
 
         addGraphics(vpolygons);
       }
 
-      function ClipPolygongsByPoints(vpolygons,points){
-        console.log(wholetask.geometry);
-        console.log(vpolygons);
-        console.log(points);
+      function ClipPolygongsByPoints(points){
         let cpy=[];
         for(var i=0;i<vpolygons.length;i++){
           var temp=d3.polygonClip(vpolygons[i],polygonClone(points.reverse()));
@@ -362,8 +350,6 @@
       // Create new view, map and layers... set up the view
       function setUpView() {
         coordinateLayer=new FeatureLayer({
-          //wkid:4326
-          //spatialReference: { wkid: 4326  }
           spatialReference: { wkid: 102100  }
         });
 
@@ -399,12 +385,11 @@
         // Add widget to the top right corner of the view
         view.ui.add(toggle, "bottom-left");
         setupEditing();
-        //view.ui.add("draw-polygon", "top-left");
+        view.ui.add("draw-polygon", "top-left");
         draw = new Draw({
         view: view
       });
       }
-      /*
       document.getElementById("draw-polygon").addEventListener("click",
         function() {
           voronoistyle="sidebar";
@@ -426,7 +411,7 @@
 
         });
 
-*/
+
 
         $(document).ready(function(){
             $('input:checkbox').click(function() {
@@ -439,10 +424,6 @@
         document.getElementById("btngeneratearea").onclick=function() {
           graphicsLayer.removeAll();
           view.graphics.removeAll();
-          wholetask=activeWidget.viewModel.measurement;
-          ClearAll();
-
-
           allpolygons=[];
 
           glverticeslist=[];
@@ -460,13 +441,13 @@
           }
 
         };
-/*
+
         document.getElementById("btnaddpolygon").onclick=function() {
           view.graphics.removeAll();
           glverticeslist=[];
           addFreedraw();
       };
-*/
+
 
       // this function is called from the polygon draw action events
       // to provide a visual feedback to users as they are drawing a polygon
@@ -739,101 +720,7 @@
         return resarray;
       }
 //-----------------------------------------------------
-document.getElementById("distanceButton").addEventListener("click",
-       function () {
-         setActiveWidget(null);
-         if (!this.classList.contains('active')) {
-           setActiveWidget('distance');
-         } else {
-           setActiveButton(null);
-         }
-       });
 
-     document.getElementById("areaButton").addEventListener("click",
-       function () {
-         setActiveWidget(null);
-         if (!this.classList.contains('active')) {
-           setActiveWidget('area');
-         } else {
-           setActiveButton(null);
-         }
-       });
-
-     function setActiveWidget(type) {
-       switch (type) {
-         case "distance":
-           activeWidget = new DistanceMeasurement2D({
-             view: view
-
-           });
-
-           // skip the initial 'new measurement' button
-           activeWidget.viewModel.newMeasurement();
-           activeWidget.
-
-           view.ui.add(activeWidget, "bottom-right");
-           setActiveButton(document.getElementById('distanceButton'));
-           break;
-         case "area":
-           activeWidget = new AreaMeasurement2D({
-             view: view,
-             unit: "acres"
-           });
-
-           // skip the initial 'new measurement' button
-           activeWidget.viewModel.newMeasurement();
-
-           view.ui.add(activeWidget, "bottom-right");
-           setActiveButton(document.getElementById('areaButton'));
-           break;
-         case null:
-           if (activeWidget) {
-             view.ui.remove(activeWidget);
-             activeWidget.destroy();
-             activeWidget = null;
-           }
-           break;
-       }
-     }
-
-     function setActiveButton(selectedButton) {
-       // focus the view to activate keyboard shortcuts for sketching
-       view.focus();
-       var elements = document.getElementsByClassName("active");
-       for (var i = 0; i < elements.length; i++) {
-         elements[i].classList.remove("active");
-       }
-       if (selectedButton) {
-         selectedButton.classList.add("active");
-       }
-     }
-
-     //------------------------------------------------
-     document.getElementById("clearall").addEventListener("click",
-       function () {
-         //activeWidget.viewModel.measurementLabel.area
-         //activeWidget.viewModel.measurement.geometry.rings: [[,],[,],[,]]
-         //wholearea=activeWidget.viewModel.measurementLabel.area;
-         //wholetask=activeWidget.viewModel.measurement;
-         //wholetask=activeWidget.viewModel.measurement;
-         ClearAll();
-       });
-
-       function ClearAll(){
-         console.log(sketchViewModel);
-         //console.log(activeWidget);
-         //console.log(activeWidget.viewModel.measurementLabel.area);
-         allpolygons=[];
-         activepolygonset=[];
-         activepolygonpoints=[];
-         glverticeslist=[];
-         graphicsLayer.removeAll();
-         view.graphics.removeAll();
-         setActiveWidget(null);
-         sketchViewModel.complete();
-         //.destroy();
-       }
-      //--------------------------------------------------
     });
 
 
@@ -845,25 +732,19 @@ document.getElementById("distanceButton").addEventListener("click",
     <h2 class="list-heading">Tools</h2>
     <div id="addFeatureDiv">
 
-      <div id="draw">
-        <h3 class="list-heading">Measure Tools</h3>
-        <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
-        <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
-      </div>
-
-      <div>
-      </div>
-
-
       <h3 class="list-heading">Map</h3>
       <div><input type="checkbox" name="voronoi" class="check" value="random"> Random Voronoi</input></div>
-      <!--div><input type="checkbox" name="voronoi" class="check" value="triangle"> Triangle based on vertices</input></div-->
+      <div><input type="checkbox" name="voronoi" class="check" value="triangle"> Triangle based on vertices</input></div>
       <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
 
       <input type="button" class="edit-button" value="Generate area" id="btngeneratearea">
-      <div>-------------------</div>
-      <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
-
+    </div>
+    <div>
+    </div>
+    <div id="draw">
+      <h3 class="list-heading">Add Freehand Polygon</h3>
+      <div>Add a freehand polygon and measure polygon. Finish task by double click</div>
+      <div><input type="button" class="edit-button" value="Add Polygon" id="btnaddpolygon"></input></div>
     </div>
 
   </div>
@@ -876,10 +757,10 @@ document.getElementById("distanceButton").addEventListener("click",
       </div>
 
     </div-->
-    <!--div id="draw-polygon" class="esri-widget--button esri-widget esri-interactive"
+    <div id="draw-polygon" class="esri-widget--button esri-widget esri-interactive"
       title="Draw and measure polygon">
       <span class="esri-icon-polygon"></span>
-    </div-->
+    </div>
   </div>
 
 

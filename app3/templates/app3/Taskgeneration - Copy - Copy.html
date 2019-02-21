@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-{% load static %}
 <html>
 
 <head>
@@ -10,25 +9,54 @@
   <link rel="stylesheet" href="https://js.arcgis.com/4.10/esri/css/main.css">
 
 
-  <script src="{% static 'js/d3.v4.min.js' %}"></script>
-  <script src="{% static 'js/d3-polygon-clip.js' %}"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
   <script src="https://js.arcgis.com/4.10/"></script>
 
-  <link rel="stylesheet" type="text/css" href="{% static "taskgeneration.css" %}"  />
   <style>
   html,
   body,
   #viewDiv {
-    padding: 0;
-    margin: 0;
-    height: 100%;
-    width: 100%;
-  }
-  #text {
-        color: white;
-        padding: 3%;
-      }
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    .SARP-container {
+      z-index: 99;
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      width: 320px;
+    }
+    #text {
+          color: white;
+          padding: 3%;
+        }
+    .editArea-container {
+      background: #fff;
+      font-family: "Avenir Next W00", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      line-height: 1.5em;
+      overflow: auto;
+      padding: 12px 15px;
+      width: 300px;
+    }
+    .edit-button:hover,
+    .edit-button:focus {
+      background-color: #e4e4e4;
+    }
+    .edit-button {
+      font-size: 14px;
+      height: 32px;
+      margin-top: 10px;
+      width: 100%;
+      background-color: transparent;
+      border: 1px solid #0079c1;
+      color: #0079c1;
+    }
   </style>
   <script>
 
@@ -49,15 +77,13 @@
       "esri/views/2d/draw/Draw",
       "esri/widgets/CoordinateConversion",//,      "esri/widgets/Sketch"
       "esri/widgets/DistanceMeasurement2D",
-      "esri/widgets/AreaMeasurement2D",
-      "esri/geometry/Extent",
-      "esri/geometry/Point"
+      "esri/widgets/AreaMeasurement2D"
 
     ], function(
       SketchViewModel, Graphic, Map, MapView, FeatureLayer,
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
       Draw,CoordinateConversion,
-      DistanceMeasurement2D,AreaMeasurement2D,Extent,Point
+      DistanceMeasurement2D,AreaMeasurement2D
     ) {
       let view, sketchViewModel,
         validSymbol, draw,
@@ -79,15 +105,14 @@
       var gcy=37.203604;
       var gwidth=10;
       var gheight=10;
-      var voronoistyle="random";
+      var voronoistyle="clear";
       var glvertices;
       var glverticeslist=[];
       let maxdistanceerror = 0.000001;
-      let jsonextent;
 
       //acer
 
-      let eacharea=240000;//60 acer;
+      let eacharea=60;
       var activeWidget = null;
 //  wkid: 102100 vs wkid: 4326
 //wkid 102100/pix =1.5 (2444,1366/1600,900)
@@ -192,37 +217,21 @@
         }
         else{
           //use view
-          jsonextent=view.extent.toJSON();
-          //textent=view.extent.expand(1);
-          textent=Extent.fromJSON(jsonextent);
-          textent=textent.expand(0.95);
-          wholearea=geometryEngine.planarArea(Polygon.fromExtent(textent));
+          textent=view.extent.expand(0.95);
+          wholearea=geometryEngine.planarArea(Polygon.fromExtent(view.extent));
         }
-
-        let npoints=2*Math.round(wholearea/eacharea+0.5);
+        console.log(wholearea);
         //wholearea=wholetask.area;//metric   240  : acre  60
 
         let lbx=textent.xmin,
             lby=textent.ymin,
             rtx=textent.xmax,
             rty=textent.ymax,
-            gwidth=textent.width,
+            gwidth=textent.width;
             gheight=textent.height;
 
-        var sites = d3.range(npoints)//15
-                   .map(function(d) { return [Math.random() * gwidth+lbx, Math.random() * gheight+lby]; });
-
-
-        let in_point=new Point({
-          x:textent.center.x+ 0.1*(Math.random()-0.5)*textent.width,
-          y:textent.center.y+ 0.1*(Math.random()-0.5)*textent.height,
-          spatialReference:view.spatialReference
-        });
-        console.log(npoints);
-        //sites = GetSitesFromN(npoints,in_point,textent);
-        console.log(sites);
-
-
+        var sites = d3.range(15)//15
+        .map(function(d) { return [Math.random() * gwidth+lbx, Math.random() * gheight+lby]; });
         var voronoi = d3.voronoi().extent([[lbx,lby], [rtx,rty]]);
         var diagram = voronoi(sites),
             links = diagram.links(),
@@ -249,7 +258,7 @@
 
         let cpy=[];
         for(var i=0;i<vpolygons.length;i++){
-          var temp=d3.polygonClip(vpolygons[i],polygonClone(points.reverse()));
+          var temp=polygonClip(vpolygons[i],polygonClone(points.reverse()));
 
           if(temp.length>0){
             cpy.push(temp);
@@ -257,53 +266,70 @@
         }
         return cpy;
       }
-
-      function GetSitesFromN(n,in_point,t_extent){
-        //n points
-        res_points=[];
-        let t_poly=Polygon.fromExtent(t_extent);
-        //in_point=t_poly.centroid;
-
-        //calculate the shortiest distance from edge to
-        //----pass
-        //get the nearest point on t_poly from in_point
-        console.log(t_poly);
-
-        //let res_nearst=0.5*Math.min(t_extent.width,t_extent.height);
-        let res_nearst=geometryEngine.nearestVertex(t_poly,in_point,"meters").distance;
-        //nearestpoint.coordinate;
-        //nearestpoint.distance;
-
-        if(n<=6){
-          let r=0.5*Math.round(res_nearst);
-          for(let i=0;i<n;i++){
-            res_points.push([in_point.x+r*Math.cos(2*i*Math.PI/n),
-              in_point.y+r*Math.sin(2*i*Math.PI/n)]);
-          }
-        }
-        else if (n<=16){
-          //0.828432
-          n=n/2;
-          let r=0.4142*Math.round(res_nearst);
-          for(let i=0;i<n;i++){
-            res_points.push([in_point.x+r*Math.cos(2*i*Math.PI/n),
-              in_point.y+r*Math.sin(2*i*Math.PI/n)]);
-
-            res_points.push([in_point.x+1.457*r*Math.cos(2*i*Math.PI/n),
-                in_point.y+1.457*r*Math.sin(2*i*Math.PI/n)]);
-          }
-        }
-        else {
-
-        }
-        if(res_points === null){
-          res_points=[[in_point.x,in_point.y]];
-        }
-        return res_points;
-      }
-
       function addTriangle(){
 
+              var sites =[
+                  [-8969595.159547715,4466816.509629287],
+                  [-8969390.929362783,4466843.979186324],
+                  [-8969481.698333865,4467187.9458135795],
+                  [-8969408.247126916,4467306.184341663],
+                  [-8968981.87182855,4467445.9207839845],
+                  [-8968559.079515884,4467154.504613671],//
+                  [-8968476.670844771,4467165.253570773],
+                  [-8968407.399787892,4467000.436228547],
+                  [-8968292.744245475,4467030.294442719],
+                  [-8968181.671688758,4467198.694770645],
+                  [-8967898.615818413,4467535.495426498],
+                  [-8967597.645019565,4467263.188513256],
+                  [-8969143.106185075,4466485.680616233],
+                  [-8968569.828472985,4467659.705597452],
+                  [-8968437.258002063,4467825.717268244],
+                  [-8969888.367210792,4467681.203511654],
+                  [-8967838.89939007,4467193.917456377],
+                  [-8968891.700021924, 4466012.12933939],
+                  [-8968652.834308527, 4466368.039252353],
+                  [-8968332.754252575, 4466628.402879956],
+                  [-8967900.407311326, 4466848.159336282],
+                  [-8967661.541597927, 4466922.207707435],
+                  [-8967606.602,4467675.232],
+                  [-8967606.602,4466302.948],
+                  [-8969950,4467675.232],
+                  [-8969950,4466302.948]
+              ];
+
+              var vring=[];
+              for( var i =0;i<sites.length;i++){
+                vring.push(FilterBoundary(sites[i][0],sites[i][1],-8967606.602,4467675.232,-8969950,4466302.948));
+              }
+              sites=vring;
+
+              var voronoi = d3.voronoi();
+              var vtriangles = voronoi.triangles(sites);
+
+              var points=[
+                [-8968055.67002504, 4467092.399528231],
+                [-8968043.726739371, 4467591.628869176],
+                [-8969939.12617497, 4467585.657226342],
+                [-8969923.5999036, 4466376.996716685],
+                [-8968965.748392982, 4466375.802388118],
+                [-8968683.886851205, 4466670.801544131],
+                [-8968375.750080956, 4466919.221886037]
+              ];
+
+              var cpy=[];
+              for(var i=0;i<vtriangles.length;i++){
+                var temp=d3.polygonClip(vtriangles[i],polygonClone(points.reverse()));
+
+                if(temp.length>0){
+                  cpy.push(temp);
+                }
+                else{
+                  console.log(i);
+                }
+              }
+
+              vtriangles=cpy;
+              addGraphics(vtriangles);
       }
 
       function addFreedraw(){
@@ -331,8 +357,9 @@
 
         //filter nearby points
         //vtriangles=PointsMerge(vtriangles,maxdistanceerror);
-        console.log(vtriangles);
+
         for (var i=0;i<vtriangles.length;i++){
+
           vtriangles[i].push(vtriangles[i][0]);
           let polygon = createGeometry(vtriangles[i]);
           let newDevelopmentGraphic = new Graphic({
@@ -415,15 +442,45 @@
         //view.ui.add("draw-polygon", "top-left");
         draw = new Draw({
         view: view
+      });
+      }
+      /*
+      document.getElementById("draw-polygon").addEventListener("click",
+        function() {
+          voronoistyle="sidebar";
+          //view.graphics.removeAll();
+
+          var action = draw.create("polygon");
+
+          // focus the view to activate keyboard shortcuts for drawing polygons
+          view.focus();
+
+          // listen polygonDrawAction events to give immediate visual feedback
+          // to users as the polygon is being drawn on the view.
+          action.on("vertex-add", drawPolygon);
+          action.on("cursor-update", drawPolygon);
+          action.on("vertex-remove", drawPolygon);
+          action.on("redo", drawPolygon);
+          action.on("undo", drawPolygon);
+          action.on("draw-complete", drawPolygon);
+
         });
 
-      }
+*/
 
+        $(document).ready(function(){
+            $('input:checkbox').click(function() {
+                $('input:checkbox').not(this).prop('checked', false);
+                if(this.checked) voronoistyle=this.value;
+
+            });
+        });
         //generate voronoi
         document.getElementById("btngeneratearea").onclick=function() {
           graphicsLayer.removeAll();
           view.graphics.removeAll();
           //wholetask=activeWidget.viewModel.measurement;
+
           allpolygons=[];
 
           glverticeslist=[];
@@ -439,8 +496,14 @@
 
             addFreedraw();
           }
-
         };
+/*
+        document.getElementById("btnaddpolygon").onclick=function() {
+          view.graphics.removeAll();
+          glverticeslist=[];
+          addFreedraw();
+      };
+*/
 
       // this function is called from the polygon draw action events
       // to provide a visual feedback to users as they are drawing a polygon
@@ -561,7 +624,7 @@
         //}
         //if is the first active or not
         if (event.state=="active"){
-          console.log(event);
+
 
           mover=event.toolEventInfo.mover.geometry;
           t_pointIndex=event.toolEventInfo.mover.attributes.pointIndex;
@@ -602,15 +665,6 @@
             allpolygons=allpolygons.concat(activepolygonset);
             activepolygonset=[];
 
-          }
-          else if(event.toolEventInfo.type=="move-start"){
-            console.log(event.toolEventInfo.type);
-          }
-          else if(event.toolEventInfo.type=="move"){
-            console.log(event.toolEventInfo.type);
-          }
-          else if(event.toolEventInfo.type=="move-stop"){
-            console.log(event.toolEventInfo.type);
           }
           //renew the polygons
           if(activepolygonset.length>0){
@@ -819,6 +873,61 @@ document.getElementById("distanceButton").addEventListener("click",
       //--------------------------------------------------
     });
 
+    function polygonClip(clip, subject) {
+        var input,
+            closed = polygonClosed(subject),
+            i = -1,
+            n = clip.length - polygonClosed(clip),
+            j,
+            m,
+            a = clip[n - 1],
+            b,
+            c,
+            d;
+
+        while (++i < n) {
+          input = subject.slice();
+          subject.length = 0;
+          b = clip[i];
+          c = input[(m = input.length - closed) - 1];
+          j = -1;
+          while (++j < m) {
+            d = input[j];
+            if (polygonInside(d, a, b)) {
+              if (!polygonInside(c, a, b)) {
+                subject.push(polygonIntersect(c, d, a, b));
+              }
+              subject.push(d);
+            } else if (polygonInside(c, a, b)) {
+              subject.push(polygonIntersect(c, d, a, b));
+            }
+            c = d;
+          }
+          if (closed) subject.push(subject[0]);
+          a = b;
+        }
+
+        return subject;
+      };
+
+      function polygonInside(p, a, b) {
+        return (b[0] - a[0]) * (p[1] - a[1]) < (b[1] - a[1]) * (p[0] - a[0]);
+      }
+
+      // Intersect two infinite lines cd and ab.
+      function polygonIntersect(c, d, a, b) {
+        var x1 = c[0], x3 = a[0], x21 = d[0] - x1, x43 = b[0] - x3,
+            y1 = c[1], y3 = a[1], y21 = d[1] - y1, y43 = b[1] - y3,
+            ua = (x43 * (y1 - y3) - y43 * (x1 - x3)) / (y43 * x21 - x43 * y21);
+        return [x1 + ua * x21, y1 + ua * y21];
+      }
+
+      // Returns true if the polygon is closed.
+      function polygonClosed(coordinates) {
+        var a = coordinates[0],
+            b = coordinates[coordinates.length - 1];
+        return !(a[0] - b[0] || a[1] - b[1]);
+      }
 
   </script>
 </head>
@@ -839,7 +948,7 @@ document.getElementById("distanceButton").addEventListener("click",
 
 
       <h3 class="list-heading">Map</h3>
-      <!--div><input type="checkbox" name="voronoi" class="check" value="random"> Random Voronoi</input></div-->
+      <div><input type="checkbox" name="voronoi" class="check" value="random"> Random Voronoi</input></div>
       <!--div><input type="checkbox" name="voronoi" class="check" value="triangle"> Triangle based on vertices</input></div-->
       <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
 

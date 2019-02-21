@@ -1,5 +1,9 @@
 Buit based on ESRI js development platform, and d3 for polygon and voronoi. 
 
+reference
+https://developers.arcgis.com/javascript/latest/api-reference/esri-views-View.html#width
+
+
 http://172.29.85.39:9000/app2/lattice
 
 Testing UI:http://172.29.85.39:9000/testing/

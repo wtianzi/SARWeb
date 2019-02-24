@@ -218,9 +218,9 @@
           y:textent.center.y+ 0.1*(Math.random()-0.5)*textent.height,
           spatialReference:view.spatialReference
         });
-
+        console.log(npoints);
         sites = GetSitesFromN(npoints,in_point,textent);
-
+        console.log(sites);
 
 
         var voronoi = d3.voronoi().extent([[lbx,lby], [rtx,rty]]);
@@ -260,7 +260,7 @@
 
       function GetSitesFromN(n,in_point,t_extent){
         //n points
-        let res_points=[];
+        res_points=[];
         let t_poly=Polygon.fromExtent(t_extent);
         //in_point=t_poly.centroid;
 
@@ -268,71 +268,35 @@
         //----pass
         //get the nearest point on t_poly from in_point
         console.log(t_poly);
-        console.log(n);
 
         let res_nearst=0.5*Math.min(t_extent.width,t_extent.height);
         //let res_nearst=geometryEngine.nearestVertex(t_poly,in_point,"meters").distance;
         //nearestpoint.coordinate;
         //nearestpoint.distance;
-        res_i=[];
-        for (let i=4;i<9;i++){
-          let j=0, m=0;
-          while(m<=n){
-            m=m+i*Math.pow(2,j);
-            j=j+1;
-          }
-          let t_x=n+i*2^j-m;
-          if(t_x<2 && j>1){
-            res_i.push([j-1,i,i*2^(j-1)+1]);
-          }
-          else{
-            res_i.push([j,i,t_x]);//[j circles, m-n the outer ring number]
-          }
-        }
-        let t_arr=res_i.pop();
-        while(t_arr[0]<=1 && res_i.length>0){
-          t_arr=res_i.pop();
-        }
-//---------------------------
-        let t_root=0;
-        let arr_root=[];
-        for(let i=0;i<t_arr[0];i++){
-          t_root+=Math.pow(2,i);
-          arr_root.push(t_root);
-        }
-        console.log(t_arr);
-        console.log(arr_root);
 
-        let r=res_nearst/Math.sqrt(t_root);
-        // r, a, r+a
-        let t_area=Math.pow(r,2);// the area of central circle
-        let s_area=0;
-        let t_pre_r=0;
-        let ncount=0;
-        for (let i=0;i<t_arr[0]-1;i++){
-          s_area=t_area*arr_root[i];
-          let t_ra=Math.sqrt(s_area);//
-          //draw points
-          let t_r=0.5*(t_ra+t_pre_r);
-          let k=2*Math.PI/(t_arr[1]*Math.pow(2,i)); // radin of each circle
-
-          for(let j=0;j<t_arr[1]*Math.pow(2,i);j++){
-            res_points.push([in_point.x+t_r*Math.cos(j*k),in_point.y+t_r*Math.sin(j*k)]);
-            ncount+=1;
+        if(n<=6){
+          let r=0.5*Math.round(res_nearst);
+          for(let i=0;i<n;i++){
+            res_points.push([in_point.x+r*Math.cos(2*i*Math.PI/n),
+              in_point.y+r*Math.sin(2*i*Math.PI/n)]);
           }
-          t_pre_r=t_ra;
         }
+        else if (n<=16){
+          //0.828432
+          n=n/3;
+          let r=0.4142*Math.round(res_nearst);
+          for(let i=0;i<n;i++){
+            res_points.push([in_point.x+r*Math.cos(2*i*Math.PI/n),
+              in_point.y+r*Math.sin(2*i*Math.PI/n)]);
 
-        let t_ra=res_nearst;
-        //draw points
-        let t_r=0.5*(t_ra+t_pre_r);
-        let k=2*Math.PI/(t_arr[2]);
-        for(let j=0;j<t_arr[2];j++){
-          res_points.push([in_point.x+t_r*Math.cos(j*k),in_point.y+t_r*Math.sin(j*k)]);
-          ncount+=1;
+            res_points.push([in_point.x+1.457*r*Math.cos(2*i*Math.PI/n),
+                in_point.y+1.457*r*Math.sin(2*i*Math.PI/n)]);
+          }
         }
-        console.log(ncount);
-        if(0){
+        else if (n<186){
+
+        }
+        else {
           res_points=d3.range(n)//15
                      .map(function(d) { return [Math.random() * t_extent.width+t_extent.xmin, Math.random() * t_extent.height+t_extent.ymin]; });
         }
@@ -370,7 +334,7 @@
 
         //filter nearby points
         //vtriangles=PointsMerge(vtriangles,maxdistanceerror);
-
+        console.log(vtriangles);
         for (var i=0;i<vtriangles.length;i++){
           vtriangles[i].push(vtriangles[i][0]);
           let polygon = createGeometry(vtriangles[i]);

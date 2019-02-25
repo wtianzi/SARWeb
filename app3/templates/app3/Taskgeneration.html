@@ -65,6 +65,7 @@
         instructionsExpand,coordinateLayer;
       let intersects = false,
         contains = true;
+      let updated_polygonring=[];
         //let graphicsLayer;
 //Transportation example:
 //https://developers.arcgis.com/javascript/latest/sample-code/sandbox/index.html?sample=intro-layers
@@ -411,6 +412,7 @@
           allpolygons.push(newDevelopmentGraphic);
           allpolygons.push(t_point);
         }
+        updated_polygonring=vtriangles;
         //view.graphics.add(newDevelopmentGraphic);
         //graphicsLayer.addMany([newDevelopmentGraphic]);
         //graphicsLayer.graphics.add(newDevelopmentGraphic);
@@ -881,6 +883,30 @@ document.getElementById("distanceButton").addEventListener("click",
          sketchViewModel.complete();
          //.destroy();
        }
+
+       document.getElementById("savetasks").addEventListener("click",
+         function () {
+           var URL = "{% url 'tasksave' %}";
+           var data = {
+                   csrfmiddlewaretoken: '{{ csrf_token }}',
+                   'Taskarea': document.getElementById("tasknotes").value
+                  };
+           $.post(URL, data, function(response){
+             var res=JSON.parse(response);
+
+               if(res.flag == 'success'){
+                 console.log(res.Taskarea);
+                 /*
+                 document.getElementById("tasknotes").value=res.taskinpy;
+                 document.getElementById("myRange3").value=res.DuressJ3;
+                 document.getElementById("myRange4").value=res.DuressJ4;
+       */
+                }
+               else{ alert(response); }
+           });
+         });
+
+
       //--------------------------------------------------
     });
 
@@ -912,6 +938,10 @@ document.getElementById("distanceButton").addEventListener("click",
       <div>-------------------</div>
       <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
+      <div>-------------------</div>
+      <h1>Task Notes</h1>
+      <input type="input" value="type here" id="tasknotes"><br>
+      <div><input type="button" class="edit-button" value="Save Tasks" id="savetasks"></input></div>
     </div>
 
   </div>

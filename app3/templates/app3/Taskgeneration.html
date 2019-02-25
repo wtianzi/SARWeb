@@ -83,7 +83,7 @@
       var voronoistyle="random";
       var glvertices;
       var glverticeslist=[];
-      let maxdistanceerror = 0.000001;
+      let maxdistanceerror = 0.0001;
       let jsonextent;
 
       //acer
@@ -700,7 +700,7 @@
         let tlen=tpoly.length;
         let pointofline=0;//0: not on line, 1: vertices, 2: center, 3: on the line
         for(i=0;i<tlen-1;i++){
-          if(Math.abs(tpoly[i][0]-x< maxdistanceerror) && Math.abs(tpoly[i][1]-y)< maxdistanceerror ){
+          if((Math.abs(tpoly[i][0]-x)< maxdistanceerror) && (Math.abs(tpoly[i][1]-y)< maxdistanceerror )){
             pointofline=1;
             break;
           }
@@ -889,7 +889,8 @@ document.getElementById("distanceButton").addEventListener("click",
            var URL = "{% url 'tasksave' %}";
            var data = {
                    csrfmiddlewaretoken: '{{ csrf_token }}',
-                   'Taskarea': document.getElementById("tasknotes").value
+                   'Tasknotes': document.getElementById("tasknotes").value,
+                   'Taskarea': updated_polygonring.length.toString()
                   };
            $.post(URL, data, function(response){
              var res=JSON.parse(response);

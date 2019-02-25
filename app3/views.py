@@ -19,7 +19,7 @@ def tasksave(request):
         #for item in request.POST:
         #print(request.POST['Taskarea'])
         #res=TestingSlideAdd(request.POST['Duress1'],request.POST['Duress2'],request.POST['Duress3'],request.POST['Duress4'])
-        task_instance = Task.objects.create(notes=request.POST['Taskarea'])
+        task_instance = Task.objects.create(notes=request.POST['Tasknotes'],taskpolygon=request.POST['Taskarea'])
 
         context={'title':"This is the result of tasksave",
         'Taskarea':"here in py",

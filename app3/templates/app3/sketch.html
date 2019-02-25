@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
-  <title>Sketch update validation - 4.10</title>
+  <title>Using Esri Icon Fonts with map graphics - 4.10</title>
 
   <link rel="stylesheet" href="https://js.arcgis.com/4.10/esri/css/main.css">
+
   <script src="https://js.arcgis.com/4.10/"></script>
 
   <style>
@@ -17,421 +17,122 @@
       margin: 0;
       height: 100%;
       width: 100%;
-      font-family: verdana;
-    }
-
-    #instructions {
-      width: 300px;
-      background: #fff;
-      padding: 20px;
     }
   </style>
 
   <script>
     require([
-      "esri/widgets/Sketch/SketchViewModel",
-      "esri/Graphic",
       "esri/Map",
+      "esri/PopupTemplate",
       "esri/views/MapView",
-      "esri/layers/FeatureLayer",
-      "esri/layers/GraphicsLayer",
-      "esri/geometry/Polygon",
-      "esri/geometry/geometryEngine",
-      "esri/widgets/Expand"
+      "esri/Graphic",
+      "esri/geometry/Point"
     ], function(
-      SketchViewModel, Graphic, Map, MapView, FeatureLayer,
-      GraphicsLayer, Polygon, geometryEngine, Expand
+      Map, PopupTemplate, MapView,
+      Graphic, Point
     ) {
 
-      let sketchViewModel, instructionsExpand, boundaryPolygon,
-        validSymbol, invalidSymbol, buffers, newDevelopmentGraphic;
-
-      //for dynamic update
-      //step 1. find the polygong in the array
-      //{taskindex:1, polyv:[[,],[,],[,] , polyring=[[,],[,],[,],[,]] }
-      let allpolygons=[];
-      let activepolygonset=[];
-      let activepolygonpoints=[];
-      let firstactivepoly=null;
-      let openforregister=true;// active surrounding polygongs
-
-      let intersects = false,
-        contains = true;
-
-      const bufferLayer = new FeatureLayer({
-        portalItem: {
-          id: "a1fc918a654648eb833826d1c198922e"
-        }
-      });
-
-      const graphicsLayer = new GraphicsLayer();
-      const boundaryLayer = new GraphicsLayer();
-
       const map = new Map({
-        basemap: "hybrid",
-        layers: [bufferLayer,
-          FeatureLayer({
-            portalItem: {
-              id: "47f194aaa40d41be94fcdf1921801c57"
-            }
-          }),
-          boundaryLayer, graphicsLayer
-        ]
+        basemap: "gray"
       });
 
       const view = new MapView({
+        center: [-97.63, 38.34],
         container: "viewDiv",
         map: map,
-        zoom: 12,
-        center: [-117.1708, 34.0574]
+        zoom: 4
       });
 
-      setUpInstructions();
-      setUpGraphicClickHandler();
+      /*************************
+       * Create point graphics
+       *************************/
 
-      view.when(function() {
-        // Query all buffer features from the school buffers featurelayer
-        bufferLayer.queryFeatures().then(function(results) {
-          buffers = results.features[0].geometry;
-        });
-
-        // Add the boundary polygon and new lot polygon graphics
-        addGraphics();
-
-        // Create a new instance of sketchViewModel
-        sketchViewModel = new SketchViewModel({
-          view: view,
-          layer: graphicsLayer,
-          updateOnGraphicClick: false,
-          defaultUpdateOptions: { // set the default options for the update operations
-            toggleToolOnClick: false // only reshape operation will be enabled
-          }
-        });
-
-        activepolygonset=[];
-        // Listen to sketchViewModel's update event to do
-        // graphic reshape or move validation
-        //on(type, listener)
-        sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
-
+      // First create a point geometry
+      const point1 = new Point({
+        longitude: -117.19,
+        latitude: 34.05
       });
 
-      function onGraphicUpdate(event) {
-        // get the graphic as it is being updated
-        const graphic = event.graphics[0];
-        //update the other polygons in the same layer
-        MapDivisionUpdateMover(event);
+      // Then create another point geometry
+      const point2 = new Point({
+        longitude: -87.63,
+        latitude: 41.88
+      });
 
-        //console.log(event);
-        //console.log("mover:"+event.toolEventInfo.mover.geometry.x);
+      // Then create another point geometry
+      const point3 = new Point({
+        longitude: -71.06,
+        latitude: 42.36
+      });
 
+      // Then create another point geometry
+      const point4 = new Point({
+        longitude: -122.33,
+        latitude: 47.60
+      });
 
-        // check if the graphic is intersecting school buffers or is
-        // still contained by the boundary polygon as the graphic is being updated
-        intersects = geometryEngine.intersects(buffers, graphic.geometry);
-        contains = geometryEngine.contains(boundaryPolygon, graphic.geometry);
+      // Then create a final point geometry
+      const point5 = new Point({
+        longitude: -104.99,
+        latitude: 39.74
+      });
 
-        // change the graphic symbol to valid or invalid symbol
-        // depending the graphic location
-        graphic.symbol = (intersects) || (!contains) ? invalidSymbol :
-          validSymbol
-
-        // check if the update event's the toolEventInfo.type is move-stop or reshape-stop
-        // then it means user finished moving or reshaping the graphic, call complete method.
-        // this will change update event state to complete and we will check the validity of the graphic location.
-        if (event.toolEventInfo && (event.toolEventInfo.type ===
-            "move-stop" || event.toolEventInfo.type === "reshape-stop")) {
-          //if (contains && !intersects) {
-            //console.log("here to complete");
-            //sketchViewModel.complete();
-          //}
-        } else if ((event.state === "cancel" || event.state === "complete")) {
-          // graphic moving or reshaping has been completed or cancelled
-          // if the graphic is in an illegal spot, call sketchviewmodel's update method again
-          // giving user a chance to correct the location of the graphic
-          //if ((!contains) || (intersects)) {
-          //  sketchViewModel.update([graphic], {
-          //    tool: "reshape"
-        //    });
-        //  }
+      // Create a symbol for drawing the point
+      const textSymbol = {
+        type: "text",  // autocasts as new TextSymbol()
+        color: "white",
+        haloColor: "black",
+        haloSize: "1px",
+        text: "You are here",
+        xoffset: 3,
+        yoffset: 3,
+        font: {  // autocast as new Font()
+          size: 12,
+          family: "sans-serif",
+          weight: "bold"
         }
-      }
-      // This function is called when a user clicks on the view.
-      function setUpGraphicClickHandler() {
-        view.on("click", function(event) {
-          // check if the sketch's state active if it is then that means
-          // the graphic is already being updated, no action required.
-          if (sketchViewModel.state === "active") {
-            return;
-          }
-          view.hitTest(event).then(function(response) {
-            var results = response.results;
-            //console.log(results);
-            // Check if the new development graphic was clicked and pass
-            // the graphic to sketchViewModel.update() with reshape tool.
-            results.forEach(function(result) {
-              if (result.graphic.layer === sketchViewModel.layer &&
-                result.graphic.attributes && result.graphic.attributes
-                .newDevelopment) {
-                sketchViewModel.update([result.graphic], {
-                  tool: "reshape"
-                });
-              }
-            });
-          });
-        });
-      }
+      };
 
-      // Add new development polygon graphic and boundary polygon graphics
-      function addGraphics() {
-        const vertices = [
-          [-13040270.324055556, 4040357.7882640623],
-          [-13038653.725694647, 4040689.513023534],
-          [-13038063.204863824, 4038017.2028549737],
-          [-13040097.818223165, 4037990.629044359],
-          [-13040270.324055556, 4040357.7882640623]
-        ]
-        const polygon = createGeometry(vertices);
-        validSymbol = createSymbol([0, 170, 255, 0.8], "solid", 2, [255,
-          255, 255
-        ]);
-        newDevelopmentGraphic = new Graphic({
-          geometry: polygon,
-          symbol: validSymbol,
-          attributes: {
-            newDevelopment: "new store"
-          }
-        });
+      // Create a graphic and add the geometry and symbol to it
+      const pointGraphic1 = new Graphic({
+        geometry: point1,
+        symbol: textSymbol
+      });
 
-        const vertices2 = [
-          [-13040270.324055556, 4040357.7882640623],
-          [-13041086.971872644, 4040931.5634187167],
-          [-13041604.787951969, 4040170.1783741196],
-          [-13040097.818223165, 4037990.629044359],
-          [-13040270.324055556, 4040357.7882640623]
-        ]
-        const polygon2 = createGeometry(vertices2);
-        validSymbol2 = createSymbol([0, 170, 255, 0.8], "solid", 2, [255,
-          255, 255
-        ]);
-        newDevelopmentGraphic2 = new Graphic({
-          geometry: polygon2,
-          symbol: validSymbol2,
-          attributes: {
-            newDevelopment: "new store"
-          }
-        });
+      // Create another graphic and add the geometry and symbol to it
+      const pointGraphic2 = new Graphic({
+        geometry: point2,
+        symbol: textSymbol
+      });
 
+      // Create another graphic and add the geometry and symbol to it
+      const pointGraphic3 = new Graphic({
+        geometry: point3,
+        symbol: textSymbol
+      });
 
-        const boundaryVertices = [
-          [-13048353.166569024, 4041363.935436187],
-          [-13036929.861699322, 4041363.935436187],
-          [-13036929.861699322, 4030232.5692555667],
-          [-13048353.166569024, 4030232.5692555667],
-          [-13048353.166569024, 4041363.935436187],
-        ];
+      // Create another graphic and add the geometry and symbol to it
+      const pointGraphic4 = new Graphic({
+        geometry: point4,
+        symbol: textSymbol
+      });
 
-        boundaryPolygon = createGeometry(boundaryVertices);
-        const boundarySymbol = createSymbol("white", "none", 2, [255, 255,
-          255
-        ]);
-        const boundaryGraphic = new Graphic({
-          geometry: boundaryPolygon,
-          symbol: boundarySymbol
-        });
-        allpolygons.push(newDevelopmentGraphic);
-        allpolygons.push(newDevelopmentGraphic2);
+      // Create one last graphic and add the geometry and symbol to it
+      const pointGraphic5 = new Graphic({
+        geometry: point5,
+        symbol: textSymbol
+      });
 
-        graphicsLayer.addMany(allpolygons);
-        boundaryLayer.add(boundaryGraphic);
-      }
-
-      function createGeometry(vertices) {
-        return new Polygon({
-          rings: vertices,
-          spatialReference: view.spatialReference
-        });
-      }
-
-      function createSymbol(color, style, width, outlineColor) {
-        return {
-          type: "simple-fill",
-          style: style,
-          color: color,
-          outline: {
-            color: outlineColor,
-            width: width
-          }
-        }
-      }
-
-      // Create new view, map and layers... set up the view
-      function setUpInstructions() {
-        // Instructions expand widget
-        const sampleInstructions = document.getElementById("instructions");
-        instructionsExpand = new Expand({
-          expandIconClass: "esri-icon-question",
-          expandTooltip: "How to use this sample",
-          expanded: true,
-          view: view,
-          content: sampleInstructions
-        });
-        view.ui.add(instructionsExpand, "top-left");
-
-        // hide the instructions expand widget when the view becomes focused
-        view.watch("focused", function(newValue, oldValue, property, object) {
-          if (newValue) {
-            instructionsExpand.expanded = false;
-          }
-        });
-        invalidSymbol = createSymbol([255, 0, 0], "diagonal-cross", 4, [255,
-          0, 0
-        ]);
-      }
-
-      function MapDivisionUpdateMover(event){
-        //console.log("event");
-        //console.log(event);
-        let graphic = event.graphics[0];
-        let mover,temppolyset;
-
-        //if(event.toolEventInfo != null){
-        //  console.log(event.toolEventInfo.mover.geometry.x +","+ event.toolEventInfo.mover.geometry.y+":"+ event.toolEventInfo.type );
-        //}
-        //if is the first active or not
-        if (event.state=="active"){
-          mover=event.toolEventInfo.mover.geometry;
-          t_pointIndex=event.toolEventInfo.mover.attributes.pointIndex;
-          orignalmover=event.graphics[0].geometry.rings[0][t_pointIndex];
-
-          if(event.toolEventInfo.type=="reshape-start"){
-            temppolyset=[];
-            //selected=event.toolEventInfo.selected[0].geometry;
-            for(let i=0;i<allpolygons.length;i++){
-              if(geometryEngine.equals(allpolygons[i].geometry,graphic.geometry)){
-                temppolyset.push(allpolygons[i]);
-                continue;
-              }
-              if(geometryEngine.touches(mover,allpolygons[i].geometry)){
-                console.log("touched");
-
-                //array, start end with the two nearby points
-                //let array_points=GetPolygonPoints(mover.x,mover.y,allpolygons[i].geometry.rings[0]);
-                let array_points=GetPolygonPoints(orignalmover[0],orignalmover[1],allpolygons[i].geometry.rings[0]);
-                activepolygonpoints.push(array_points);
-                //console.log("mover"+mover.x+","+mover.y);
-                //console.log("original"+orignalmover[0]+","+orignalmover[1]);
-                //console.log(activepolygonset);
-                activepolygonset.push(allpolygons[i]);
-
-              }
-              else{
-                temppolyset.push(allpolygons[i]);
-              }
-            }
-            allpolygons=temppolyset;
-          }
-          else if(event.toolEventInfo.type=="reshape"){
-
-          }
-          else if(event.toolEventInfo.type=="reshape-stop"){
-
-            allpolygons=allpolygons.concat(activepolygonset);
-            console.log(allpolygons);
-            activepolygonset=[];
-          }
-
-          //renew the polygons
-          if(activepolygonset.length>0){
-            graphicsLayer.removeMany(activepolygonset);
-            //graphicsLayer.removeAll();
-            activepolygonset=GeneratePolygonBasedonPoints(mover.x,mover.y,activepolygonpoints);
-            graphicsLayer.addMany(activepolygonset);
-          }
-
-        }
-
-      }
-
-      //tpoly is an array[[,],[,]]
-      function GetPolygonPoints(x,y,tpoly){
-
-        let t_array=[];
-        let i=0;
-        let tlen=tpoly.length;
-        for(i=0;i<tlen-1;i++){
-          entry=tpoly[i];
-          if(entry[0]==x && entry[1]==y){
-            break;
-          }
-        }
-
-        if(i<tlen-1){
-          console.log("points as vertices");
-          //poins as vertices of the line
-
-          t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i));
-          //console.log(t_array);
-        }
-        else{
-          //poins on the line
-          //add more pass
-          console.log("points on line");
-          t_array=null;
-        }
-        return t_array;
-      }
-
-      //update new polygon
-      function GeneratePolygonBasedonPoints(x,y,array_points){
-        let tmppolysets=[];
-        validSymbol = createSymbol([0, 170, 255, 0.8], "solid", 2, [255,
-          255, 255
-        ]);
-        //console.log(array_points);
-        if(array_points.length==0){
-          return tmppolysets;
-        }
-        for(let i=0;i<array_points.length;i++){
-          entry=array_points[i];
-
-          let vertices=[];
-          vertices=vertices.concat([[x,y]],entry,[[x,y]]);
-          //console.log(vertices);
-          //console.log("-------------");
-          let polygon = createGeometry(vertices);
-          newDevelopmentGraphic = new Graphic({
-            geometry: polygon,
-            symbol: validSymbol,
-            attributes: {
-              newDevelopment: "new store"
-            }
-          });
-          tmppolysets.push(newDevelopmentGraphic);
-        }
-
-        return tmppolysets;
-      }
-
+      // Add the graphics to the view's graphics layer
+      view.graphics.addMany([pointGraphic1, pointGraphic2, pointGraphic3,
+        pointGraphic4, pointGraphic5
+      ]);
 
     });
-
   </script>
 </head>
 
 <body>
   <div id="viewDiv"></div>
-  <div id="instructions">
-    <b>Instructions</b>
-    <br />
-    <b>Click</b> the
-    <b>blue polygon</b> graphic.
-    <br /> Rotate, scale, move or reshape the graphic.
-    <br />
-    <br /> Update operation can only be completed if the graphic does not
-    intersect school buffers and is inside the
-    boundary polygon.
-  </div>
 </body>
-
 </html>

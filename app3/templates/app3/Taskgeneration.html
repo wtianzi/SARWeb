@@ -183,7 +183,6 @@
       }
 
       function addVoronoi(){
-        //console.log(view);
         let textend;
         let wholearea;
         if(activeWidget){
@@ -205,8 +204,8 @@
         let lbx=textent.xmin,
             lby=textent.ymin,
             rtx=textent.xmax,
-            rty=textent.ymax,
-            gwidth=textent.width,
+            rty=textent.ymax;
+            gwidth=textent.width;
             gheight=textent.height;
 
         var sites = d3.range(npoints)//15
@@ -259,6 +258,7 @@
       }
 
       function GetSitesFromN(n,in_point,t_extent){
+        let t_portion=gwidth/gheight;
         //n points
         let res_points=[];
         let t_poly=Polygon.fromExtent(t_extent);
@@ -267,8 +267,6 @@
         //calculate the shortiest distance from edge to
         //----pass
         //get the nearest point on t_poly from in_point
-        console.log(t_poly);
-        console.log(n);
 
         let res_nearst=0.5*Math.min(t_extent.width,t_extent.height);
         //let res_nearst=geometryEngine.nearestVertex(t_poly,in_point,"meters").distance;
@@ -300,8 +298,6 @@
           t_root+=Math.pow(2,i);
           arr_root.push(t_root);
         }
-        console.log(t_arr);
-        console.log(arr_root);
 
         let r=res_nearst/Math.sqrt(t_root);
         // r, a, r+a
@@ -313,11 +309,11 @@
           s_area=t_area*arr_root[i];
           let t_ra=Math.sqrt(s_area);//
           //draw points
-          let t_r=0.5*(t_ra+t_pre_r);
+          let t_r=0.5*(t_ra+t_pre_r);//t_portion*t_pre_r
           let k=2*Math.PI/(t_arr[1]*Math.pow(2,i)); // radin of each circle
 
           for(let j=0;j<t_arr[1]*Math.pow(2,i);j++){
-            res_points.push([in_point.x+t_r*Math.cos(j*k),in_point.y+t_r*Math.sin(j*k)]);
+            res_points.push([in_point.x+t_portion*t_r*Math.cos(j*k),in_point.y+t_r*Math.sin(j*k)]);
             ncount+=1;
           }
           t_pre_r=t_ra;
@@ -328,10 +324,9 @@
         let t_r=0.5*(t_ra+t_pre_r);
         let k=2*Math.PI/(t_arr[2]);
         for(let j=0;j<t_arr[2];j++){
-          res_points.push([in_point.x+t_r*Math.cos(j*k),in_point.y+t_r*Math.sin(j*k)]);
+          res_points.push([in_point.x+t_portion*t_r*Math.cos(j*k),in_point.y+t_r*Math.sin(j*k)]);
           ncount+=1;
         }
-        console.log(ncount);
         if(0){
           res_points=d3.range(n)//15
                      .map(function(d) { return [Math.random() * t_extent.width+t_extent.xmin, Math.random() * t_extent.height+t_extent.ymin]; });
@@ -366,22 +361,55 @@
       function addGraphics(vtriangles) {
         // transfer the voronoi polygon:vpolygons to gispolygon
 
-        let validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);
+        let validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//solid
 
         //filter nearby points
         //vtriangles=PointsMerge(vtriangles,maxdistanceerror);
+  /*      let text_symbol={
+         type: "text",
+         style: "solid",
+         backgroundColor: [0, 170, 255, 0.4],
+         color:[255,255, 255],
+         text:  "hello",
+         outline: {
+           color: [255,255, 255],
+           width: 2
+         }
+        };
+*/
+        let text_symbol = {
+          type: "text",  // autocasts as new TextSymbol()
+          color: "white",
+          haloColor: "black",
+          haloSize: "1px",
+          text: "You are here",
+          xoffset: 3,
+          yoffset: 3,
+          font: {  // autocast as new Font()
+            size: 12,
+            family: "sans-serif",
+            weight: "bold"
+          }
+        };
 
         for (var i=0;i<vtriangles.length;i++){
           vtriangles[i].push(vtriangles[i][0]);
           let polygon = createGeometry(vtriangles[i]);
           let newDevelopmentGraphic = new Graphic({
             geometry: polygon,
-            symbol: validSymbol,
+            symbol: validSymbol,//validSymbol,
             attributes: {
               newDevelopment: "new store"
             }
           });
+          text_symbol.text="S"+i.toString();
+          let t_point=new Graphic ({
+            geometry:newDevelopmentGraphic.geometry.centroid,
+            symbol:text_symbol
+          });
+
           allpolygons.push(newDevelopmentGraphic);
+          allpolygons.push(t_point);
         }
         //view.graphics.add(newDevelopmentGraphic);
         //graphicsLayer.addMany([newDevelopmentGraphic]);
@@ -435,7 +463,7 @@
           visible: true
         });
         map.add(transportationLayer);
-        //console.log(transportationLayer);
+
         view = new MapView({
           container: "viewDiv",
           map: map,
@@ -590,8 +618,7 @@
 //-----------------adding new functions here---------------------
 
       function MapDivisionUpdateMover(event){
-        //console.log("event");
-        //console.log(event);
+
         let graphic = event.graphics[0];
         let mover,temppolyset;
 
@@ -600,7 +627,7 @@
         //}
         //if is the first active or not
         if (event.state=="active"){
-          console.log(event);
+          //console.log(event);
 
           mover=event.toolEventInfo.mover.geometry;
           t_pointIndex=event.toolEventInfo.mover.attributes.pointIndex;
@@ -643,13 +670,13 @@
 
           }
           else if(event.toolEventInfo.type=="move-start"){
-            console.log(event.toolEventInfo.type);
+            //console.log(event.toolEventInfo.type);
           }
           else if(event.toolEventInfo.type=="move"){
-            console.log(event.toolEventInfo.type);
+            //console.log(event.toolEventInfo.type);
           }
           else if(event.toolEventInfo.type=="move-stop"){
-            console.log(event.toolEventInfo.type);
+            //console.log(event.toolEventInfo.type);
           }
           //renew the polygons
           if(activepolygonset.length>0){
@@ -679,7 +706,7 @@
         }
 
         if( pointofline===1 ){
-          console.log("points as vertices");
+          //console.log("points as vertices");
           //poins as vertices of the line
           t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i));
           //console.log(t_array);
@@ -694,14 +721,14 @@
           }
         }
         if (pointofline===2){
-          console.log("points on line");
+          //console.log("points on line");
           //have problem need debug
           t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i+1));
         }
         else{
           //poins on the line
           //add more pass
-          console.log("points not on line");
+          //console.log("points not on line");
           t_array=null;
         }
         return t_array;
@@ -710,9 +737,8 @@
       //update new polygon
       function GeneratePolygonBasedonPoints(x,y,array_points){
         let tmppolysets=[];
-        validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,
-          255, 255
-        ]);
+
+        validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);
         //console.log(array_points);
         if(array_points.length==0){
           return tmppolysets;

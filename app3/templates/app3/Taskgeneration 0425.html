@@ -53,16 +53,14 @@
       "esri/widgets/AreaMeasurement2D",
       "esri/geometry/Extent",
       "esri/geometry/Point",
-      "esri/layers/OpenStreetMapLayer",
-      "esri/widgets/Track",
-      "esri/widgets/Search"
+      "esri/layers/OpenStreetMapLayer"
 
     ], function(
       SketchViewModel, Graphic, Map, MapView, FeatureLayer,
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
       Draw,CoordinateConversion,
       DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
-      OpenStreetMapLayer,Track,Search
+      OpenStreetMapLayer
     ) {
       let view, sketchViewModel,
         validSymbol, draw,
@@ -81,11 +79,8 @@
       var height=900*1.5;
 
       var scale=16;
-      //36.8176602,-80.363078
-      //kentlane farm (-80.572567,37.203604)
-      var gcx=-80.363078;
-      var gcy=36.8176602;
-
+      var gcx=-80.572567;
+      var gcy=37.203604;
       var gwidth=10;
       var gheight=10;
       var voronoistyle="random";
@@ -106,10 +101,7 @@
       let activepolygonset=[];
       let activepolygonpoints=[];
 
-      let gpspatharray=[];
-
       const graphicsLayer = new GraphicsLayer();
-      const gpsgraphicsLayer = new GraphicsLayer();
       setUpView();
       function polygonClone(polygon) {
         var cloned = [],
@@ -434,69 +426,6 @@
         graphicsLayer.addMany(allpolygons);
       }
 
-      function addGPSPath(){
-
-        gpsgraphicsLayer.removeAll();
-        /****************************
-         * Create a polyline graphic
-         ****************************/
-
-        // First create a line geometry (this is the Keystone pipeline)
-        var polyline = {
-          type: "polyline", // autocasts as new Polyline()
-          paths: gpspatharray//  [[-80.582342,37.199622],[-80.581031,37.204559],[-80.577359,37.207806]]//[[-111.3, 52.68], [-98, 49.5], [-93.94, 29.89]]
-        };
-
-        // Create a symbol for drawing the line
-        var lineSymbol = {
-          type: "simple-line", // autocasts as SimpleLineSymbol()
-          color: [226, 119, 40],
-          width: 4
-        };
-
-        // Create an object for storing attributes related to the line
-        var lineAtt = {
-          Name: "GPS Test data",
-          Owner: "SAR",
-          Length: "..."
-        };
-
-        /*******************************************
-         * Create a new graphic and add the geometry,
-         * symbol, and attributes to it. You may also
-         * add a simple PopupTemplate to the graphic.
-         * This allows users to view the graphic's
-         * attributes when it is clicked.
-         ******************************************/
-        var polylineGraphic = new Graphic({
-          geometry: polyline,
-          symbol: lineSymbol,
-          attributes: lineAtt,
-          popupTemplate: {
-            // autocasts as new PopupTemplate()
-            title: "{Name}",
-            content: [
-              {
-                type: "fields",
-                fieldInfos: [
-                  {
-                    fieldName: "Name"
-                  },
-                  {
-                    fieldName: "Owner"
-                  },
-                  {
-                    fieldName: "Length"
-                  }
-                ]
-              }
-            ]
-          }
-        });
-
-        gpsgraphicsLayer.add(polylineGraphic);
-      }
-
       function createGeometry(vertices) {
 
         return new Polygon({
@@ -532,8 +461,8 @@
         //graphicsLayer = new GraphicsLayer();
 
         const map = new Map({
-          basemap: "hybrid",//"hybrid",//"satellite",
-          layers: [  graphicsLayer,gpsgraphicsLayer]
+          basemap: "satellite",//"hybrid",//"satellite",
+          layers: [  graphicsLayer]
         });
 
 
@@ -567,25 +496,6 @@
 
         // Add widget to the top right corner of the view
         view.ui.add(toggle, "bottom-left");
-
-        //add track widget
-        var trackWidget = new Track({
-          view: view
-        });
-
-        view.ui.add(trackWidget, "top-left");
-
-        // Adds the search widget below other elements in
-        // the top left corner of the view
-        var searchWidget = new Search({
-          view: view
-        });
-
-        view.ui.add(searchWidget, {
-          position: "bottom-right",
-          index: 5
-        });
-
         setupEditing();
         //view.ui.add("draw-polygon", "top-left");
         draw = new Draw({
@@ -598,7 +508,6 @@
         document.getElementById("btngeneratearea").onclick=function() {
           graphicsLayer.removeAll();
           view.graphics.removeAll();
-          gpsgraphicsLayer.removeAll();
           //wholetask=activeWidget.viewModel.measurement;
           allpolygons=[];
 
@@ -987,7 +896,6 @@ document.getElementById("distanceButton").addEventListener("click",
          updated_polygonring=[];
          graphicsLayer.removeAll();
          view.graphics.removeAll();
-         gpsgraphicsLayer.removeAll();
          setActiveWidget(null);
          sketchViewModel.complete();
          //.destroy();
@@ -1011,8 +919,8 @@ document.getElementById("distanceButton").addEventListener("click",
            console.log(py_task_all_array);
            if(py_task_all_array.includes(document.getElementById("tasknotes").value)){
              //task_all
-             alert("Please try another task name.");
-             //console.log(document.getElementById("tasknotes").value+" is already exist, please enter another one!");
+             document.getElementById("tasknoteslabel").value="Try another one!";
+             console.log(document.getElementById("tasknotes").value+" is already exist, please enter another one!");
            }
            else {
              var URL = "{% url 'tasksave' %}";
@@ -1042,151 +950,13 @@ document.getElementById("distanceButton").addEventListener("click",
                    document.getElementById("tasknotes").value=res.taskinpy;
                    document.getElementById("myRange3").value=res.DuressJ3;
                    document.getElementById("myRange4").value=res.DuressJ4;
-                   */
+         */
                   }
                  else{ alert(response); }
              });
            }
          });
 
-         //--------------------------------------------------
-
-          function getRandomInt(max) {
-            return Math.floor(Math.random() * Math.floor(max));
-          }
-
-          let gpstimerid;
-          let all_gpsdata=[];
-          let rand_gpsdevicename;
-
-          function readDB() {
-            if(document.getElementById("sel_gpsdevice").selectedIndex==0){
-              readSimulation();
-              return;
-            }
-            clearInterval(gpstimerid);
-
-             if(el.value=="Load GPS"){
-               el.value='Stop & Save';
-               rand_gpsdevicename=Date.now().toString();
-               all_gpsdata=[];
-               gpspatharray=[];
-               //console.log(gpsdevicename);
-             }
-             else{
-               //save data to db
-               el.value="Load GPS"
-               savewholegpsdatatodb();
-
-               function savewholegpsdatatodb(){
-                 var sel_gpsdevice = document.getElementById("sel_gpsdevice");
-                   var URL = "{% url 'gpsdatastorage' %}";
-                   var data = {
-                           csrfmiddlewaretoken: '{{ csrf_token }}',
-                           'task_notes': document.getElementById("tasknotes").value,
-                           'rand_gpsdevicename':rand_gpsdevicename,
-                           'id_device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].value,
-                           'device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text,
-                           'all_gpsdata' : all_gpsdata.toString()
-                          };
-                   $.post(URL, data, function(response){
-                     var res=JSON.parse(response);
-                       if(res.flag == 'success'){
-                         console.log(res.gpsdata);
-                        }
-                       else{ alert(response); }
-                   });
-               }
-               return
-             }
-
-             gpstimerid=setInterval(myTimer, 1000);
-
-             function myTimer(e){
-               //readdb
-
-               //display gps
-               //gpspatharray=[[],[],[]]
-               getGPSDataUpdate();
-               addGPSPath();
-
-               //display datetime
-               var d = new Date();
-               var t = d.toLocaleTimeString();
-               document.getElementById("daytime").innerHTML = t;
-
-             }
-           }
-
-         function readSimulation(){
-           //testing only
-           let rand_x=gcx+(Math.random()-0.5)*0.005;
-           let rand_y=gcy+(Math.random()-0.5)*0.005;
-           clearInterval(gpstimerid);
-
-            if(el.value=="Load GPS"){
-              el.value='Stop & Save';
-              rand_gpsdevicename=Date.now().toString();
-              all_gpsdata=[];
-              gpspatharray=[];
-            }
-            else{
-              //save data to db
-              el.value="Load GPS"
-              return
-            }
-
-              gpstimerid=setInterval(myTimer, 500);
-
-              function myTimer(e){
-                rand_x=rand_x+(Math.random()-0.5)*0.005;
-                rand_y=rand_y+(Math.random()-0.5)*0.005;
-                gpspatharray.push([rand_x,rand_y]);
-
-                addGPSPath();
-
-                //display datetime
-                var d = new Date();
-                var t = d.toLocaleTimeString();
-                document.getElementById("daytime").innerHTML = 'Simulation ' + t;
-
-            }
-        }
-
-         function getGPSDataUpdate(){
-           var sel_gpsdevice = document.getElementById("sel_gpsdevice");
-           var id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].value;
-             var URL = "{% url 'gpsupdate' %}";
-             var data = {
-                     csrfmiddlewaretoken: '{{ csrf_token }}',
-                     'task_notes': document.getElementById("tasknotes").value,
-                     'id_device_id': id_device_id
-                    };
-             $.post(URL, data, function(response){
-               var res=JSON.parse(response);
-                 if(res.flag == 'success'){
-                     //[x,y]
-                    gps_json=JSON.parse(res.gpsdata);
-                     //{lat: 0, stamp: 430, log: 0}
-                     // gpspatharray.push([gps_json.gps[0].lat,gps_json.gps[0].log]);
-                    //Testing
-                    //console.log(sel_gpsdevice.selectedIndex);
-
-                    gpspatharray.push([gps_json.gps[0].lat,gps_json.gps[0].log]);
-                    all_gpsdata.push(gps_json.gps[0]);
-                    console.log(gps_json.gps[0]);
-                  }
-                 else{ alert(response); }
-             });
-         }
-
-         var el = document.getElementById('GPSStart');
-         if(el){
-            el.addEventListener('click', readDB, false);
-         }
-         else{
-           console.log("GPSStart is null");
-         }
 
       //--------------------------------------------------
     });
@@ -1199,11 +969,16 @@ document.getElementById("distanceButton").addEventListener("click",
   <div id="editArea" class="editArea-container">
     <h2 class="list-heading">Tools</h2>
     <div id="addFeatureDiv">
+
       <div id="draw">
         <h3 class="list-heading">Measure Tools</h3>
         <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
         <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
       </div>
+
+      <div>
+      </div>
+
 
       <h3 class="list-heading">Map</h3>
       <!--div><input type="checkbox" name="voronoi" class="check" value="random"> Random Voronoi</input></div-->
@@ -1218,29 +993,29 @@ document.getElementById("distanceButton").addEventListener("click",
       <h1>Task Name</h1>
       <div>
         <div>
-        <input type="input" id="tasknotes" value="SAR0001">
-        <input type="button" value="Save Tasks" id="savetasks"></input></div>
+        <input type="input" id="tasknotes" value="SAR0001"><br>
+        </div>
+        <div>
+          <label id="tasknoteslabel"><br>
         </div>
       </div>
-
-    <hr/>
-    <div>
-        <select id="sel_gpsdevice">
-          <option value="">Select a device</option>
-          {% for device in gpsdevice %}
-          <option value="{{ device.id }}">{{ device.deviceid }}</option>
-          {% endfor %}
-        </select>
-        <input type="button" id="GPSStart"  value="Load GPS"></input>
-
-      <p id="daytime"></p>
-
+      <div><input type="button" class="edit-button" value="Save Tasks" id="savetasks"></input></div>
     </div>
 
   </div>
-
   <div id="viewDiv">
+    <!--div id="SARParameter" class="SARP-container">
+      <div id="text">
+        <h1>Tools</h1>
+        <p>This is a test page for dividing map for SAR tasks</p>
 
+      </div>
+
+    </div-->
+    <!--div id="draw-polygon" class="esri-widget--button esri-widget esri-interactive"
+      title="Draw and measure polygon">
+      <span class="esri-icon-polygon"></span>
+    </div-->
   </div>
 
 

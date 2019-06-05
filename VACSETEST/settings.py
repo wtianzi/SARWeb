@@ -28,6 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     '127.0.0.1',
     '172.29.85.39',
+    '172.29.56.174',
 ]
 
 
@@ -40,10 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'App1',
-    'app2',
-    'testing',
     'app3',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -82,14 +81,14 @@ WSGI_APPLICATION = 'VACSETEST.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE':'django.db.backends.mysql',
-        'NAME':'saruser',
-        'USER': 'VACSE',
-        'PASSWORD':'VACSE529',
-        'HOST':'localhost',
-        'PORT':'3306',
-        #'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        #'ENGINE':'django.db.backends.mysql',
+        #'NAME':'saruser',
+        #'USER': 'VACSE',
+        #'PASSWORD':'VACSE529',
+        #'HOST':'127.0.0.1',
+        #'PORT':'3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 

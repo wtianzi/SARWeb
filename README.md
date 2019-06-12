@@ -17,6 +17,7 @@ URL
 http://127.0.0.1:8000/app3/
 
 -----------2019 06 12-------------
+
 If the migration sends errors, try:
 - delete all tables in the db.sqlite3
 - delete the migration folders

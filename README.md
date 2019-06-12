@@ -33,7 +33,11 @@ If the migration sends errors, try:
 - manage.py createsuperuser
 Enter username
 Enter password
-The username and password will be used to post/update gpsdatas
+The username and password will be used to post/update gpsdatas. 
+
+New:
+- Home page for sign up : http://127.0.0.1:8000
+- admin page for user management:  http://127.0.0.1:8000/admin
 
 -----------2019 05 17 ------------
 1. Setup

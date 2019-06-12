@@ -71,6 +71,7 @@ Open the link in chrome: http://127.0.0.1:8000/app3/gpsdatas/
 
 
 Updates Log
+
 --------------Nov------------------
 1. Need to find the algrithm of generating convex polygon based on multi-points.
 2. Add function of marking

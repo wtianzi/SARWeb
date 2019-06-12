@@ -4,6 +4,8 @@ from . import views
 from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView
 from django.conf.urls import url
 from rest_framework import routers
+from django.conf.urls import include
+
 router = routers.DefaultRouter()
 router.register(r'gpsdatas', views.GPSDataViewSet)
 
@@ -24,6 +26,7 @@ urlpatterns = [
     url(r'^taskgenerationform/(?P<task_id>\w+)_(?P<subtask_id>\d+)/$',TaskGenerationFormView.as_view(),name="taskgenerationform"),
     url(r'^taskgenerationform/\w+/action_page$',TaskGenerationFormView.FormToDB,name="action_page"),
     url(r'^readfile$',TemplateView.as_view(template_name="app3/readfile.html"), name="readfile"),
+    path('api-auth/', include('rest_framework.urls')),
 ]
 
 urlpatterns += router.urls

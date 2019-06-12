@@ -17,7 +17,14 @@ from django.contrib import admin
 from django.urls import include,path
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('', include('pages.urls')),
     path('app3/', include('app3.urls')),
+
+    #django admin
+    path('admin/', admin.site.urls),
+
+    # user management
+    path('users/', include('users.urls')),
+    path('users/', include('django.contrib.auth.urls')),
 ]
 #python manage.py runserver 172.29.85.39:9000

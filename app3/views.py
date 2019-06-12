@@ -11,6 +11,8 @@ from django.core import serializers
 from rest_framework import viewsets
 from .serializers import GPSDataSerializer
 
+from rest_framework import permissions
+
 # Create your views here.
 
 class IndexView(ListView):
@@ -141,6 +143,7 @@ class TaskGenerationFormView(TemplateView):
         context={'form': form}
         #print(form)
         return render(request,'app3/demo.html',context)
+        
 
 class GPSDataViewSet(viewsets.ModelViewSet):
     """
@@ -148,9 +151,11 @@ class GPSDataViewSet(viewsets.ModelViewSet):
 
     import requests
     r = requests.get('http://127.0.0.1:8000/gpsdatas/')
-    r = requests.patch('http://127.0.0.1:8000/gpsdatas/max_testing/', data = {'deviceid':'max_testing', 'taskid':'sar_put2','gpsdata':'{"gps":["stamp":004,"lat":-80,"log":38]}'})
+    r = requests.patch('http://127.0.0.1:8000/app3/gpsdatas/max_testing/', auth=('username','password'), data = {'deviceid':'max_testing', 'taskid':'sar_put2','gpsdata':'{"gps":["stamp":004,"lat":-80,"log":38]}'})
+    r = requests.post('http://127.0.0.1:8000/app3/gpsdatas/', auth=('username','password'),data = {'deviceid':'max_test_100', 'taskid':'sar_put2','gpsdata':'{"gps":["stamp":004,"lat":-80,"log":38]}'})
     r.text
 
     """
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     queryset = GPSData.objects.all()
     serializer_class = GPSDataSerializer

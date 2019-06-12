@@ -16,6 +16,24 @@ Reference
 URL
 http://127.0.0.1:8000/app3/
 
+-----------2019 06 12-------------
+If the migration sends errors, try:
+- delete all tables in the db.sqlite3
+- delete the migration folders
+- manage.py makemigrations users
+- manage.py migrate users
+
+- manage.py makemigrations
+- manage.py migrate
+
+- manage.py makemigrations app3
+- manage.py migrate app3
+
+- manage.py createsuperuser
+Enter username
+Enter password
+The username and password will be used to post/update gpsdatas
+
 -----------2019 05 17 ------------
 1. Setup
 [Django REST framework](https://www.django-rest-framework.org/tutorial/quickstart/)
@@ -41,10 +59,10 @@ Code in python:
 import requests
 
 # create a new device, deviceis is the primary key
-r = requests.post('http://127.0.0.1:8000/app3/gpsdatas/', data = {'deviceid':'max_testing', 'taskid':'sar_put2','gpsdata':'{"gps":["stamp":004,"lat":-81,"log":37]}'})
+r = requests.post('http://127.0.0.1:8000/app3/gpsdatas/',auth=('username','password'), data = {'deviceid':'max_testing', 'taskid':'sar_put2','gpsdata':'{"gps":["stamp":004,"lat":-81,"log":37]}'})
 
 # update record based on primary key. For example: "./max_testing/" is added as pk
-r = requests.patch('http://127.0.0.1:8000/app3/gpsdatas/max_testing/', data = {'deviceid':'max_testing', 'taskid':'sar_put2','gpsdata':'{"gps":["stamp":004,"lat":-80,"log":38]}'})
+r = requests.patch('http://127.0.0.1:8000/app3/gpsdatas/max_testing/', auth=('username','password'), data = {'deviceid':'max_testing', 'taskid':'sar_put2','gpsdata':'{"gps":["stamp":004,"lat":-80,"log":38]}'})
 ```
 
 3. Operate in browser:

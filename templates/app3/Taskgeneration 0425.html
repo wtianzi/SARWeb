@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}">
+  <title>SAR MAPPING DEMO</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.10/esri/css/main.css">
+
+
+  <script src="{% static 'js/d3.v4.min.js' %}"></script>
+  <script src="{% static 'js/d3-polygon-clip.js' %}"></script>
+  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="https://js.arcgis.com/4.10/"></script>
+
+  <link rel="stylesheet" type="text/css" href="{% static "taskgeneration.css" %}"  />
+  <style>
+  html,
+  body,
+  #viewDiv {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+  }
+  #text {
+        color: white;
+        padding: 3%;
+      }
+  </style>
+  <script>
+
+//https://developers.arcgis.com/javascript/latest/sample-code/sketch-geometries/index.html
+//https://developers.arcgis.com/javascript/latest/sample-code/sandbox/index.html?sample=sketch-update-validation
+    require([
+      "esri/widgets/Sketch/SketchViewModel",
+      "esri/Graphic",
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/layers/FeatureLayer",
+      "esri/layers/GraphicsLayer",
+      "esri/geometry/Polygon",
+      "esri/geometry/geometryEngine",
+      "esri/widgets/Expand",
+        "esri/layers/TileLayer",
+        "esri/widgets/BasemapToggle",//-----------------------------
+      "esri/views/2d/draw/Draw",
+      "esri/widgets/CoordinateConversion",//,      "esri/widgets/Sketch"
+      "esri/widgets/DistanceMeasurement2D",
+      "esri/widgets/AreaMeasurement2D",
+      "esri/geometry/Extent",
+      "esri/geometry/Point",
+      "esri/layers/OpenStreetMapLayer"
+
+    ], function(
+      SketchViewModel, Graphic, Map, MapView, FeatureLayer,
+      GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
+      Draw,CoordinateConversion,
+      DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
+      OpenStreetMapLayer
+    ) {
+      let view, sketchViewModel,
+        validSymbol, draw,
+        invalidSymbol, newDevelopmentGraphic,
+        instructionsExpand,coordinateLayer;
+      let intersects = false,
+        contains = true;
+      let updated_polygonring=[];
+        //let graphicsLayer;
+//Transportation example:
+//https://developers.arcgis.com/javascript/latest/sample-code/sandbox/index.html?sample=intro-layers
+//Transportation service:
+//https://server.arcgisonline.com/arcgis/rest/services/Reference/World_Transportation/MapServer
+
+      var width=1600*1.5;
+      var height=900*1.5;
+
+      var scale=16;
+      var gcx=-80.572567;
+      var gcy=37.203604;
+      var gwidth=10;
+      var gheight=10;
+      var voronoistyle="random";
+      var glvertices;
+      var glverticeslist=[];
+      let maxdistanceerror = 0.0001;
+      let jsonextent;
+
+      //acer
+
+      let eacharea=240000;//60 acer;
+      var activeWidget = null;
+//  wkid: 102100 vs wkid: 4326
+//wkid 102100/pix =1.5 (2444,1366/1600,900)
+//wkid 102100: left-top (-8970062.142, 4467672.843), right-bottom (-8967625.712	4466311.309)
+
+      let allpolygons=[];
+      let activepolygonset=[];
+      let activepolygonpoints=[];
+
+      const graphicsLayer = new GraphicsLayer();
+      setUpView();
+      function polygonClone(polygon) {
+        var cloned = [],
+            i,
+            n;
+
+        for (i = 0, n = polygon.length; i < n; i++) {
+          cloned.push([polygon[i][0], polygon[i][1]]);
+        }
+
+        return cloned;
+      }
+
+      function FilterBoundary(x,y,maxx,maxy,minx,miny){
+        if (x>maxx) {
+          x=maxx;
+        }
+        else if (x<minx) {
+          x=minx;
+        }
+        if (y>maxy) {
+          y=maxy;
+        }
+        else if (y<miny) {
+          y=miny;
+        }
+        return [x,y];
+      }
+
+      // creates new view and map, adds featurelayers and graphicslayer to the view
+
+      // This function is called when a user clicks on the view.
+      function setUpGraphicClickHandler() {
+        view.on("click", function(event) {
+
+          // check if the sketch's state active if it is then that means
+          // the graphic is already being updated, no action required.
+          if (sketchViewModel.state === "active") {
+            //testing forbid mover
+            return;
+          }
+          view.hitTest(event).then(function(response) {
+            var results = response.results;
+            // Check if the new development graphic was clicked and pass
+            // the graphic to sketchViewModel.update() with reshape tool.
+            results.forEach(function(result) {
+              if (result.graphic.layer === sketchViewModel.layer &&
+                result.graphic.attributes && result.graphic.attributes
+                .newDevelopment) {
+                sketchViewModel.update([result.graphic], {
+                  tool: "reshape"
+                });
+              }
+            });
+          });
+        });
+      }
+      setUpGraphicClickHandler();
+
+      view.when(function() {
+        // Query all buffer features from the school buffers featurelayer
+
+        // Create a new instance of sketchViewModel and set its required properties
+        sketchViewModel = new SketchViewModel({
+          view: view,
+          layer: graphicsLayer,
+          updateOnGraphicClick: false,
+          defaultUpdateOptions: { // set the default options for the update operations
+            //tool: "transform",
+            toggleToolOnClick: false//false // only reshape operation will be enabled
+          }
+        })
+
+        activepolygonset=[];
+        // Listen to sketchViewModel's update event to do
+        // graphic reshape or move validation
+        sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
+
+      });
+      function onGraphicUpdate(event) {
+
+        // get the graphic as it is being updated
+        const graphic = event.graphics[0];
+        MapDivisionUpdateMover(event);
+
+      }
+
+      function addVoronoi(){
+        let textend;
+        let wholearea;
+        if(activeWidget){
+          textent=activeWidget.viewModel.measurement.geometry.extent;
+          wholearea=activeWidget.viewModel.measurement.area;
+        }
+        else{
+          //use view
+          jsonextent=view.extent.toJSON();
+          //textent=view.extent.expand(1);
+          textent=Extent.fromJSON(jsonextent);
+          textent=textent.expand(0.95);
+          wholearea=geometryEngine.planarArea(Polygon.fromExtent(textent));
+        }
+
+        let npoints=2*Math.round(wholearea/eacharea+0.5);
+        //wholearea=wholetask.area;//metric   240  : acre  60
+
+        let lbx=textent.xmin,
+            lby=textent.ymin,
+            rtx=textent.xmax,
+            rty=textent.ymax;
+            gwidth=textent.width;
+            gheight=textent.height;
+
+        var sites = d3.range(npoints)//15
+                   .map(function(d) { return [Math.random() * gwidth+lbx, Math.random() * gheight+lby]; });
+
+
+        let in_point=new Point({
+          x:textent.center.x+ 0.1*(Math.random()-0.5)*textent.width,
+          y:textent.center.y+ 0.1*(Math.random()-0.5)*textent.height,
+          spatialReference:view.spatialReference
+        });
+
+        sites = GetSitesFromN(npoints,in_point,textent);
+
+
+
+        var voronoi = d3.voronoi().extent([[lbx,lby], [rtx,rty]]);
+        var diagram = voronoi(sites),
+            links = diagram.links(),
+            vpolygons = diagram.polygons();
+
+        var points=[
+          [-8968055.67002504, 4467092.399528231],
+          [-8968043.726739371, 4467591.628869176],
+          [-8969939.12617497, 4467585.657226342],
+          [-8969923.5999036, 4466376.996716685],
+          [-8968965.748392982, 4466375.802388118],
+          [-8968683.886851205, 4466670.801544131],
+          [-8968375.750080956, 4466919.221886037]
+        ];
+        if(activeWidget){
+          vpolygons=ClipPolygongsByPoints(vpolygons,activeWidget.viewModel.measurement.geometry.rings[0].slice(0,activeWidget.viewModel.measurement.geometry.rings[0].length-1));
+        }
+
+        ClearAll();
+        addGraphics(vpolygons);
+      }
+
+      function ClipPolygongsByPoints(vpolygons,points){
+
+        let cpy=[];
+        for(var i=0;i<vpolygons.length;i++){
+          var temp=d3.polygonClip(vpolygons[i],polygonClone(points.reverse()));
+
+          if(temp.length>0){
+            cpy.push(temp);
+          }
+        }
+        return cpy;
+      }
+
+      function GetSitesFromN(n,in_point,t_extent){
+        let t_portion=gwidth/gheight;
+        //n points
+        let res_points=[];
+        let t_poly=Polygon.fromExtent(t_extent);
+        //in_point=t_poly.centroid;
+
+        //calculate the shortiest distance from edge to
+        //----pass
+        //get the nearest point on t_poly from in_point
+
+        let res_nearst=0.5*Math.min(t_extent.width,t_extent.height);
+        //let res_nearst=geometryEngine.nearestVertex(t_poly,in_point,"meters").distance;
+        //nearestpoint.coordinate;
+        //nearestpoint.distance;
+        res_i=[];
+        for (let i=4;i<9;i++){
+          let j=0, m=0;
+          while(m<=n){
+            m=m+i*Math.pow(2,j);
+            j=j+1;
+          }
+          let t_x=n+i*2^j-m;
+          if(t_x<2 && j>1){
+            res_i.push([j-1,i,i*2^(j-1)+1]);
+          }
+          else{
+            res_i.push([j,i,t_x]);//[j circles, m-n the outer ring number]
+          }
+        }
+        let t_arr=res_i.pop();
+        while(t_arr[0]<=1 && res_i.length>0){
+          t_arr=res_i.pop();
+        }
+//---------------------------
+        let t_root=0;
+        let arr_root=[];
+        for(let i=0;i<t_arr[0];i++){
+          t_root+=Math.pow(2,i);
+          arr_root.push(t_root);
+        }
+
+        let r=res_nearst/Math.sqrt(t_root);
+        // r, a, r+a
+        let t_area=Math.pow(r,2);// the area of central circle
+        let s_area=0;
+        let t_pre_r=0;
+        let ncount=0;
+        for (let i=0;i<t_arr[0]-1;i++){
+          s_area=t_area*arr_root[i];
+          let t_ra=Math.sqrt(s_area);//
+          //draw points
+          let t_r=0.5*(t_ra+t_pre_r);//t_portion*t_pre_r
+          let k=2*Math.PI/(t_arr[1]*Math.pow(2,i)); // radin of each circle
+
+          for(let j=0;j<t_arr[1]*Math.pow(2,i);j++){
+            res_points.push([in_point.x+t_portion*t_r*Math.cos(j*k),in_point.y+t_r*Math.sin(j*k)]);
+            ncount+=1;
+          }
+          t_pre_r=t_ra;
+        }
+
+        let t_ra=res_nearst;
+        //draw points
+        let t_r=0.5*(t_ra+t_pre_r);
+        let k=2*Math.PI/(t_arr[2]);
+        for(let j=0;j<t_arr[2];j++){
+          res_points.push([in_point.x+t_portion*t_r*Math.cos(j*k),in_point.y+t_r*Math.sin(j*k)]);
+          ncount+=1;
+        }
+        if(0){
+          res_points=d3.range(n)//15
+                     .map(function(d) { return [Math.random() * t_extent.width+t_extent.xmin, Math.random() * t_extent.height+t_extent.ymin]; });
+        }
+
+
+        return res_points;
+      }
+
+      function addTriangle(){
+
+      }
+
+      function addFreedraw(){
+        var action = draw.create("polygon");
+
+        // focus the view to activate keyboard shortcuts for drawing polygons
+        view.focus();
+
+        // listen polygonDrawAction events to give immediate visual feedback
+        // to users as the polygon is being drawn on the view.
+        action.on("vertex-add", drawPolygon);
+        action.on("cursor-update", drawPolygon);
+        action.on("vertex-remove", drawPolygon);
+        action.on("redo", drawPolygon);
+        action.on("undo", drawPolygon);
+        action.on("draw-complete", drawPolygon);
+
+
+      }
+
+      function addGraphics(vtriangles) {
+        // transfer the voronoi polygon:vpolygons to gispolygon
+
+        let validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//solid
+
+        //filter nearby points
+        //vtriangles=PointsMerge(vtriangles,maxdistanceerror);
+  /*      let text_symbol={
+         type: "text",
+         style: "solid",
+         backgroundColor: [0, 170, 255, 0.4],
+         color:[255,255, 255],
+         text:  "hello",
+         outline: {
+           color: [255,255, 255],
+           width: 2
+         }
+        };
+*/
+        let text_symbol = {
+          type: "text",  // autocasts as new TextSymbol()
+          color: "white",
+          haloColor: "black",
+          haloSize: "1px",
+          text: "You are here",
+          xoffset: 3,
+          yoffset: 3,
+          font: {  // autocast as new Font()
+            size: 12,
+            family: "sans-serif",
+            weight: "bold"
+          }
+        };
+
+        for (var i=0;i<vtriangles.length;i++){
+          vtriangles[i].push(vtriangles[i][0]);
+          let polygon = createGeometry(vtriangles[i]);
+          let newDevelopmentGraphic = new Graphic({
+            geometry: polygon,
+            symbol: validSymbol,//validSymbol,
+            attributes: {
+              newDevelopment: "new store"
+            }
+          });
+          text_symbol.text="S"+i.toString();
+          let t_point=new Graphic ({
+            geometry:newDevelopmentGraphic.geometry.centroid,
+            symbol:text_symbol
+          });
+
+          allpolygons.push(newDevelopmentGraphic);
+          allpolygons.push(t_point);
+        }
+        updated_polygonring=vtriangles;
+        //view.graphics.add(newDevelopmentGraphic);
+        //graphicsLayer.addMany([newDevelopmentGraphic]);
+        //graphicsLayer.graphics.add(newDevelopmentGraphic);
+
+        graphicsLayer.addMany(allpolygons);
+      }
+
+      function createGeometry(vertices) {
+
+        return new Polygon({
+          rings: vertices,
+          //spatialReference: {wkid: 102100 }
+          spatialReference: view.spatialReference
+        });
+      }
+
+      function createSymbol(color, style, width, outlineColor) {
+        return {
+          type: "simple-fill",
+          style: style,
+          color: color,
+          outline: {
+            color: outlineColor,
+            width: width
+          }
+        }
+      }
+
+      // Create new view, map and layers... set up the view
+      function setUpView() {
+        coordinateLayer=new FeatureLayer({
+          //wkid:4326
+          //spatialReference: { wkid: 4326  }
+          spatialReference: { wkid: 102100  }
+        });
+
+
+
+
+        //graphicsLayer = new GraphicsLayer();
+
+        const map = new Map({
+          basemap: "satellite",//"hybrid",//"satellite",
+          layers: [  graphicsLayer]
+        });
+
+
+        var transportationLayer = new TileLayer({
+          url: "https://server.arcgisonline.com/arcgis/rest/services/Reference/World_Transportation/MapServer",
+          // This property can be used to uniquely identify the layer
+          id: "something",
+          visible: true
+        });
+        //map.add(transportationLayer);
+
+        var riverLayer = new FeatureLayer({
+          url:
+          "https://services8.arcgis.com/ZXMBUOxDBbivoAgJ/arcgis/rest/services/RiverMiles/FeatureServer"
+          // This property can be used to uniquely identify the layer
+
+        });
+        map.add(riverLayer);
+        console.log(riverLayer.gdbVersion);
+        view = new MapView({
+          container: "viewDiv",
+          map: map,
+          zoom: scale,
+          center: [gcx,gcy]//,35.4
+        });
+        var toggle = new BasemapToggle({
+          // 2 - Set properties
+          view: view, // view that provides access to the map's 'topo' basemap
+          nextBasemap: "topo" // allows for toggling to the 'hybrid' basemap
+        });
+
+        // Add widget to the top right corner of the view
+        view.ui.add(toggle, "bottom-left");
+        setupEditing();
+        //view.ui.add("draw-polygon", "top-left");
+        draw = new Draw({
+        view: view
+        });
+
+      }
+
+        //generate voronoi
+        document.getElementById("btngeneratearea").onclick=function() {
+          graphicsLayer.removeAll();
+          view.graphics.removeAll();
+          //wholetask=activeWidget.viewModel.measurement;
+          allpolygons=[];
+
+          glverticeslist=[];
+          if(voronoistyle=="random"){
+            addVoronoi();
+            //view.complete();
+          }
+          else if(voronoistyle=="triangle"){
+            addTriangle();
+            //view.complete();
+          }
+          else if(voronoistyle=="clear"){
+
+            addFreedraw();
+          }
+
+        };
+
+      // this function is called from the polygon draw action events
+      // to provide a visual feedback to users as they are drawing a polygon
+      function drawPolygon(event) {
+        if(voronoistyle!="clear" && voronoistyle!="sidebar") return;
+        var glvertices = event.vertices;
+        //remove existing graphic
+        view.graphics.removeAll();
+
+        if(glverticeslist.length>0) addGraphics(glverticeslist);
+
+        // create a new polygon
+        var polygon = new Polygon({
+          rings: glvertices,
+          spatialReference: view.spatialReference
+        });
+
+        // create a new graphic representing the polygon, add it to the view
+        var graphic = new Graphic({
+          geometry: polygon,
+          symbol: {
+            type: "simple-fill", // autocasts as SimpleFillSymbol
+            color: [178, 102, 234, 0.8],
+            style: "solid",
+            outline: { // autocasts as SimpleLineSymbol
+              color: [255, 255, 255],
+              width: 2
+            }
+          }
+        });
+
+        view.graphics.add(graphic);
+
+        // calculate the area of the polygon
+        var area = geometryEngine.geodesicArea(polygon, "acres");
+        if (area < 0) {
+          // simplify the polygon if needed and calculate the area again
+          var simplifiedPolygon = geometryEngine.simplify(polygon);
+          if (simplifiedPolygon) {
+            area = geometryEngine.geodesicArea(simplifiedPolygon, "acres");
+          }
+        }
+        // start displaying the area of the polygon
+        labelAreas(polygon, area);
+
+        if(event.type=="draw-complete"){
+          addGraphics(glvertices);
+          if( voronoistyle=="clear"){
+
+            glverticeslist.push(glvertices);
+            //addFreedraw();
+          }
+        }
+      }
+
+
+
+      //Label polyon with its area
+      function labelAreas(geom, area) {
+        var graphic = new Graphic({
+          geometry: geom.centroid,
+          symbol: {
+            type: "text",
+            color: "white",
+            haloColor: "black",
+            haloSize: "1px",
+            text: area.toFixed(2) + " acres",
+            xoffset: 3,
+            yoffset: 3,
+            font: { // autocast as Font
+              size: 14,
+              family: "sans-serif"
+            }
+          }
+        });
+        view.graphics.add(graphic);
+      }
+
+      function setupEditing() {
+        // input boxes for the attribute editing
+        editArea = document.getElementById("editArea");
+
+
+        // Listen to the feature form's submit event.
+
+
+        // Expand widget for the editArea div.
+        const editExpand = new Expand({
+          expandIconClass: "esri-icon-edit",
+          expandTooltip: "Expand Edit",
+          expanded: true,
+          view: view,
+          content: editArea
+        });
+
+        view.ui.add(editExpand, "top-right");
+
+      }
+
+      var ccWidget = new CoordinateConversion({
+        view: view
+        //container: "coordinatesdiv"
+      });
+      view.ui.add(ccWidget, "bottom-left");
+      //view.ui.add(ccWidget,document.getElementById("coordinatesdiv"));
+
+
+//-----------------adding new functions here---------------------
+
+      function MapDivisionUpdateMover(event){
+
+        let graphic = event.graphics[0];
+        let mover,temppolyset;
+
+        //if(event.toolEventInfo != null){
+        //  console.log(event.toolEventInfo.mover.geometry.x +","+ event.toolEventInfo.mover.geometry.y+":"+ event.toolEventInfo.type );
+        //}
+        //if is the first active or not
+        if (event.state=="active"){
+          //console.log(event);
+
+          mover=event.toolEventInfo.mover.geometry;
+          t_pointIndex=event.toolEventInfo.mover.attributes.pointIndex;
+          orignalmover=event.graphics[0].geometry.rings[0][t_pointIndex];
+
+          if(event.toolEventInfo.type=="reshape-start"){
+
+            temppolyset=[];
+            activepolygonpoints=[];
+            //selected=event.toolEventInfo.selected[0].geometry;
+            for(let i=0;i<allpolygons.length;i++){
+              if(geometryEngine.equals(allpolygons[i].geometry,graphic.geometry)){
+                temppolyset.push(allpolygons[i]);
+                continue;
+              }
+              if(geometryEngine.touches(mover,allpolygons[i].geometry)){
+                //array, start end with the two nearby points
+                //let array_points=GetPolygonPoints(mover.x,mover.y,allpolygons[i].geometry.rings[0]);
+                let array_points=GetPolygonPoints(orignalmover[0],orignalmover[1],allpolygons[i].geometry.rings[0]);
+                activepolygonpoints.push(array_points);
+                //console.log("mover"+mover.x+","+mover.y);
+                //console.log("original"+orignalmover[0]+","+orignalmover[1]);
+                //console.log(activepolygonset);
+                activepolygonset.push(allpolygons[i]);
+
+              }
+              else{
+                temppolyset.push(allpolygons[i]);
+              }
+            }
+            allpolygons=temppolyset;
+          }
+          else if(event.toolEventInfo.type=="reshape"){
+
+          }
+          else if(event.toolEventInfo.type=="reshape-stop"){
+
+            allpolygons=allpolygons.concat(activepolygonset);
+            activepolygonset=[];
+
+          }
+          else if(event.toolEventInfo.type=="move-start"){
+            //console.log(event.toolEventInfo.type);
+          }
+          else if(event.toolEventInfo.type=="move"){
+            //console.log(event.toolEventInfo.type);
+          }
+          else if(event.toolEventInfo.type=="move-stop"){
+            //console.log(event.toolEventInfo.type);
+          }
+          //renew the polygons
+          if(activepolygonset.length>0){
+
+            graphicsLayer.removeMany(activepolygonset);
+            activepolygonset=GeneratePolygonBasedonPoints(mover.x,mover.y,activepolygonpoints);
+            graphicsLayer.addMany(activepolygonset);
+
+          }
+
+        }
+      }
+
+      //tpoly is an array[[,],[,]]
+      function GetPolygonPoints(x,y,tpoly){
+
+        let t_array=[];
+        let i=0;
+        let tlen=tpoly.length;
+        let pointofline=0;//0: not on line, 1: vertices, 2: center, 3: on the line
+        for(i=0;i<tlen-1;i++){
+          if((Math.abs(tpoly[i][0]-x)< maxdistanceerror) && (Math.abs(tpoly[i][1]-y)< maxdistanceerror )){
+            pointofline=1;
+            break;
+          }
+
+        }
+
+        if( pointofline===1 ){
+          //console.log("points as vertices");
+          //poins as vertices of the line
+          t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i));
+          //console.log(t_array);
+          return t_array;
+        }
+
+        for(i=0;i<tlen-1;i++){
+          if( ( Math.abs(0.5*( tpoly[i][0]+tpoly[i+1][0] )-x )< maxdistanceerror)
+                && ( Math.abs(0.5*( tpoly[i][1]+tpoly[i+1][1] )-y) < maxdistanceerror) ){
+                    pointofline=2;
+                    break;
+          }
+        }
+        if (pointofline===2){
+          //console.log("points on line");
+          //have problem need debug
+          t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i+1));
+        }
+        else{
+          //poins on the line
+          //add more pass
+          //console.log("points not on line");
+          t_array=null;
+        }
+        return t_array;
+      }
+
+      //update new polygon
+      function GeneratePolygonBasedonPoints(x,y,array_points){
+        let tmppolysets=[];
+
+        validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);
+        //console.log(array_points);
+        if(array_points.length==0){
+          return tmppolysets;
+        }
+        for(let i=0;i<array_points.length;i++){
+          entry=array_points[i];
+
+          let vertices=[];
+          vertices=vertices.concat([[x,y]],entry,[[x,y]]);
+          //console.log(vertices);
+          //console.log("-------------");
+          let polygon = createGeometry(vertices);
+          newDevelopmentGraphic = new Graphic({
+            geometry: polygon,
+            symbol: validSymbol,
+            attributes: {
+              newDevelopment: "new store"
+            }
+          });
+          tmppolysets.push(newDevelopmentGraphic);
+        }
+
+        return tmppolysets;
+      }
+
+      function PointsMerge(points_array,maxd){
+        //ring with no points repeated
+
+        resarray=[];
+        while(points_array.length>0){
+          entry=points_array.pop();
+          console.log(entry);
+          let i=0;
+          for(i = 0;i<points_array.length;i++){
+            if(Math.abs(points_array[i][0]-entry[0]< maxd) && Math.abs(points_array[i][1]-entry[1])< maxd ){
+              break;
+            }
+          }
+          if(i<points_array.length){
+            continue;
+          }
+          else{
+            resarray.push(entry);
+          }
+        }
+        return resarray;
+      }
+//-----------------------------------------------------
+document.getElementById("distanceButton").addEventListener("click",
+       function () {
+         setActiveWidget(null);
+         if (!this.classList.contains('active')) {
+           setActiveWidget('distance');
+         } else {
+           setActiveButton(null);
+         }
+       });
+
+     document.getElementById("areaButton").addEventListener("click",
+       function () {
+         setActiveWidget(null);
+         if (!this.classList.contains('active')) {
+           setActiveWidget('area');
+         } else {
+           setActiveButton(null);
+         }
+       });
+
+     function setActiveWidget(type) {
+       switch (type) {
+         case "distance":
+           activeWidget = new DistanceMeasurement2D({
+             view: view
+
+           });
+
+           // skip the initial 'new measurement' button
+           activeWidget.viewModel.newMeasurement();
+           activeWidget.
+
+           view.ui.add(activeWidget, "bottom-right");
+           setActiveButton(document.getElementById('distanceButton'));
+           break;
+         case "area":
+           activeWidget = new AreaMeasurement2D({
+             view: view,
+             unit: "acres"
+           });
+
+           // skip the initial 'new measurement' button
+           activeWidget.viewModel.newMeasurement();
+
+           view.ui.add(activeWidget, "bottom-right");
+           setActiveButton(document.getElementById('areaButton'));
+           break;
+         case null:
+           if (activeWidget) {
+             view.ui.remove(activeWidget);
+             activeWidget.destroy();
+             activeWidget = null;
+           }
+           break;
+       }
+     }
+
+     function setActiveButton(selectedButton) {
+       // focus the view to activate keyboard shortcuts for sketching
+       view.focus();
+       var elements = document.getElementsByClassName("active");
+       for (var i = 0; i < elements.length; i++) {
+         elements[i].classList.remove("active");
+       }
+       if (selectedButton) {
+         selectedButton.classList.add("active");
+       }
+     }
+
+     //------------------------------------------------
+     document.getElementById("clearall").addEventListener("click",
+       function () {
+         //activeWidget.viewModel.measurementLabel.area
+         //activeWidget.viewModel.measurement.geometry.rings: [[,],[,],[,]]
+         //wholearea=activeWidget.viewModel.measurementLabel.area;
+         //wholetask=activeWidget.viewModel.measurement;
+         //wholetask=activeWidget.viewModel.measurement;
+         ClearAll();
+       });
+
+       function ClearAll(){
+
+         //console.log(activeWidget);
+         //console.log(activeWidget.viewModel.measurementLabel.area);
+         allpolygons=[];
+         activepolygonset=[];
+         activepolygonpoints=[];
+         glverticeslist=[];
+         updated_polygonring=[];
+         graphicsLayer.removeAll();
+         view.graphics.removeAll();
+         setActiveWidget(null);
+         sketchViewModel.complete();
+         //.destroy();
+       }
+
+       function PolyArrayToJson(polyarray)
+       {
+         if(polyarray.length<1){
+           return "";
+         }
+         res_json={};
+         for (let i=0;i<polyarray.length;i++){
+           res_json[i]=polyarray[i];
+         }
+         return JSON.stringify(res_json);
+       }
+
+       document.getElementById("savetasks").addEventListener("click",
+         function () {
+           let py_task_all_array={{ task_all |safe }}
+           console.log(py_task_all_array);
+           if(py_task_all_array.includes(document.getElementById("tasknotes").value)){
+             //task_all
+             document.getElementById("tasknoteslabel").value="Try another one!";
+             console.log(document.getElementById("tasknotes").value+" is already exist, please enter another one!");
+           }
+           else {
+             var URL = "{% url 'tasksave' %}";
+             let dbpolystr=PolyArrayToJson(updated_polygonring);
+             var data = {
+                     csrfmiddlewaretoken: '{{ csrf_token }}',
+                     'task_notes': document.getElementById("tasknotes").value,
+                     'task_id': document.getElementById("tasknotes").value,
+                     'Taskarea': updated_polygonring.length.toString(),
+                     'task_polygon': dbpolystr
+                    };
+             $.post(URL, data, function(response){
+               var res=JSON.parse(response);
+
+                 if(res.flag == 'success'){
+                   //console.log(res.Taskarea);
+                   //add date and task number and a random number
+                   //task name:
+                   let task_url="{% url 'taskgenerationform' %}"+"/"+document.getElementById("tasknotes").value+'_'+'0/';
+                   console.log(task_url);
+                   //var win = window.open("{% url 'taskgenerationform' %}", '_blank');
+                   var win = window.open(task_url, '_blank');
+                   win.focus();
+                   //open a new tab for task TaskGeneration
+
+                   /*
+                   document.getElementById("tasknotes").value=res.taskinpy;
+                   document.getElementById("myRange3").value=res.DuressJ3;
+                   document.getElementById("myRange4").value=res.DuressJ4;
+         */
+                  }
+                 else{ alert(response); }
+             });
+           }
+         });
+
+
+      //--------------------------------------------------
+    });
+
+
+  </script>
+</head>
+
+<body>
+  <div id="editArea" class="editArea-container">
+    <h2 class="list-heading">Tools</h2>
+    <div id="addFeatureDiv">
+
+      <div id="draw">
+        <h3 class="list-heading">Measure Tools</h3>
+        <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
+        <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
+      </div>
+
+      <div>
+      </div>
+
+
+      <h3 class="list-heading">Map</h3>
+      <!--div><input type="checkbox" name="voronoi" class="check" value="random"> Random Voronoi</input></div-->
+      <!--div><input type="checkbox" name="voronoi" class="check" value="triangle"> Triangle based on vertices</input></div-->
+      <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
+
+      <input type="button" class="edit-button" value="Generate area" id="btngeneratearea">
+      <hr/>
+      <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
+
+      <hr/>
+      <h1>Task Name</h1>
+      <div>
+        <div>
+        <input type="input" id="tasknotes" value="SAR0001"><br>
+        </div>
+        <div>
+          <label id="tasknoteslabel"><br>
+        </div>
+      </div>
+      <div><input type="button" class="edit-button" value="Save Tasks" id="savetasks"></input></div>
+    </div>
+
+  </div>
+  <div id="viewDiv">
+    <!--div id="SARParameter" class="SARP-container">
+      <div id="text">
+        <h1>Tools</h1>
+        <p>This is a test page for dividing map for SAR tasks</p>
+
+      </div>
+
+    </div-->
+    <!--div id="draw-polygon" class="esri-widget--button esri-widget esri-interactive"
+      title="Draw and measure polygon">
+      <span class="esri-icon-polygon"></span>
+    </div-->
+  </div>
+
+
+</body>
+
+</html>

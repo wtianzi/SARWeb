@@ -1,0 +1,952 @@
+define([
+    "require",
+
+    "dojo/_base/declare",
+    "dojo/_base/lang",
+    "dojo/_base/array",
+
+    "dojo/Evented",
+    "dojo/Deferred",
+    "dojo/on",
+    "dojo/dnd/Source",
+
+    "dojo/dom",
+    "dojo/dom-construct",
+    "dojo/dom-class",
+    "dojo/dom-style",
+
+    "dojo/i18n!./SearchConfig/nls/SearchConfig",
+    "dojo/text!./SearchConfig/templates/SearchConfig.html",
+
+    "dijit/form/Form",
+    "dijit/form/Button",
+    "dijit/form/SimpleTextarea",
+    "dijit/form/TextBox",
+    "dijit/form/CheckBox",
+    "dijit/form/Select",
+    "dijit/form/MultiSelect",
+    "dijit/form/RadioButton",
+
+    "dijit/_WidgetBase",
+
+    "dijit/_TemplatedMixin",
+
+    "dijit/Dialog",
+    "esri/layers/FeatureLayer",
+    "esri/dijit/Search"
+  ],
+  function (
+    require,
+    declare, lang, array,
+    Evented, Deferred, on,
+    Source,
+    dom, domConstruct, domClass, domStyle,
+    i18n, template,
+    Form, Button, SimpleTextarea, TextBox, CheckBox, Select, MultiSelect, RadioButton,
+    _WidgetBase, _TemplatedMixin,
+    Dialog,
+    FeatureLayer,
+    Search
+  ) {
+
+    return declare([_WidgetBase, _TemplatedMixin, Evented], {
+      declaredClass: "esri.dijit.SearchConfig",
+      // Set template file HTML
+      templateString: template,
+      basePath: require.toUrl("."),
+      // init
+      constructor: function (options, srcRefNode) {
+        // class names
+        this.css = {
+          theme: "searchConfig",
+          actionBar: "dijitDialogPaneActionBar",
+          form: "searchConfigForm",
+          group: "searchConfigGroup",
+          hidden: "searchConfigHidden",
+          inline: "searchConfigInline"
+        };
+        // default settings
+        this.defaults = {
+          config: {
+            activeSourceIndex: 0,
+            enableSearchingAll: true,
+            sources: []
+          }
+        };
+        var search = new Search();
+        this._esriSource = search.defaultSource;
+        this._allValue = "all";
+        this._lastSelected = null;
+        // mix in settings and defaults
+        var defaults = lang.mixin({}, this.defaults, options);
+        // properties
+        this.set(defaults);
+        // languages
+        this._i18n = i18n;
+        // widget node
+        this.domNode = srcRefNode;
+      },
+      /* ---------------- */
+      /* Public Functions */
+      /* ---------------- */
+      startup: function () {
+        this._displayConfig();
+      },
+
+      // post create widget function
+      postCreate: function () {
+        this.inherited(arguments);
+        this._dnd = new Source(this.dndItems);
+        this.own(on(this._dnd, "Drop", lang.hitch(this, function () {
+          this._dnd.sync();
+          this._sortSources();
+        })));
+        this._selectedSource = new Select({
+          emptyLabel: i18n.untitled
+        });
+        this._selectedSource.startup();
+        this._selectedSource.placeAt(this.activeSourceNode);
+        this.own(this._selectedSource);
+
+        this.own(on(this._selectedSource, "change", lang.hitch(this, function () {
+          this._activeSourceChange();
+        })));
+        var cbid = this.id + "_enableSearchingAll";
+        this._enableSearchingAll = new CheckBox({
+          id: cbid,
+          checked: this.config.enableSearchingAll
+        });
+        this._enableSearchingAll.startup();
+        this._enableSearchingAll.placeAt(this.enableSearchingAllGroupNode);
+        this.own(on(this._enableSearchingAll, "change", lang.hitch(this, function () {
+          var config = lang.mixin({}, this.get("config"));
+          config.enableSearchingAll = this._enableSearchingAll.checked;
+          this.set("config", config);
+        })));
+        this.own(this._enableSearchingAll);
+        domConstruct.create("label", {
+          for: cbid,
+          textContent: i18n.searchAllSources
+        }, this.enableSearchingAllGroupNode);
+        domConstruct.create("br", {}, this.enableSearchingAllGroupNode);
+      },
+
+      destroy: function () {
+        this._destroyDialogs();
+        this._destroyWidgets();
+        if (this._dnd) {
+          this._dnd.destroy();
+        }
+        this.inherited(arguments);
+      },
+
+
+      /* ---------------- */
+      /* Private Functions */
+      /* ---------------- */
+
+      _featureLayerLoaded: function (layer) {
+        var def = new Deferred();
+        if (layer === undefined) {
+          def.reject("Invalid layer");
+        } else if (layer.loaded) {
+          // nothing to do
+          def.resolve(layer);
+        } else if (layer.loadError) {
+          def.reject(this._error("Layer failed to load."));
+        } else {
+          var loadedEvent,
+            errorEvent;
+          // once layer is loaded
+          loadedEvent = on.once(layer, "load", lang.hitch(this, function () {
+            errorEvent.remove();
+            def.resolve(layer);
+          }));
+          // error occurred loading layer
+          errorEvent = on.once(layer, "error", lang.hitch(this, function () {
+            loadedEvent.remove();
+            def.reject(this._error("Layer could not be loaded."));
+          }));
+        }
+        return def.promise;
+      },
+
+      _activeSourceChange: function () {
+        var config = lang.mixin({}, this.get("config"));
+        var value = this._selectedSource.get("value");
+        if (value !== this._allValue) {
+          value = parseInt(value, 10);
+        }
+        this._lastSelected = value;
+        config.activeSourceIndex = value;
+        this._set("config", config);
+      },
+
+      _sortSourcesToNodes: function (a, b, nodes) {
+        // dnd node id for a
+        var aId = a.id;
+        // dnd node id for b
+        var bId = b.id;
+        // get parent of stop node a
+        var aDnd = dom.byId(aId);
+        // get parent of stop node b
+        var bDnd = dom.byId(bId);
+        // get index of parent a
+        var indexA = array.indexOf(nodes, aDnd);
+        // get index of parent b
+        var indexB = array.indexOf(nodes, bDnd);
+        // sort by list nodes
+        for (var i = 0; i < nodes.length; i++) {
+          if (i === indexA) {
+            // move a lower index
+            return -1;
+          } else if (i === indexB) {
+            // move b lower index
+            return 1;
+          }
+        }
+      },
+
+      _supportsPagination: function (source) {
+        // check if featurelayer supports pagination
+        var supported;
+        if (source.locator) {
+          supported = true;
+        } else if (source.featureLayer) {
+          // supports pagination
+          if (source.featureLayer.advancedQueryCapabilities && source.featureLayer.advancedQueryCapabilities.supportsPagination) {
+            supported = true;
+          }
+        }
+        return supported;
+      },
+
+      _sortSources: function () {
+        var config = lang.mixin({}, this.get("config"));
+        // all nodes
+        var nodes = this._dnd.getAllNodes();
+        // sort geocoders to match nodes
+        config.sources = config.sources.sort(lang.hitch(this, function (a, b) {
+          return this._sortSourcesToNodes(a, b, nodes);
+        }));
+        this._lastSelected = null;
+        this.set("config", config);
+      },
+
+      _destroyDialogs: function () {
+        var dialogs = this._dialogs;
+        if (dialogs) {
+          var len = dialogs.length;
+          for (var i = 0; i < len; i++) {
+            dialogs[i].destroyRecursive();
+          }
+        }
+        this._dialogs = [];
+      },
+
+      _destroyEvents: function () {
+        var cb = this._events;
+        if (cb) {
+          var len = cb.length;
+          for (var i = 0; i < len; i++) {
+            cb[i].remove();
+          }
+        }
+        this._events = [];
+      },
+
+      _destroyWidgets: function () {
+        var w = this._widgets;
+        if (w) {
+          var len = w.length;
+          for (var i = 0; i < len; i++) {
+            w[i].destroyRecursive();
+          }
+        }
+        this._widgets = [];
+      },
+
+      _settingsClick: function (index) {
+        var dialog = this._dialogs[index];
+        if (dialog) {
+          dialog.show();
+        }
+      },
+
+      _enableSuggestChange: function (node, index) {
+        if (node) {
+          var evt = on(node, "change", lang.hitch(this, function (value) {
+            var nodes = this._nodes[index];
+            var container = nodes.displayTypeContainer;
+            if (container) {
+              if (value) {
+                domClass.remove(container, this.css.hidden);
+              } else {
+                domClass.add(container, this.css.hidden);
+              }
+            }
+            var container2 = nodes.maxSuggestionsCon;
+            if (container2) {
+              if (value) {
+                domClass.remove(container2, this.css.hidden);
+              } else {
+                domClass.add(container2, this.css.hidden);
+              }
+            }
+          }));
+          this._events.push(evt);
+        }
+      },
+
+      _enableChange: function (node, index) {
+        var evt = on(node, "change", lang.hitch(this, function () {
+          this._lastSelected = null;
+          this._saveSource(index);
+        }));
+        this._events.push(evt);
+      },
+
+      _displayChange: function (node, index) {
+        if (node) {
+          var evt = on(node, "change", lang.hitch(this, function (evt) {
+            var nodes = this._nodes[index];
+            var sTemplateContainer = nodes.sTemplateContainer;
+            var displayFieldContainer = nodes.displayFieldContainer;
+            if (evt) {
+              domClass.add(displayFieldContainer, this.css.hidden);
+              domClass.remove(sTemplateContainer, this.css.hidden);
+            } else {
+              domClass.remove(displayFieldContainer, this.css.hidden);
+              domClass.add(sTemplateContainer, this.css.hidden);
+            }
+          }));
+          this._events.push(evt);
+        }
+      },
+      _error: function (message) {
+        return new Error(this.declaredClass + " " + message);
+      },
+      _settingsButton: function (index) {
+        var btn = new Button({
+          label: i18n.edit,
+          iconClass: "dijitIconEdit",
+          onClick: lang.hitch(this, function () {
+            this._settingsClick(index);
+          })
+        });
+        this._widgets.push(btn);
+        return btn;
+      },
+
+      _displayConfig: function () {
+        this._destroyDialogs();
+        this._destroyWidgets();
+        this._destroyEvents();
+        var config = this.get("config");
+        var sources = config.sources;
+        this.dndItems.innerHTML = "";
+        this._dnd.sync();
+        var nodeList = [];
+        var itemList = [];
+        for (var i = 0; i < sources.length; i++) {
+          var index = i;
+          var source = sources[index];
+          // fix esri locator
+          if (source.locator && (source.locator.url === this._esriSource.locator.url)) {
+            if (!source.placeholder) {
+              source.placeholder = this._esriSource.placeholder;
+            }
+            if (!source.singleLineFieldName) {
+              source.singleLineFieldName = this._esriSource.singleLineFieldName;
+            }
+          }
+          var nodes = {};
+          var id = this.id + "_source_" + index;
+          var row = domConstruct.create("tr");
+          var col1 = domConstruct.create("td", {}, row);
+          var col2 = domConstruct.create("td", {}, row);
+          var col3 = domConstruct.create("td", {}, row);
+          // source enable checkbox
+          nodes.enable = new CheckBox({
+            id: id,
+            checked: source.enable
+          });
+          nodes.enable.startup();
+          nodes.enable.placeAt(col1);
+          this._widgets.push(nodes.enable);
+          domConstruct.create("label", {
+            for: id,
+            textContent: source.name
+          }, col2);
+          nodes.settingsButton = this._settingsButton(index);
+          nodes.settingsButton.placeAt(col3);
+          // save list item
+          itemList.push(row);
+          var dialogContent = new Form({
+            className: this.css.form
+          });
+          dialogContent.startup();
+          // name
+          var nameContainer = domConstruct.create("div", {
+            className: this.css.group
+          }, dialogContent.domNode);
+          domConstruct.create("label", {
+            textContent: i18n.name,
+            for: id + "_name"
+          }, nameContainer);
+          nodes.name = new TextBox({
+            size: 40,
+            value: source.name,
+            id: id + "_name"
+          });
+          nodes.name.startup();
+          nodes.name.placeAt(nameContainer);
+          // placeholder
+          var placeholderContainer = domConstruct.create("div", {
+            className: this.css.group
+          }, dialogContent.domNode);
+          domConstruct.create("label", {
+            textContent: i18n.placeholder,
+            for: id + "_placeholder"
+          }, placeholderContainer);
+          nodes.placeholder = new TextBox({
+            size: 40,
+            value: source.placeholder,
+            id: id + "_placeholder"
+          });
+          nodes.placeholder.startup();
+          nodes.placeholder.placeAt(placeholderContainer);
+          // Search within map
+          var withinMapContainer = domConstruct.create("div", {
+            className: this.css.group + " " + this.css.inline
+          }, dialogContent.domNode);
+          nodes.searchWithinMap = new CheckBox({
+            checked: source.searchWithinMap,
+            id: id + "_searchwithinmap"
+          });
+          nodes.searchWithinMap.startup();
+          nodes.searchWithinMap.placeAt(withinMapContainer);
+          domConstruct.create("label", {
+            textContent: i18n.searchWithinMap,
+            for: id + "_searchwithinmap"
+          }, withinMapContainer);
+          // Enable suggestions
+          var suggestionsSupported = this._supportsPagination(source);
+          if (suggestionsSupported) {
+            var enableSuggestionsContainer = domConstruct.create("div", {
+              className: this.css.group + " " + this.css.inline
+            }, dialogContent.domNode);
+            nodes.enableSuggestions = new CheckBox({
+              checked: source.enableSuggestions,
+              id: id + "_enablesuggestions"
+            });
+            nodes.enableSuggestions.startup();
+            nodes.enableSuggestions.placeAt(enableSuggestionsContainer);
+            domConstruct.create("label", {
+              textContent: i18n.enableSuggestions,
+              for: id + "_enablesuggestions"
+            }, enableSuggestionsContainer);
+            // maxSuggestions
+            var maxSuggestionsCon = domConstruct.create("div", {
+              className: this.css.group
+            }, dialogContent.domNode);
+            nodes.maxSuggestionsCon = maxSuggestionsCon;
+            if (!source.enableSuggestions) {
+              domClass.add(maxSuggestionsCon, this.css.hidden);
+            }
+            domConstruct.create("label", {
+              textContent: i18n.maxSuggestions,
+              for: id + "_maxSuggestions"
+            }, maxSuggestionsCon);
+            nodes.maxSuggestions = new Select({
+              options: [{
+                label: i18n.select,
+                value: "",
+                selected: (!source.maxSuggestions)
+              }, {
+                label: "1",
+                value: "1",
+                selected: (source.maxSuggestions === 1)
+              }, {
+                label: "2",
+                value: "2",
+                selected: (source.maxSuggestions === 2)
+              }, {
+                label: "3",
+                value: "3",
+                selected: (source.maxSuggestions === 3)
+              }, {
+                label: "4",
+                value: "4",
+                selected: (source.maxSuggestions === 4)
+              }, {
+                label: "5",
+                value: "5",
+                selected: (source.maxSuggestions === 5)
+              }, {
+                label: "6",
+                value: "6",
+                selected: (source.maxSuggestions === 6)
+              }, {
+                label: "7",
+                value: "7",
+                selected: (source.maxSuggestions === 7)
+              }, {
+                label: "8",
+                value: "8",
+                selected: (source.maxSuggestions === 8)
+              }, {
+                label: "9",
+                value: "9",
+                selected: (source.maxSuggestions === 9)
+              }, {
+                label: "10",
+                value: "10",
+                selected: (source.maxSuggestions === 10)
+              }, {
+                label: "11",
+                value: "11",
+                selected: (source.maxSuggestions === 11)
+              }, {
+                label: "12",
+                value: "12",
+                selected: (source.maxSuggestions === 12)
+              }, {
+                label: "13",
+                value: "13",
+                selected: (source.maxSuggestions === 13)
+              }, {
+                label: "14",
+                value: "14",
+                selected: (source.maxSuggestions === 14)
+              }, {
+                label: "15",
+                value: "15",
+                selected: (source.maxSuggestions === 15)
+              }],
+              id: id + "_maxSuggestions"
+            });
+            nodes.maxSuggestions.startup();
+            nodes.maxSuggestions.placeAt(maxSuggestionsCon);
+          }
+          // Locator source
+          if (source.locator) {
+            // countryCode
+            var ccContainer = domConstruct.create("div", {
+              className: this.css.group
+            }, dialogContent.domNode);
+            domConstruct.create("label", {
+              innerHTML: "<a target=\"_blank\" href=\"https://developers.arcgis.com/rest/geocode/api-reference/geocode-coverage.htm\">" + i18n.countryCode + "</a>",
+              for: id + "_cc"
+            }, ccContainer);
+            nodes.countryCode = new TextBox({
+              size: 3,
+              placeholder: "USA",
+              maxLength: 3,
+              value: source.countryCode,
+              id: id + "_cc"
+            });
+            nodes.countryCode.startup();
+            nodes.countryCode.placeAt(ccContainer);
+          }
+          // feature layer source
+          if (source.featureLayer || source.flayerId) {
+            // display field
+            /*if (!source.featureLayer && this._map) {
+              source.featureLayer = this._map.getLayer(source.flayerId);
+            }*/
+            if (!source.featureLayer && source.url) {
+              source.featureLayer = new FeatureLayer(source.url, {
+                outFields: ["*"]
+              });
+            }
+            var displayTypeContainer = domConstruct.create("div", {
+              className: this.css.group
+            }, dialogContent.domNode);
+            if (!source.enableSuggestions) {
+              domClass.add(displayTypeContainer, this.css.hidden);
+            }
+            nodes.displayTypeContainer = displayTypeContainer;
+            domConstruct.create("label", {
+              textContent: i18n.displayUsing,
+              for: id + "_suggestvsdisplay"
+            }, displayTypeContainer);
+            // inner display field container
+            var displayTypeContainer2 = domConstruct.create("div", {
+              className: this.css.group + " " + this.css.inline
+            }, displayTypeContainer);
+            // display field option
+            var displayField = new RadioButton({
+              id: id + "_displayType_field",
+              checked: !source.suggestionTemplate,
+              name: id + "_displayfield_type"
+            });
+            displayField.placeAt(displayTypeContainer2).startup();
+            domConstruct.create("label", {
+              textContent: i18n.field,
+              for: id + "_displayType_field"
+            }, displayTypeContainer2);
+            // template option
+            var suggestionTemplate = new RadioButton({
+              id: id + "_displayType_template",
+              checked: source.suggestionTemplate,
+              name: id + "_displayfield_type"
+            });
+            suggestionTemplate.placeAt(displayTypeContainer2).startup();
+            domConstruct.create("label", {
+              textContent: i18n.template,
+              for: id + "_displayType_template"
+            }, displayTypeContainer2);
+            nodes.radio = suggestionTemplate;
+            // display fields
+            var displayFieldContainer = domConstruct.create("div", {
+              className: this.css.group
+            }, displayTypeContainer);
+            if (source.suggestionTemplate) {
+              domClass.add(displayFieldContainer, this.css.hidden);
+            }
+            nodes.displayFieldContainer = displayFieldContainer;
+            domConstruct.create("label", {
+              textContent: i18n.displayField,
+              for: id + "_sdisplayfield"
+            }, displayFieldContainer);
+            nodes.displayField = new Select();
+            nodes.displayField.startup();
+            nodes.displayField.placeAt(displayFieldContainer);
+            // fields
+            this._setOptions(source, nodes.displayField);
+            // Suggestion Template
+            var sTemplateContainer = domConstruct.create("div", {
+              className: this.css.group
+            }, displayTypeContainer);
+            if (!source.suggestionTemplate) {
+              domClass.add(sTemplateContainer, this.css.hidden);
+            }
+            nodes.sTemplateContainer = sTemplateContainer;
+            domConstruct.create("label", {
+              textContent: i18n.suggestionTemplate,
+              for: id + "_stemplate"
+            }, sTemplateContainer);
+            nodes.suggestionTemplate = new SimpleTextarea({
+              placeholder: "Name: ${field_name}",
+              cols: 40,
+              rows: 3,
+              value: source.suggestionTemplate || "",
+              id: id + "_stemplate"
+            });
+            nodes.suggestionTemplate.startup();
+            nodes.suggestionTemplate.placeAt(sTemplateContainer);
+            // Search fields
+            var searchFieldsContainer = domConstruct.create("div", {
+              className: this.css.group
+            }, dialogContent.domNode);
+            domConstruct.create("label", {
+              textContent: i18n.searchFields,
+              for: id + "_searchfields"
+            }, searchFieldsContainer);
+            var searchFields = source.searchFields || [];
+            nodes.searchFields = new MultiSelect({
+              size: 6,
+              id: id + "_searchfields"
+            });
+            nodes.searchFields.startup();
+            nodes.searchFields.placeAt(searchFieldsContainer);
+            this._insertFields(nodes.searchFields.domNode, source.featureLayer, searchFields);
+            // Exact Match
+            var exactMatchContainer = domConstruct.create("div", {
+              className: this.css.group + " " + this.css.inline
+            }, dialogContent.domNode);
+            nodes.exactMatch = new CheckBox({
+              checked: source.exactMatch,
+              id: id + "_exactmatch"
+            });
+            nodes.exactMatch.startup();
+            nodes.exactMatch.placeAt(exactMatchContainer);
+            domConstruct.create("label", {
+              textContent: i18n.exactMatch,
+              for: id + "_exactmatch"
+            }, exactMatchContainer);
+          }
+          // create dialog
+          var layerDialog = new Dialog({
+            title: source.name,
+            className: this.css.theme,
+            content: dialogContent.domNode
+          });
+          this._dialogs.push(layerDialog);
+          // save nodes
+          nodeList.push(nodes);
+          // dialog buttons
+          this._actionButtons(layerDialog, index);
+          this._enableChange(nodes.enable, index);
+          this._enableSuggestChange(nodes.enableSuggestions, index);
+          this._displayChange(nodes.radio, index);
+        }
+        // save nodes
+        this._nodes = nodeList;
+        // insert list items
+        this._dnd.insertNodes(false, itemList);
+        // set ids of sources to match nodes
+        var dndNodes = this._dnd.getAllNodes();
+        for (var j = 0; j < dndNodes.length; j++) {
+          var node = dndNodes[j];
+          var nodeId = node.id;
+          sources[j].id = nodeId;
+        }
+        config.sources = sources;
+        this._buildSelectedSource();
+        this._set("config", config);
+      },
+
+
+      _activeSourceIndex: function (config) {
+        var sources = config.sources;
+        var enabled = [];
+        for (var i = 0; i < sources.length; i++) {
+          var source = sources[i];
+          if (source.enable) {
+            enabled.push(source);
+          }
+        }
+        var defaultActive;
+        if (this._lastSelected !== null) {
+          defaultActive = this._lastSelected;
+        } else {
+          defaultActive = 0;
+          if (enabled.length > 1) {
+            defaultActive = this._allValue;
+          }
+        }
+        config.activeSourceIndex = defaultActive;
+        return config;
+      },
+
+      _buildSelectedSource: function () {
+        var config = this.get("config");
+        var sources = config.sources;
+        var enabled = [],
+          options = [];
+        var value = "";
+        var i;
+        for (i = 0; i < sources.length; i++) {
+          var source = sources[i];
+          if (source.enable) {
+            enabled.push(source);
+          }
+        }
+        if (enabled.length > 1) {
+          if (config.enableSearchingAll) {
+            var allOption = {
+              value: this._allValue,
+              label: i18n.all
+            };
+            if (config.activeSourceIndex === this._allValue) {
+              allOption.selected = true;
+              value = this._allValue;
+            }
+            options.push(allOption);
+          }
+        }
+        for (i = 0; i < enabled.length; i++) {
+          var current = enabled[i];
+          var currentVal = i.toString();
+          var option = {
+            label: current.name,
+            value: currentVal
+          };
+          if (config.activeSourceIndex === i) {
+            option.selected = true;
+            value = currentVal;
+          }
+          options.push(option);
+        }
+        if (!enabled.length) {
+          this._selectedSource.set("disabled", true);
+          domStyle.set(this.activeSourceGroupNode, "display", "none");
+          domStyle.set(this.enableSearchingAllGroupNode, "display", "none");
+        } else {
+          this._selectedSource.set("disabled", false);
+          domStyle.set(this.activeSourceGroupNode, "display", "block");
+          domStyle.set(this.enableSearchingAllGroupNode, "display", "block");
+        }
+        this._selectedSource.set("options", options);
+        this._selectedSource.set("value", value);
+      },
+
+      _saveSource: function (index) {
+        var config = lang.mixin({}, this.get("config"));
+        var source = config.sources[index];
+        var nodes = this._nodes[index];
+        // enable
+        if (nodes.enable) {
+          source.enable = nodes.enable.get("checked");
+        }
+        // suggestions
+        if (nodes.enableSuggestions) {
+          source.enableSuggestions = nodes.enableSuggestions.get("checked");
+        }
+        // max suggestions
+        if (nodes.maxSuggestions) {
+          var num = parseInt(nodes.maxSuggestions.get("value"), 10);
+          if (!isNaN(num)) {
+            source.maxSuggestions = num;
+          } else if (source.hasOwnProperty("maxSuggestions")) {
+            delete source.maxSuggestions;
+          }
+        }
+        // search within map
+        if (nodes.searchWithinMap) {
+          source.searchWithinMap = nodes.searchWithinMap.get("checked");
+        }
+        // exact match
+        if (nodes.exactMatch) {
+          source.exactMatch = nodes.exactMatch.get("checked");
+        }
+        // name
+        if (nodes.name) {
+          source.name = nodes.name.get("value") || "";
+        }
+        // placeholder
+        if (nodes.placeholder) {
+          source.placeholder = nodes.placeholder.get("value") || "";
+        }
+        // countryCode
+        if (nodes.countryCode) {
+          source.countryCode = nodes.countryCode.get("value") || "";
+        }
+        // search fields
+        if (nodes.searchFields) {
+          source.searchFields = nodes.searchFields.get("value") || [];
+        }
+        // suggest options
+        if (nodes.radio && source.enableSuggestions) {
+          // suggestion radio on
+          var suggestChecked = nodes.radio.get("checked");
+          // displayField
+          if (nodes.displayField && !suggestChecked) {
+            source.displayField = nodes.displayField.get("value") || "";
+            source.suggestionTemplate = "";
+          }
+          // suggestion template
+          if (nodes.suggestionTemplate && suggestChecked) {
+            source.suggestionTemplate = nodes.suggestionTemplate.get("value") || "";
+          }
+        }
+        this.set("config", config);
+      },
+
+      _actionButtons: function (layerDialog, index) {
+        var actionBar = domConstruct.create("div", {
+          "className": this.css.actionBar
+        }, layerDialog.containerNode);
+        new Button({
+          "label": i18n.save,
+          "onClick": lang.hitch(this, function () {
+            layerDialog.hide().then(lang.hitch(this, function () {
+              this._saveSource(index);
+            }));
+          })
+        }).placeAt(actionBar);
+        new Button({
+          "label": i18n.cancel,
+          "onClick": lang.hitch(this, function () {
+            layerDialog.hide();
+          })
+        }).placeAt(actionBar);
+      },
+
+      _getFirstStringField: function (fl) {
+        if (fl) {
+          var fields = fl.fields;
+          if (fields && fields.length) {
+            for (var i = 0; i < fields.length; i++) {
+              var field = fields[i];
+              // if field is a string
+              if (field.type === "esriFieldTypeString") {
+                return field.name;
+              }
+            }
+          }
+        }
+      },
+
+      _setOptions: function (source, node) {
+        var featureLayer = source.featureLayer || null;
+        if (!featureLayer && source.url) {
+          featureLayer = new FeatureLayer(source.url, {
+            outFields: ["*"]
+          });
+        }
+        if (featureLayer) {
+          this._getOptions(source, featureLayer).then(lang.hitch(this, function (response) {
+            if (node) {
+              node.set("options", response.selectOptions);
+              node.set("value", response.displayField);
+            }
+          }));
+        }
+      },
+
+      _getOptions: function (source, featureLayer) {
+        var def = new Deferred();
+        this._featureLayerLoaded(featureLayer).then(lang.hitch(this, function () {
+          var displayFieldValue = source.displayField || featureLayer.displayField || this._getFirstStringField(featureLayer);
+          var options = [];
+          var fields = featureLayer.fields;
+          if (fields && fields.length) {
+            for (var i = 0; i < fields.length; i++) {
+              var field = fields[i];
+              var option = {
+                label: field.alias || field.name,
+                value: field.name
+              };
+              if (displayFieldValue && displayFieldValue === field.name) {
+                option.selected = true;
+              }
+              options.push(option);
+            }
+          }
+          def.resolve({
+            displayField: displayFieldValue,
+            selectOptions: options
+          });
+        }));
+        return def.promise;
+      },
+
+      _insertFields: function (selectMenu, featureLayer, searchFields) {
+        this._featureLayerLoaded(featureLayer).then(lang.hitch(this, function () {
+          var fields = featureLayer.fields;
+          if (fields && fields.length) {
+            for (var i = 0; i < fields.length; i++) {
+              var field = fields[i];
+              var selected = false;
+              if (array.indexOf(searchFields, field.name) > -1) {
+                selected = true;
+              }
+              domConstruct.create("option", {
+                selected: selected,
+                textContent: field.alias || field.name,
+                value: field.name
+              }, selectMenu);
+            }
+          }
+        }));
+      },
+
+      /* ---------------- */
+      /* Handle Stateful Props   */
+      /* ---------------- */
+
+      _setConfigAttr: function (newVal) {
+        if (this._created) {
+          newVal = this._activeSourceIndex(newVal);
+        }
+        this._set("config", newVal);
+        if (this._created) {
+          this._displayConfig();
+        }
+      }
+
+    });
+  });

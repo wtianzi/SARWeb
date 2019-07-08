@@ -1,0 +1,33 @@
+{
+  "type":"FeatureCollection",
+  "metadata":{
+    "generated":1562604947000,
+    "title":"Lost person behavior",
+    "status":200,"api":"1.0","count":3
+    },
+    "features":[
+      {
+        "type":"Feature",
+        "properties":{
+          "mag":1.1799999999999999,"place":"17km ESE of Little Lake, CA","time":1562604800100,"updated":1562604941283,"tz":-480,
+          "url":"https://earthquake.usgs.gov/earthquakes/eventpage/ci38489167","detail":"https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/ci38489167.geojson",
+          "felt":null,"cdi":null,"mmi":null,"alert":null,"status":"automatic","tsunami":0,"sig":21,"net":"ci","code":"38489167",
+          "ids":",ci38489167,","sources":",ci,","types":",geoserve,nearby-cities,origin,phase-data,scitech-link,","nst":12,"dmin":0.084370000000000001,
+          "rms":0.10000000000000001,"gap":76,"magType":"ml","type":"earthquake","title":"M 1.2 - 17km ESE of Little Lake, CA"
+          },
+        "geometry":{"type":"Point","coordinates":[-117.7265015,35.890335100000001,5.1399999999999997]},
+        "id":"ci38489167"
+      },
+      {
+        "type":"Feature",
+        "properties":{"mag":2.0800000000000001,"place":"16km E of Little Lake, CA","time":1562604729020,"updated":1562604854873,"tz":-480,"url":"https://earthquake.usgs.gov/earthquakes/eventpage/ci38489159","detail":"https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/ci38489159.geojson","felt":null,"cdi":null,"mmi":null,"alert":null,"status":"automatic","tsunami":0,"sig":67,"net":"ci","code":"38489159","ids":",ci38489159,","sources":",ci,","types":",geoserve,nearby-cities,origin,phase-data,scitech-link,","nst":23,"dmin":0.070110000000000006,"rms":0.17999999999999999,"gap":54,"magType":"ml","type":"earthquake","title":"M 2.1 - 16km E of Little Lake, CA"},
+        "geometry":{"type":"Point","coordinates":[-117.72816469999999,35.917331699999998,1.3200000000000001]},
+        "id":"ci38489159"
+      },
+      {"type":"Feature",
+        "properties":{"mag":0.59999999999999998,"place":"65km NNW of Nellis Air Force Base, Nevada","time":1560013023545,"updated":1561495530649,"tz":-480,"url":"https://earthquake.usgs.gov/earthquakes/eventpage/nn00687155","detail":"https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nn00687155.geojson","felt":null,"cdi":null,"mmi":null,"alert":null,"status":"reviewed","tsunami":0,"sig":6,"net":"nn","code":"00687155","ids":",nn00687155,","sources":",nn,","types":",geoserve,origin,phase-data,","nst":5,"dmin":0.33500000000000002,"rms":0.1041,"gap":182.96000000000001,"magType":"ml","type":"earthquake","title":"M 0.6 - 65km NNW of Nellis Air Force Base, Nevada"},
+        "geometry":{"type":"Point","coordinates":[-115.4616,36.733600000000003,0]},
+        "id":"nn00687155"
+        }],
+    "bbox":[-179.9631,-65.6071,-3.63,179.9458,84.4877,641.95]
+  }

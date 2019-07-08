@@ -8,13 +8,14 @@
   <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}">
   <title>SAR MAPPING DEMO</title>
 
-  <link rel="stylesheet" href="https://js.arcgis.com/4.10/esri/css/main.css">
+  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
 
 
   <script src="{% static 'js/d3.v4.min.js' %}"></script>
   <script src="{% static 'js/d3-polygon-clip.js' %}"></script>
   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-  <script src="https://js.arcgis.com/4.10/"></script>
+  <script src="https://js.arcgis.com/4.12/"></script>
+  <script src="{% static 'js/randompolygon.js' %}"></script>
 
   <link rel="stylesheet" type="text/css" href="{% static "taskgeneration.css" %}"  />
   <style>
@@ -55,14 +56,17 @@
       "esri/geometry/Point",
       "esri/layers/OpenStreetMapLayer",
       "esri/widgets/Track",
-      "esri/widgets/Search"
+      "esri/widgets/Search",
+      "esri/layers/GeoJSONLayer",
+      "esri/geometry/Multipoint"
 
     ], function(
       SketchViewModel, Graphic, Map, MapView, FeatureLayer,
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
       Draw,CoordinateConversion,
       DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
-      OpenStreetMapLayer,Track,Search
+      OpenStreetMapLayer,Track,Search,
+      GeoJSONLayer,Multipoint
     ) {
       let view, sketchViewModel,
         validSymbol, draw,
@@ -110,7 +114,66 @@
 
       const graphicsLayer = new GraphicsLayer();
       const gpsgraphicsLayer = new GraphicsLayer();
+
+
+      const heatmaprenderer = {
+          type: "heatmap",
+          colorStops: [
+            { color: "rgba(63, 40, 102, 0)", ratio: 0 },
+            { color: "#472b77", ratio: 0.083 },
+            { color: "#4e2d87", ratio: 0.166 },
+            { color: "#563098", ratio: 0.249 },
+            { color: "#5d32a8", ratio: 0.332 },
+            { color: "#6735be", ratio: 0.415 },
+            { color: "#7139d4", ratio: 0.498 },
+            { color: "#7b3ce9", ratio: 0.581 },
+            { color: "#853fff", ratio: 0.664 },
+            { color: "#a46fbf", ratio: 0.747 },
+            { color: "#c29f80", ratio: 0.83 },
+            { color: "#e0cf40", ratio: 0.913 },
+            { color: "#ffff00", ratio: 1 }
+          ],
+          maxPixelIntensity: 25,
+          minPixelIntensity: 0
+        };
+
+
+        const geojsonLayer = new GeoJSONLayer({
+          url: "{% static 'data/geojsonheatmap.geojson' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
+          copyright: "USGS Earthquakes",
+          renderer: heatmaprenderer
+        });
+
+    //geometry {coordinate}
+    function addPointsToGeolayer(point){
+      const attributes = {};
+      attributes["Description"] = "This is the description";
+      attributes["Address"] = "380 New York St";
+
+      // Date.now() returns number of milliseconds elapsed
+      // since 1 January 1970 00:00:00 UTC.
+      attributes["Report_Date"] = Date.now();
+
+      const addFeature =  new Graphic({
+        geometry: point,
+        attributes: attributes
+      });
+
+      //console.log(addFeature);
+
+      const deleteFeature = {
+       objectId: ['ci38489159']
+      };
+
+      const promise = geojsonLayer.applyEdits({
+        addFeatures: [addFeature]
+      });
+
+      //view.graphics.add(addFeature);//testing multipoint
+    }
+
       setUpView();
+
       function polygonClone(polygon) {
         var cloned = [],
             i,
@@ -144,6 +207,9 @@
       // This function is called when a user clicks on the view.
       function setUpGraphicClickHandler() {
         view.on("click", function(event) {
+          //console.log(view);
+
+
 
           // check if the sketch's state active if it is then that means
           // the graphic is already being updated, no action required.
@@ -201,6 +267,7 @@
         let textend;
         let wholearea;
         if(activeWidget){
+          console.log(activeWidget);
           textent=activeWidget.viewModel.measurement.geometry.extent;
           wholearea=activeWidget.viewModel.measurement.area;
         }
@@ -252,6 +319,7 @@
           [-8968375.750080956, 4466919.221886037]
         ];
         if(activeWidget){
+          console.log(activeWidget);
           vpolygons=ClipPolygongsByPoints(vpolygons,activeWidget.viewModel.measurement.geometry.rings[0].slice(0,activeWidget.viewModel.measurement.geometry.rings[0].length-1));
         }
 
@@ -552,6 +620,10 @@
 
         });
         map.add(riverLayer);
+
+        map.add(geojsonLayer);
+
+
         console.log(riverLayer.gdbVersion);
         view = new MapView({
           container: "viewDiv",
@@ -596,6 +668,7 @@
 
         //generate voronoi
         document.getElementById("btngeneratearea").onclick=function() {
+
           graphicsLayer.removeAll();
           view.graphics.removeAll();
           gpsgraphicsLayer.removeAll();
@@ -756,6 +829,7 @@
                 //array, start end with the two nearby points
                 //let array_points=GetPolygonPoints(mover.x,mover.y,allpolygons[i].geometry.rings[0]);
                 let array_points=GetPolygonPoints(orignalmover[0],orignalmover[1],allpolygons[i].geometry.rings[0]);
+
                 activepolygonpoints.push(array_points);
                 //console.log("mover"+mover.x+","+mover.y);
                 //console.log("original"+orignalmover[0]+","+orignalmover[1]);
@@ -933,14 +1007,14 @@ document.getElementById("distanceButton").addEventListener("click",
            break;
          case "area":
            activeWidget = new AreaMeasurement2D({
-             view: view,
-             unit: "acres"
+             view: view
            });
 
            // skip the initial 'new measurement' button
            activeWidget.viewModel.newMeasurement();
 
            view.ui.add(activeWidget, "bottom-right");
+           console.log(activeWidget);
            setActiveButton(document.getElementById('areaButton'));
            break;
          case null:
@@ -968,11 +1042,7 @@ document.getElementById("distanceButton").addEventListener("click",
      //------------------------------------------------
      document.getElementById("clearall").addEventListener("click",
        function () {
-         //activeWidget.viewModel.measurementLabel.area
-         //activeWidget.viewModel.measurement.geometry.rings: [[,],[,],[,]]
-         //wholearea=activeWidget.viewModel.measurementLabel.area;
-         //wholetask=activeWidget.viewModel.measurement;
-         //wholetask=activeWidget.viewModel.measurement;
+
          ClearAll();
        });
 
@@ -990,7 +1060,10 @@ document.getElementById("distanceButton").addEventListener("click",
          gpsgraphicsLayer.removeAll();
          setActiveWidget(null);
          sketchViewModel.complete();
-         //.destroy();
+
+         view.ui.remove(activeWidget);
+         //activeWidget.destroy();
+         activeWidget = null;
        }
 
        function PolyArrayToJson(polyarray)
@@ -1048,6 +1121,26 @@ document.getElementById("distanceButton").addEventListener("click",
              });
            }
          });
+
+         document.getElementById("btngenerateheatmap").onclick=function(){
+           //heatmap
+           //map.remove(geojsonLayer);
+           //map.add(geojsonLayer);
+
+           geojsonLayer.cancelLoad();
+           for(let j=0;j<20;j++){
+             let in_point=new Point({
+               x:view.center.x+ 0.2*(Math.random()-0.5)*view.extent.width,
+               y:view.center.y+ 0.2*(Math.random()-0.5)*view.extent.height,
+               spatialReference:view.spatialReference
+             });
+             //console.log(in_point);
+             for (var i=0;i<Math.random()*20;i=i+1){
+               addPointsToGeolayer(in_point);
+             }
+           }
+
+         };
 
          //--------------------------------------------------
 
@@ -1211,6 +1304,7 @@ document.getElementById("distanceButton").addEventListener("click",
       <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
 
       <input type="button" class="edit-button" value="Generate area" id="btngeneratearea">
+      <input type="button" class="edit-button" value="Generate random heatmap" id="btngenerateheatmap">
       <hr/>
       <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 

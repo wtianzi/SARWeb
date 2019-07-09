@@ -7,30 +7,40 @@
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
   <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}">
   <title>SAR MAPPING DEMO</title>
-
-  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/css/main.css">
-
+  <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/themes/light/main.css"/>
 
   <script src="{% static 'js/d3.v4.min.js' %}"></script>
   <script src="{% static 'js/d3-polygon-clip.js' %}"></script>
   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
   <script src="https://js.arcgis.com/4.12/"></script>
   <script src="{% static 'js/randompolygon.js' %}"></script>
-
   <link rel="stylesheet" type="text/css" href="{% static "taskgeneration.css" %}"  />
   <style>
   html,
   body,
-  #viewDiv {
-    padding: 0;
-    margin: 0;
-    height: 100%;
-    width: 100%;
-  }
-  #text {
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      #sidebar {
+        z-index: 99;
+        position: absolute;
+        top: 10%;
+        left: 1%;
+        height: 80%;
+        background: rgba(0, 0, 0, 0.5);
+        width: 80.2%;
+      }
+
+      #text {
         color: white;
         padding: 3%;
       }
+
+
   </style>
   <script>
 
@@ -96,7 +106,6 @@
       var glvertices;
       var glverticeslist=[];
       let maxdistanceerror = 0.0001;
-      let jsonextent;
 
       //acer
 
@@ -109,31 +118,26 @@
       let allpolygons=[];
       let activepolygonset=[];
       let activepolygonpoints=[];
+      let area_extent;
 
       let gpspatharray=[];
 
       const graphicsLayer = new GraphicsLayer();
       const gpsgraphicsLayer = new GraphicsLayer();
-
+      const graphicHeatmapLayer = new GraphicsLayer();
 
       const heatmaprenderer = {
           type: "heatmap",
           colorStops: [
-            { color: "rgba(63, 40, 102, 0)", ratio: 0 },
-            { color: "#472b77", ratio: 0.083 },
-            { color: "#4e2d87", ratio: 0.166 },
-            { color: "#563098", ratio: 0.249 },
-            { color: "#5d32a8", ratio: 0.332 },
-            { color: "#6735be", ratio: 0.415 },
-            { color: "#7139d4", ratio: 0.498 },
-            { color: "#7b3ce9", ratio: 0.581 },
-            { color: "#853fff", ratio: 0.664 },
-            { color: "#a46fbf", ratio: 0.747 },
-            { color: "#c29f80", ratio: 0.83 },
-            { color: "#e0cf40", ratio: 0.913 },
-            { color: "#ffff00", ratio: 1 }
+            { ratio: 0, color: "rgba(255, 255, 255, 0)" },
+            { ratio: 0.1, color: "rgba(128, 0, 255, 0.1)" },
+            { ratio: 0.3, color: "rgba(0, 0, 255, 0.1)" },
+            { ratio: 0.5, color: "rgba(0, 255, 0, 0.1)" },
+            { ratio: 0.7, color: "rgba(255, 255, 0, 0.1)" },
+            { ratio: 0.9, color: "rgba(255, 0, 0, 0.1)" },
+            { ratio: 1, color: "rgba(255, 0, 0, 0.1)" }
           ],
-          maxPixelIntensity: 25,
+          maxPixelIntensity: 50,
           minPixelIntensity: 0
         };
 
@@ -143,6 +147,12 @@
           copyright: "USGS Earthquakes",
           renderer: heatmaprenderer
         });
+
+        const map = new Map({
+          basemap: "hybrid",//"hybrid",//"satellite",
+          layers: [  graphicsLayer,gpsgraphicsLayer]
+        });
+
 
     //geometry {coordinate}
     function addPointsToGeolayer(point){
@@ -273,13 +283,23 @@
         }
         else{
           //use view
-          jsonextent=view.extent.toJSON();
+          let jsonextent=view.extent.toJSON();
           //textent=view.extent.expand(1);
           textent=Extent.fromJSON(jsonextent);
-          textent=textent.expand(0.95);
+
+          let ori_xmin=textent.xmin;
+          let ori_wid=textent.width*0.01;
+
+          textent=textent.expand(0.8);
+
+          let centerpoint = textent.center.clone();
+          centerpoint.x= textent.center.x-(textent.xmin-ori_xmin-ori_wid);
+          textent=textent.centerAt(centerpoint);
+
+          area_extent=textent;
+
           wholearea=geometryEngine.planarArea(Polygon.fromExtent(textent));
         }
-
         let npoints=2*Math.round(wholearea/eacharea+0.5);
         //wholearea=wholetask.area;//metric   240  : acre  60
 
@@ -599,10 +619,7 @@
 
         //graphicsLayer = new GraphicsLayer();
 
-        const map = new Map({
-          basemap: "hybrid",//"hybrid",//"satellite",
-          layers: [  graphicsLayer,gpsgraphicsLayer]
-        });
+
 
 
         var transportationLayer = new TileLayer({
@@ -623,13 +640,15 @@
 
         map.add(geojsonLayer);
 
+        map.add(graphicHeatmapLayer);
 
-        console.log(riverLayer.gdbVersion);
+        //console.log(riverLayer.gdbVersion);
         view = new MapView({
           container: "viewDiv",
           map: map,
           zoom: scale,
-          center: [gcx,gcy]//,35.4
+          center: [gcx,gcy],//,35.4
+
         });
         var toggle = new BasemapToggle({
           // 2 - Set properties
@@ -1058,6 +1077,7 @@ document.getElementById("distanceButton").addEventListener("click",
          graphicsLayer.removeAll();
          view.graphics.removeAll();
          gpsgraphicsLayer.removeAll();
+         graphicHeatmapLayer.removeAll();
          setActiveWidget(null);
          sketchViewModel.complete();
 
@@ -1128,10 +1148,10 @@ document.getElementById("distanceButton").addEventListener("click",
            //map.add(geojsonLayer);
 
            geojsonLayer.cancelLoad();
-           for(let j=0;j<20;j++){
+           for(let j=0;j<50;j++){
              let in_point=new Point({
-               x:view.center.x+ 0.2*(Math.random()-0.5)*view.extent.width,
-               y:view.center.y+ 0.2*(Math.random()-0.5)*view.extent.height,
+               x:view.center.x+ 0.5*(Math.random()-0.5)*view.extent.width,
+               y:view.center.y+ 0.5*(Math.random()-0.5)*view.extent.height,
                spatialReference:view.spatialReference
              });
              //console.log(in_point);
@@ -1140,8 +1160,21 @@ document.getElementById("distanceButton").addEventListener("click",
              }
            }
 
+
          };
 
+         document.getElementById("btngenerateheatmapimg").onclick=function(){
+           //show the sidebar
+           if( $("#sidebar").is(":visible") ){
+             $("#sidebar").hide();
+           }
+           else{
+             //console.log(view);
+             $("#heatimgid").height(view.height*0.8);
+             $("#sidebar").show();
+           }
+
+         };
          //--------------------------------------------------
 
           function getRandomInt(max) {
@@ -1281,6 +1314,10 @@ document.getElementById("distanceButton").addEventListener("click",
            console.log("GPSStart is null");
          }
 
+
+
+        var graphicA = new Graphic();  // graphic with line geometry
+        graphicHeatmapLayer.graphics.add();
       //--------------------------------------------------
     });
 
@@ -1289,6 +1326,8 @@ document.getElementById("distanceButton").addEventListener("click",
 </head>
 
 <body>
+
+
   <div id="editArea" class="editArea-container">
     <h2 class="list-heading">Tools</h2>
     <div id="addFeatureDiv">
@@ -1305,6 +1344,7 @@ document.getElementById("distanceButton").addEventListener("click",
 
       <input type="button" class="edit-button" value="Generate area" id="btngeneratearea">
       <input type="button" class="edit-button" value="Generate random heatmap" id="btngenerateheatmap">
+      <input type="button" class="edit-button" value="Generate heatImage" id="btngenerateheatmapimg">
       <hr/>
       <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
@@ -1334,7 +1374,9 @@ document.getElementById("distanceButton").addEventListener("click",
   </div>
 
   <div id="viewDiv">
-
+    <div id="sidebar" class="esri-widget" style="display:none">
+        <img id="heatimgid" src="{% static 'img/testheatmap2.png' %}" alt="Heatmap" style="width:100%;height:auto;border:0;">
+    </div>
   </div>
 
 

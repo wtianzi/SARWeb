@@ -97,6 +97,7 @@
       var scale=16;
       //36.8176602,-80.363078
       //kentlane farm (-80.572567,37.203604)
+      //{" wkid":4326 }: latetude
       var gcx=-80.363078;
       var gcy=36.8176602;
 
@@ -121,6 +122,7 @@
       let area_extent;
 
       let gpspatharray=[];
+      var arr_featureset=[];
 
       const graphicsLayer = new GraphicsLayer();
       const gpsgraphicsLayer = new GraphicsLayer();
@@ -155,31 +157,65 @@
 
 
     //geometry {coordinate}
-    function addPointsToGeolayer(point){
-      const attributes = {};
-      attributes["Description"] = "This is the description";
-      attributes["Address"] = "380 New York St";
+    function deletePointsToGeolayer(){
+      const query = geojsonLayer.createQuery();
+      var editFeature;
+      var t_res=geojsonLayer.queryFeatures(query).then( function(results){
+        editFeature=results.features;
+        console.log(editFeature);
+        const promise = geojsonLayer.applyEdits({
+          deleteFeatures: editFeature
+        });
 
-      // Date.now() returns number of milliseconds elapsed
-      // since 1 January 1970 00:00:00 UTC.
-      attributes["Report_Date"] = Date.now();
-
-      const addFeature =  new Graphic({
-        geometry: point,
-        attributes: attributes
       });
 
-      //console.log(addFeature);
 
+    }
+
+    function addPointsToGeolayer_new(arr_points){
+      arr_featureset=[];
+      const attributes = {};
+      attributes["Description"] = "This is the description";
+      attributes["magnitude"] = "2";
+      attributes["Report_Date"] = Date.now();
+      //console.log(arr_points);
+      for (var i=0;i<arr_points.points.length;i++){
+        let in_point=new Point({
+          x:arr_points.points[i][0],
+          y:arr_points.points[i][1],
+          spatialReference:view.spatialReference
+        });
+
+        var t_graphic =  new Graphic({
+          geometry: in_point,
+          attributes: attributes,
+          id:i,
+          spatialReference:view.spatialReference
+        });
+        arr_featureset.push(t_graphic);
+      }
+      //console.log(arr_featureset);
+
+
+      let in_point=new Point({
+        x:arr_points.points[0][0],
+        y:arr_points.points[0][1],
+        spatialReference:view.spatialReference
+      });
+      var addFeature =  new Graphic({
+        geometry: in_point,
+        attributes: attributes,
+        spatialReference:view.spatialReference
+      });
       const deleteFeature = {
-       objectId: ['ci38489159']
+       objectId: [0]
       };
 
       const promise = geojsonLayer.applyEdits({
-        addFeatures: [addFeature]
+        addFeatures: arr_featureset//[addFeature]//[arr_featureset[0],arr_featureset[1]]//
       });
 
-      //view.graphics.add(addFeature);//testing multipoint
+      //console.log(geojsonLayer);
     }
 
       setUpView();
@@ -1147,19 +1183,27 @@ document.getElementById("distanceButton").addEventListener("click",
            //map.remove(geojsonLayer);
            //map.add(geojsonLayer);
 
-           geojsonLayer.cancelLoad();
-           for(let j=0;j<50;j++){
+           //geojsonLayer.cancelLoad();
+
+           var t_mpt =new Multipoint({
+             type:"multipoint",
+             spatialReference:view.spatialReference
+           });
+
+           //500
+           for(let j=0;j<500;j++){
              let in_point=new Point({
-               x:view.center.x+ 0.5*(Math.random()-0.5)*view.extent.width,
-               y:view.center.y+ 0.5*(Math.random()-0.5)*view.extent.height,
+               x:view.center.x+ 0.6*(Math.random()-0.5)*view.extent.width,
+               y:view.center.y+ 0.6*(Math.random()-0.5)*view.extent.height,
                spatialReference:view.spatialReference
+
              });
-             //console.log(in_point);
-             for (var i=0;i<Math.random()*20;i=i+1){
-               addPointsToGeolayer(in_point);
+             for (var i=0;i<Math.random()*40;i=i+1){
+                t_mpt.addPoint(in_point);
              }
            }
-
+           deletePointsToGeolayer();
+          addPointsToGeolayer_new(t_mpt);
 
          };
 

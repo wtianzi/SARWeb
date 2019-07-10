@@ -1,10 +1,10 @@
 # SAR Web User Interface Demo
 ![Web interface](screen/screen1.png)
 [more examples](screen/)
-## Built based on 
+## Built based on
 - DJango as sever
-- ESRI js development platform, 
-- d3 for polygon and voronoi. 
+- ESRI js development platform,
+- d3 for polygon and voronoi.
 - SQLite as database
 - DJango REST freamwork is needed
 
@@ -15,6 +15,12 @@ Reference
 
 URL
 http://127.0.0.1:8000/app3/
+-----------2019 07 09-------------
+Add two methods of generate heatmap
+- add coordinate to geojsonLayer
+- add a png file to viewdiv
+
+![geojsonLayer](screen/heatmap_esri.png)
 
 -----------2019 06 12-------------
 
@@ -33,7 +39,7 @@ If the migration sends errors, try:
 - manage.py createsuperuser
 Enter username
 Enter password
-The username and password will be used to post/update gpsdatas. 
+The username and password will be used to post/update gpsdatas.
 
 New:
 - Home page for sign up : http://127.0.0.1:8000

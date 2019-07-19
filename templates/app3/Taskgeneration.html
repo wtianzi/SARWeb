@@ -157,7 +157,7 @@
 
       const heatmaprenderer = {
         type: "heatmap",
-        blurRadius:15,
+        blurRadius:10,
         colorStops: color_0,
         field: "Magnitude",
         maxPixelIntensity: 100,
@@ -324,7 +324,7 @@
         let textend;
         let wholearea;
         if(activeWidget){
-          console.log(activeWidget);
+          //console.log(activeWidget);
           textent=activeWidget.viewModel.measurement.geometry.extent;
           wholearea=activeWidget.viewModel.measurement.area;
         }
@@ -660,15 +660,6 @@
           //spatialReference: { wkid: 4326  }
           spatialReference: { wkid: 102100  }
         });
-
-
-
-
-        //graphicsLayer = new GraphicsLayer();
-
-
-
-
         var transportationLayer = new TileLayer({
           url: "https://server.arcgisonline.com/arcgis/rest/services/Reference/World_Transportation/MapServer",
           // This property can be used to uniquely identify the layer
@@ -729,6 +720,7 @@
         draw = new Draw({
         view: view
         });
+
 
       }
 
@@ -1195,10 +1187,22 @@ document.getElementById("distanceButton").addEventListener("click",
            let totalpoint=200;
            let maxdensity=100;
 
+           let x,y;
+
            var t_mpt=new Array(totalpoint);
            for(let j=0;j<totalpoint;j++){
-             let x=view.center.x+ 0.6*(Math.random()-0.5)*view.extent.width;
-             let y=view.center.y+ 0.6*(Math.random()-0.5)*view.extent.height;
+
+
+             //console.log(area_extent);
+             if (area_extent == null){
+               x=view.center.x+ 0.6*(Math.random()-0.5)*view.extent.width;
+               y=view.center.y+ 0.6*(Math.random()-0.5)*view.extent.height;
+             }
+             else{
+               x=area_extent.center.x+ 0.6*(Math.random()-0.5)*area_extent.width;
+               y=area_extent.center.y+ 0.6*(Math.random()-0.5)*area_extent.height;
+             }
+
              let t_density= Math.random()*maxdensity;
              t_mpt[j]=[x,y,t_density];
            }
@@ -1390,6 +1394,7 @@ document.getElementById("distanceButton").addEventListener("click",
       <input type="button" class="edit-button" value="Generate area" id="btngeneratearea">
       <input type="button" class="edit-button" value="Generate random heatmap" id="btngenerateheatmap">
       <input type="button" class="edit-button" value="Generate heatImage" id="btngenerateheatmapimg">
+
       <hr/>
       <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 

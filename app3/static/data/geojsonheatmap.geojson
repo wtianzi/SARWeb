@@ -7,8 +7,8 @@
     },
     "features":[
       {"type":"Feature",
-        "properties":{"mag":0.59999999999999998,"place":"65km NNW of Nellis Air Force Base, Nevada","time":1560013023545,"updated":1561495530649,"tz":-480,"url":"https://earthquake.usgs.gov/earthquakes/eventpage/nn00687155","detail":"https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nn00687155.geojson","felt":null,"cdi":null,"mmi":null,"alert":null,"status":"reviewed","tsunami":0,"sig":6,"net":"nn","code":"00687155","ids":",nn00687155,","sources":",nn,","types":",geoserve,origin,phase-data,","nst":5,"dmin":0.33500000000000002,"rms":0.1041,"gap":182.96000000000001,"magType":"ml","type":"earthquake","title":"M 0.6 - 65km NNW of Nellis Air Force Base, Nevada"},
-        "geometry":{"type":"Point","coordinates":[300,300,0]},
+        "properties":{"Magnitude":8.0,"place":"65km NNW of Nellis Air Force Base, Nevada","time":1560013023545,"updated":1561495530649,"tz":-480,"url":"https://earthquake.usgs.gov/earthquakes/eventpage/nn00687155","detail":"https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/nn00687155.geojson","felt":null,"cdi":null,"mmi":null,"alert":null,"status":"reviewed","tsunami":0,"sig":6,"net":"nn","code":"00687155","ids":",nn00687155,","sources":",nn,","types":",geoserve,origin,phase-data,","nst":5,"dmin":0.33500000000000002,"rms":0.1041,"gap":182.96000000000001,"magType":"ml","type":"earthquake","title":"M 0.6 - 65km NNW of Nellis Air Force Base, Nevada"},
+        "geometry":{"type":"Point","coordinates":[36.81677563595975,-80.36194319134714,0]},
         "id":"nn00687155"
         }],
     "bbox":[-179.9631,-65.6071,-3.63,179.9458,84.4877,641.95]

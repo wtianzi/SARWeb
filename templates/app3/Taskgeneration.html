@@ -31,7 +31,7 @@
         top: 10%;
         left: 1%;
         height: 80%;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.05);
         width: 80.2%;
       }
 
@@ -127,33 +127,55 @@
       const graphicsLayer = new GraphicsLayer();
       const gpsgraphicsLayer = new GraphicsLayer();
       const graphicHeatmapLayer = new GraphicsLayer();
+      const color_1= [
+        { ratio: 0, color: "rgba(133, 193, 200, 0)" },
+        { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
+        { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
+        { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
+        { ratio: 0.0853482, color: "rgba(144, 161, 190, 1)" },
+        { ratio: 0.1606965, color: "rgba(156,129, 132, 1)" },
+        { ratio: 0.2360448, color: "rgba(167, 97, 170, 1)" },
+        { ratio: 0.311393, color: "rgba(175, 73, 128, 1)" },
+        { ratio: 0.386741458, color: "rgba(184, 48, 85, 1)" },
+        { ratio: 0.46208975, color: "rgba(192, 24, 42, 1)" },
+        { ratio: 0.537438, color: "rgba(200, 0, 0, 1)" },
+        { ratio: 0.612786, color: "rgba(211, 51, 0, 1)" },
+        { ratio: 0.688134625, color: "rgba(222, 102, 0, 1)" },
+        { ratio: 0.7634829166666667, color: "rgba(233, 153, 0, 1)" },
+        { ratio: 0.8388312, color: "rgba(244, 204, 0, 1)" },
+        { ratio: 0.9141795, color: "rgba(255, 255, 0, 1)" }
+      ];
+      const color_0= [
+        { ratio: 0, color: "rgba(255, 255, 255, 0)" },
+        { ratio: 0.1, color: "rgba(128, 0, 255, 0.2)" },
+        { ratio: 0.3, color: "rgba(0, 0, 255, 0.2)" },
+        { ratio: 0.5, color: "rgba(0, 255, 0, 0.2)" },
+        { ratio: 0.7, color: "rgba(255, 255, 0, 0.2)" },
+        { ratio: 0.9, color: "rgba(255, 0, 0,0.2)" },
+        { ratio: 1, color: "rgba(255, 0, 0, 0.2)" }
+      ];
 
       const heatmaprenderer = {
-          type: "heatmap",
-          colorStops: [
-            { ratio: 0, color: "rgba(255, 255, 255, 0)" },
-            { ratio: 0.1, color: "rgba(128, 0, 255, 0.1)" },
-            { ratio: 0.3, color: "rgba(0, 0, 255, 0.1)" },
-            { ratio: 0.5, color: "rgba(0, 255, 0, 0.1)" },
-            { ratio: 0.7, color: "rgba(255, 255, 0, 0.1)" },
-            { ratio: 0.9, color: "rgba(255, 0, 0, 0.1)" },
-            { ratio: 1, color: "rgba(255, 0, 0, 0.1)" }
-          ],
-          maxPixelIntensity: 50,
-          minPixelIntensity: 0
-        };
+        type: "heatmap",
+        blurRadius:15,
+        colorStops: color_0,
+        field: "Magnitude",
+        maxPixelIntensity: 100,
+        minPixelIntensity: 0
+      };
 
 
-        const geojsonLayer = new GeoJSONLayer({
-          url: "{% static 'data/geojsonheatmap.geojson' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
-          copyright: "USGS Earthquakes",
-          renderer: heatmaprenderer
-        });
+      const geojsonLayer = new GeoJSONLayer({
+        url: "{% static 'data/geojsonheatmap.geojson' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
+        copyright: "USGS Earthquakes",
+        renderer: heatmaprenderer,
+        opacity: 0.2
+      });
 
-        const map = new Map({
-          basemap: "hybrid",//"hybrid",//"satellite",
-          layers: [  graphicsLayer,gpsgraphicsLayer]
-        });
+      const map = new Map({
+        basemap: "hybrid",//"hybrid",//"satellite",
+        layers: [  graphicsLayer,gpsgraphicsLayer]
+      });
 
 
     //geometry {coordinate}
@@ -162,7 +184,7 @@
       var editFeature;
       var t_res=geojsonLayer.queryFeatures(query).then( function(results){
         editFeature=results.features;
-        console.log(editFeature);
+        //console.log(editFeature);
         const promise = geojsonLayer.applyEdits({
           deleteFeatures: editFeature
         });
@@ -172,41 +194,32 @@
 
     }
 
-    function addPointsToGeolayer_new(arr_points){
+    function addPointsToGeolayer(arr_points){
       arr_featureset=[];
-      const attributes = {};
+      var attributes = {};
       attributes["Description"] = "This is the description";
-      attributes["magnitude"] = "2";
+      //attributes["Magnitude"] = 8;
       attributes["Report_Date"] = Date.now();
       //console.log(arr_points);
-      for (var i=0;i<arr_points.points.length;i++){
+      for (var i=0;i<arr_points.length;i++){
         let in_point=new Point({
-          x:arr_points.points[i][0],
-          y:arr_points.points[i][1],
+          x:arr_points[i][0],
+          y:arr_points[i][1],
           spatialReference:view.spatialReference
         });
 
+        attributes["Magnitude"] = arr_points[i][2];
+        attributes["OBJECTID"] = i;
+
         var t_graphic =  new Graphic({
           geometry: in_point,
-          attributes: attributes,
-          id:i,
-          spatialReference:view.spatialReference
+          attributes: attributes
         });
+
         arr_featureset.push(t_graphic);
       }
       //console.log(arr_featureset);
 
-
-      let in_point=new Point({
-        x:arr_points.points[0][0],
-        y:arr_points.points[0][1],
-        spatialReference:view.spatialReference
-      });
-      var addFeature =  new Graphic({
-        geometry: in_point,
-        attributes: attributes,
-        spatialReference:view.spatialReference
-      });
       const deleteFeature = {
        objectId: [0]
       };
@@ -214,8 +227,6 @@
       const promise = geojsonLayer.applyEdits({
         addFeatures: arr_featureset//[addFeature]//[arr_featureset[0],arr_featureset[1]]//
       });
-
-      //console.log(geojsonLayer);
     }
 
       setUpView();
@@ -1181,30 +1192,19 @@ document.getElementById("distanceButton").addEventListener("click",
 
          document.getElementById("btngenerateheatmap").onclick=function(){
            //heatmap
-           //map.remove(geojsonLayer);
-           //map.add(geojsonLayer);
+           let totalpoint=200;
+           let maxdensity=100;
 
-           //geojsonLayer.cancelLoad();
-
-           var t_mpt =new Multipoint({
-             type:"multipoint",
-             spatialReference:view.spatialReference
-           });
-
-           //500
-           for(let j=0;j<500;j++){
-             let in_point=new Point({
-               x:view.center.x+ 0.6*(Math.random()-0.5)*view.extent.width,
-               y:view.center.y+ 0.6*(Math.random()-0.5)*view.extent.height,
-               spatialReference:view.spatialReference
-
-             });
-             for (var i=0;i<Math.random()*40;i=i+1){
-                t_mpt.addPoint(in_point);
-             }
+           var t_mpt=new Array(totalpoint);
+           for(let j=0;j<totalpoint;j++){
+             let x=view.center.x+ 0.6*(Math.random()-0.5)*view.extent.width;
+             let y=view.center.y+ 0.6*(Math.random()-0.5)*view.extent.height;
+             let t_density= Math.random()*maxdensity;
+             t_mpt[j]=[x,y,t_density];
            }
+
            deletePointsToGeolayer();
-          addPointsToGeolayer_new(t_mpt);
+           addPointsToGeolayer(t_mpt);
 
          };
 

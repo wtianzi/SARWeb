@@ -78,8 +78,9 @@
       OpenStreetMapLayer,Track,Search,
       GeoJSONLayer,Multipoint
     ) {
-      let view, sketchViewModel, draw,
-        newDevelopmentGraphic,
+      let view, sketchViewModel,
+        validSymbol, draw,
+        invalidSymbol, newDevelopmentGraphic,
         instructionsExpand,coordinateLayer;
       let intersects = false,
         contains = true;
@@ -118,13 +119,10 @@
       let allpolygons=[];
       let activepolygonset=[];
       let activepolygonpoints=[];
-      let move_polygon;
       let area_extent;
 
       let gpspatharray=[];
       var arr_featureset=[];
-
-      let validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//solid
 
       const graphicsLayer = new GraphicsLayer();
       const gpsgraphicsLayer = new GraphicsLayer();
@@ -461,7 +459,7 @@
 
       function addGraphics(vtriangles) {
         // transfer the voronoi polygon:vpolygons to gispolygon
-
+        let validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//solid
         let text_symbol = {
           type: "text",  // autocasts as new TextSymbol()
           color: "white",
@@ -481,7 +479,7 @@
           let polygon = createGeometry(vtriangles[i]);
           let newDevelopmentGraphic = new Graphic({
             geometry: polygon,
-            symbol: validSymbol,
+            symbol: validSymbol,//validSymbol,
             attributes: {
               newDevelopment: "new store"
             }
@@ -743,8 +741,7 @@
       function onGraphicUpdate(event){
 
         let graphic = event.graphics[0];
-        let mover,temppolyset,t_pointIndex,orignalmover;//for reshape
-        let t_pt_array;//for move
+        let mover,temppolyset;
 
         //if(event.toolEventInfo != null){
         //  console.log(event.toolEventInfo.mover.geometry.x +","+ event.toolEventInfo.mover.geometry.y+":"+ event.toolEventInfo.type );
@@ -752,15 +749,12 @@
         //if is the first active or not
         if (event.state=="active"){
           //console.log(event);
-          let t_status=0;//1: "reshape", 2: "move";
-          mover=event.toolEventInfo.mover.geometry;
-          //console.log(event.toolEventInfo.mover);
 
+          mover=event.toolEventInfo.mover.geometry;
+          t_pointIndex=event.toolEventInfo.mover.attributes.pointIndex;
+          orignalmover=graphic.geometry.rings[0][t_pointIndex];
 
           if(event.toolEventInfo.type=="reshape-start"){
-            t_status=1;
-            t_pointIndex=event.toolEventInfo.mover.attributes.pointIndex;
-            orignalmover=graphic.geometry.rings[0][t_pointIndex];
 
             temppolyset=[];
             activepolygonpoints=[];
@@ -780,6 +774,7 @@
                 //console.log("original"+orignalmover[0]+","+orignalmover[1]);
                 //console.log(activepolygonset);
                 activepolygonset.push(allpolygons[i]);
+
               }
               else{
                 temppolyset.push(allpolygons[i]);
@@ -788,49 +783,25 @@
             allpolygons=temppolyset;
           }
           else if(event.toolEventInfo.type=="reshape"){
-            t_status=1;
+
           }
           else if(event.toolEventInfo.type=="reshape-stop"){
 
             allpolygons=allpolygons.concat(activepolygonset);
             activepolygonset=[];
-            t_status=1;
+
           }
           else if(event.toolEventInfo.type=="move-start"){
-            temppolyset=[];
-            activepolygonpoints=[];
-
-            t_status=2;
-            for(let i=0;i<allpolygons.length;i++){
-              if(geometryEngine.equals(allpolygons[i].geometry,graphic.geometry)){
-                move_polygon = new Graphic({
-                  geometry: allpolygons[i].geometry,
-                  symbol: validSymbol,
-                  attributes: {
-                    newDevelopment: "new store"
-                  }
-                });
-                activepolygonset.push(allpolygons[i]);
-                continue;
-              }
-              temppolyset.push(allpolygons[i]);
-            }
-            allpolygons=temppolyset;
+            //console.log(event.toolEventInfo.type);
           }
           else if(event.toolEventInfo.type=="move"){
-            t_status=2;
+            console.log(event.toolEventInfo.type);
           }
           else if(event.toolEventInfo.type=="move-stop"){
-            t_status=2;
-            allpolygons.push(move_polygon);
-            //console.log(allpolygons);
-            graphicsLayer.removeMany(activepolygonset);
-            graphicsLayer.addMany([move_polygon]);
-
-            activepolygonset=[];
+            //console.log(event.toolEventInfo.type);
           }
           //renew the polygons
-          if(activepolygonset.length>0 && t_status==1){
+          if(activepolygonset.length>0){
 
             graphicsLayer.removeMany(activepolygonset);
             activepolygonset=GeneratePolygonBasedonPoints(mover.x,mover.y,activepolygonpoints);
@@ -843,26 +814,28 @@
 
       //tpoly is an array[[,],[,]]
       function GetPolygonPoints(x,y,tpoly){
-        //break the ring
 
         let t_array=[];
         let i=0;
+        let tlen=tpoly.length;
         let pointofline=0;//0: not on line, 1: vertices, 2: center, 3: on the line
-        for(i=0;i<tpoly.length-1;i++){
+        for(i=0;i<tlen-1;i++){
           if((Math.abs(tpoly[i][0]-x)< maxdistanceerror) && (Math.abs(tpoly[i][1]-y)< maxdistanceerror )){
             pointofline=1;
             break;
           }
+
         }
+
         if( pointofline===1 ){
           //console.log("points as vertices");
           //poins as vertices of the line
-          t_array=t_array.concat(tpoly.slice(i+1,tpoly.length-1),tpoly.slice(0,i));
+          t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i));
           //console.log(t_array);
           return t_array;
         }
 
-        for(i=0;i<tpoly.length-1;i++){
+        for(i=0;i<tlen-1;i++){
           if( ( Math.abs(0.5*( tpoly[i][0]+tpoly[i+1][0] )-x )< maxdistanceerror)
                 && ( Math.abs(0.5*( tpoly[i][1]+tpoly[i+1][1] )-y) < maxdistanceerror) ){
                     pointofline=2;
@@ -872,7 +845,7 @@
         if (pointofline===2){
           //console.log("points on line");
           //have problem need debug
-          t_array=t_array.concat(tpoly.slice(i+1,tpoly.length-1),tpoly.slice(0,i+1));
+          t_array=t_array.concat(tpoly.slice(i+1,tlen-1),tpoly.slice(0,i+1));
         }
         else{
           //poins on the line
@@ -883,24 +856,11 @@
         return t_array;
       }
 
-      function GetPolygonPoints_Vertices(x,y,tpoly){
-        //break the ring
-        let t_array=[];
-        for(let i=0;i<tpoly.length-1;i++){
-          if((Math.abs(tpoly[i][0]-x)< maxdistanceerror) && (Math.abs(tpoly[i][1]-y)< maxdistanceerror )){
-            pointofline=1;
-            t_array=t_array.concat(tpoly.slice(i+1,tpoly.length-1),tpoly.slice(0,i));
-            return t_array;
-          }
-        }
-        return tpoly;
-      }
-
       //update new polygon
       function GeneratePolygonBasedonPoints(x,y,array_points){
         let tmppolysets=[];
 
-        //validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);
+        validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);
         //console.log(array_points);
         if(array_points.length==0){
           return tmppolysets;

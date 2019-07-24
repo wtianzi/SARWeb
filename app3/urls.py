@@ -27,6 +27,7 @@ urlpatterns = [
     url(r'^taskgenerationform/\w+/action_page$',TaskGenerationFormView.FormToDB,name="action_page"),
     url(r'^readfile$',TemplateView.as_view(template_name="app3/readfile.html"), name="readfile"),
     path('api-auth/', include('rest_framework.urls')),
+    path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),
 ]
 
 urlpatterns += router.urls

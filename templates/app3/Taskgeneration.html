@@ -68,7 +68,9 @@
       "esri/widgets/Track",
       "esri/widgets/Search",
       "esri/layers/GeoJSONLayer",
-      "esri/geometry/Multipoint"
+      "esri/geometry/Multipoint",
+      "esri/layers/ElevationLayer",
+      "esri/core/promiseUtils"
 
     ], function(
       SketchViewModel, Graphic, Map, MapView, FeatureLayer,
@@ -76,7 +78,8 @@
       Draw,CoordinateConversion,
       DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
       OpenStreetMapLayer,Track,Search,
-      GeoJSONLayer,Multipoint
+      GeoJSONLayer,Multipoint,
+      ElevationLayer,promiseUtils
     ) {
       let view, sketchViewModel,
         validSymbol, draw,
@@ -172,9 +175,16 @@
         opacity: 0.2
       });
 
+      var elevLyr = new ElevationLayer({
+        // Custom elevation service
+        url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
+      });
+
       const map = new Map({
         basemap: "hybrid",//"hybrid",//"satellite",
+        //ground: "world-elevation",
         layers: [  graphicsLayer,gpsgraphicsLayer]
+
       });
 
 
@@ -266,7 +276,19 @@
         view.on("click", function(event) {
           //console.log(view);
 
-
+          //elevation=============
+          var position = event.mapPoint;
+          var queryBeforeLandslide = elevLyr.queryElevation(
+            position
+          );
+          promiseUtils
+            .eachAlways([queryBeforeLandslide])
+            .then(function(results) {
+              $("#elevation").text("Elenvation: "+results[0].value.geometry.z);
+              //console.log(position);
+              //console.log( results[0].value.geometry.z);
+            });
+          //====================
 
           // check if the sketch's state active if it is then that means
           // the graphic is already being updated, no action required.
@@ -562,11 +584,16 @@
           allpolygons.push(t_point);
         }
         updated_polygonring=vtriangles;
+
         //view.graphics.add(newDevelopmentGraphic);
         //graphicsLayer.addMany([newDevelopmentGraphic]);
         //graphicsLayer.graphics.add(newDevelopmentGraphic);
 
         graphicsLayer.addMany(allpolygons);
+
+        // query the average elevation of a cell
+        //elevLyr.createElevationSampler(extent);
+
       }
 
       function addGPSPath(){
@@ -1399,13 +1426,16 @@ document.getElementById("distanceButton").addEventListener("click",
       <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
       <hr/>
-      <h1>Task Name</h1>
+      <h2>Task Name</h2>
       <div>
-        <div>
-        <input type="input" id="tasknotes" value="SAR0001">
-        <input type="button" value="Save Tasks" id="savetasks"></input></div>
-        </div>
+          <div>
+            <input type="input" id="tasknotes" value="SAR0001"></input>
+            <input type="button" value="Save Tasks" id="savetasks"></input>
+          </div>
       </div>
+
+
+    </div>
 
     <hr/>
     <div>
@@ -1419,6 +1449,11 @@ document.getElementById("distanceButton").addEventListener("click",
 
       <p id="daytime"></p>
 
+    </div>
+
+    <hr/>
+    <div>
+      <label id="elevation">Elevation</label>
     </div>
 
   </div>

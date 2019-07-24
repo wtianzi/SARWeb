@@ -100,8 +100,10 @@
       //36.8176602,-80.363078
       //kentlane farm (-80.572567,37.203604)
       //{" wkid":4326 }: latetude
-      var gcx=-80.363078;
-      var gcy=36.8176602;
+      //
+
+      var gcx=-80.98813;
+      var gcy=37.030508;
 
       var gwidth=10;
       var gheight=10;
@@ -1056,6 +1058,7 @@
       document.getElementById("clearall").addEventListener("click",
        function () {
          ClearAll();
+         area_extent=view.extent;
        });
 
        function ClearAll(){
@@ -1139,7 +1142,7 @@
          document.getElementById("btngenerateheatmap").onclick=function(){
            //heatmap
            let totalpoint=200;
-           let maxdensity=50;
+           let maxdensity=80;
            let t_potion=0.95;
 
            let x,y;
@@ -1171,25 +1174,31 @@
                spatialReference:view.spatialReference
              })
            );
+           let heatmappt=[];
            promiseUtils
              .eachAlways([queryBeforeLandslide])
              .then(function(results) {
                //$("#elevation").text("Elenvation: "+results[0].value.geometry.z);
                //console.log(results[0].value.geometry.points);
                let col3 = results[0].value.geometry.points.map(function(value,index) { return value[2]; });
-               //const add = (a, b) =>  a + b;
-               //const sum = col3.reduce(add);
-               //average_elevation = sum / col3.length;
+               let add = (a, b) =>  a + b;
+               let sum = col3.reduce(add);
+               let average_elevation = sum / col3.length;
                //console.log(average_elevation);
                let t_min = Math.min(...col3);
                let t_max=Math.max(...col3);
                let t_stander=t_max-t_min;
+               let mean_elevation=0.5*(t_max+t_min);
                for (let t_i=0;t_i<col3.length;t_i++){
-                 t_mpt[t_i].push(maxdensity*(col3[t_i]-t_min)/t_stander);
+                 if(col3[t_i]<average_elevation && col3[t_i]<mean_elevation){
+                  t_mpt[t_i].push(maxdensity*(1-(col3[t_i]-t_min)/t_stander));
+                   heatmappt.push(t_mpt[t_i]);
+                 }
+                ;
                  //console.log(t_mpt[t_i]);
                }
                deletePointsToGeolayer();
-               addPointsToGeolayer(t_mpt);
+               addPointsToGeolayer(heatmappt);//(t_mpt);
              });
          };
 

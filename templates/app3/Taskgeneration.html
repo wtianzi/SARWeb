@@ -288,6 +288,7 @@
           var queryBeforeLandslide = elevLyr.queryElevation(
             position
           );
+
           promiseUtils
             .eachAlways([queryBeforeLandslide])
             .then(function(results) {
@@ -296,6 +297,7 @@
               //console.log( results[0].value.geometry.z);
             });
           //====================
+          //console.log(view.allLayerViews);
 
           // check if the sketch's state active if it is then that means
           // the graphic is already being updated, no action required.
@@ -308,6 +310,9 @@
             // Check if the new development graphic was clicked and pass
             // the graphic to sketchViewModel.update() with reshape tool.
             results.forEach(function(result) {
+              //set the assignment: cell to team
+              //result
+              $("#cellname").val("S"+result.graphic.attributes.cellindex);//result.graphic.attributes.cellindex;
               if (result.graphic.layer === sketchViewModel.layer &&
                 result.graphic.attributes && result.graphic.attributes
                 .newDevelopment) {
@@ -513,10 +518,11 @@
             geometry: polygon,
             symbol: validSymbol,
             attributes: {
-              newDevelopment: "new store"
+              newDevelopment: "new store",
+              cellindex:(i+1).toString()
             }
           });
-          text_symbol.text="S"+i.toString();
+          text_symbol.text="S"+(i+1).toString();
           let t_point=new Graphic ({
             geometry:newDevelopmentGraphic.geometry.centroid,
             symbol:text_symbol
@@ -1417,6 +1423,26 @@
     <hr/>
     <div>
       <label id="elevation">Elevation</label>
+    </div>
+
+    <hr/>
+    <div>
+      <h2>Task Assignment</h2>
+      <div>
+        <label for="cellname">Cell Name: </label>
+        <input type="input" id="cellname" value="SX"></input>
+      </div>
+
+      <div>
+        <label >Assign to team: </label>
+        <select>
+          <option value="team1">Team 1</option>
+          <option value="team2">Team 2</option>
+          <option value="team3">Team 3</option>
+          <option value="team4">Team 4</option>
+        </select>
+      <input type="button" id="taskassignment" value="Assign"></input>
+    </div>
     </div>
 
   </div>

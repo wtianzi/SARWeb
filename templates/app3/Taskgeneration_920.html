@@ -96,14 +96,14 @@
       var width=1600*1.5;
       var height=900*1.5;
 
-      var scale=14;//16
+      var scale=16;
       //36.8176602,-80.363078
       //kentlane farm (-80.572567,37.203604)
       //{" wkid":4326 }: latetude
       //
 
-      var gcx=-80.556451;
-      var gcy=37.2;
+      var gcx=-80.98813;
+      var gcy=37.030508;
 
       var gwidth=10;
       var gheight=10;
@@ -167,11 +167,11 @@
 
       const heatmaprenderer = {
         type: "heatmap",
-        blurRadius:20,
-        colorStops: color_1,
-        field: "Magnitude"//,
-        //maxPixelIntensity: 100,
-        //minPixelIntensity: 0
+        blurRadius:10,
+        colorStops: color_0,
+        field: "Magnitude",
+        maxPixelIntensity: 100,
+        minPixelIntensity: 0
       };
 
 
@@ -179,7 +179,7 @@
         url: "{% static 'data/geojsonheatmap.geojson' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
         copyright: "USGS Earthquakes",
         renderer: heatmaprenderer,
-        opacity: 0.9
+        opacity: 0.2
       });
 
       var elevLyr = new ElevationLayer({
@@ -197,12 +197,10 @@
 
     //geometry {coordinate}
     function deletePointsToGeolayer(){
-      //console.log(geojsonLayer);
       const query = geojsonLayer.createQuery();
       var editFeature;
       var t_res=geojsonLayer.queryFeatures(query).then( function(results){
         editFeature=results.features;
-        console.log(editFeature);
         //console.log(editFeature);
         const promise = geojsonLayer.applyEdits({
           deleteFeatures: editFeature
@@ -216,7 +214,7 @@
     function addPointsToGeolayer(arr_points){
       arr_featureset=[];
       var attributes = {};
-
+      attributes["Description"] = "This is the description";
       //attributes["Magnitude"] = 8;
       attributes["Report_Date"] = Date.now();
       //console.log(arr_points);
@@ -633,7 +631,7 @@
           "https://services8.arcgis.com/ZXMBUOxDBbivoAgJ/arcgis/rest/services/RiverMiles/FeatureServer"
           // This property can be used to uniquely identify the layer
         });
-        //map.add(riverLayer);
+        map.add(riverLayer);
         map.add(geojsonLayer);
         map.add(graphicHeatmapLayer);
         //console.log(riverLayer.gdbVersion);
@@ -1210,83 +1208,18 @@
              });
          };
 
-         function readSingleFile(e) {
-           //load csv file
+         document.getElementById("btngenerateheatmapimg").onclick=function(){
+           //show the sidebar
+           if( $("#sidebar").is(":visible") ){
+             $("#sidebar").hide();
+           }
+           else{
+             //console.log(view);
+             $("#heatimgid").height(view.height*0.8);
+             $("#sidebar").show();
+           }
 
-            var file = e.target.files[0];
-            if (!file) {
-              return;
-            }
-           var reader = new FileReader();
-           var arr_heatpoints=[];
-           reader.onload = function(e) {
-             var contents = e.target.result;
-             var lines=contents.split('\n');
-             for (var line=0;line <lines.length-1;line++){
-               //console.log(lines[line]);
-               arr_heatpoints.push(lines[line].split(',').map(Number));
-             }
-             //console.log(arr_heatpoints);
-
-             let col3 = arr_heatpoints.map(function(value,index) { return value[2]; });//arr_heatpoints[:,2];
-
-             let add = (a, b) =>  a + b;
-             const sum = col3.reduce(add);
-
-             console.log(sum);
-
-             let t_min = Math.min(...col3);
-             let t_max=Math.max(...col3);
-             let t_stander=t_max-t_min;
-             let mean_elevation=0.5*(t_max+t_min);
-
-             deletePointsToGeolayer();
-
-             let maxdensity=80;
-
-             arr_featureset=[];
-             var attributes = {};
-             attributes["Report_Date"] = Date.now();
-             for (var i=0;i<arr_heatpoints.length;i++){
-               if(col3[i]==0){
-                 continue;
-               }
-
-               let in_point=new Point({
-                 latitude:arr_heatpoints[i][1],
-                 longitude:arr_heatpoints[i][0],
-                 spatialReference:view.spatialReference
-               });
-
-               t_mag=Math.floor(maxdensity*(col3[i]-t_min)/t_stander);
-               //               console.log(t_mag);
-
-               attributes["Magnitude"] =1;
-               attributes["OBJECTID"] = i;
-
-               var t_graphic =  new Graphic({
-                 geometry: in_point,
-                 attributes: attributes
-               });
-               for(let i=0;i<t_mag;i++){
-                 arr_featureset.push(t_graphic);
-               }
-
-             }
-             console.log(arr_featureset);
-             const deleteFeature = {
-              objectId: [0]
-             };
-
-             const promise = geojsonLayer.applyEdits({
-               addFeatures: arr_featureset//[addFeature]//[arr_featureset[0],arr_featureset[1]]//
-             });
-
-           };
-           reader.readAsText(file);
-         }
-
-         document.getElementById('file-input').addEventListener('change', readSingleFile, false);
+         };
          //--------------------------------------------------
 
           function getRandomInt(max) {
@@ -1426,6 +1359,8 @@
            //console.log("GPSStart is null");
          }
 
+
+
         var graphicA = new Graphic();  // graphic with line geometry
         graphicHeatmapLayer.graphics.add();
       //--------------------------------------------------
@@ -1452,10 +1387,9 @@
       <!--div><input type="checkbox" name="voronoi" class="check" value="triangle"> Triangle based on vertices</input></div-->
       <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
 
-      <input type="button" class="edit-button" value="Generate area" id="btngeneratearea"/>
+      <input type="button" class="edit-button" value="Generate area" id="btngeneratearea">
       <input type="button" class="edit-button" value="Generate random heatmap" id="btngenerateheatmap">
-
-      <input type="file" id="file-input" />
+      <input type="button" class="edit-button" value="Load Heat Image" id="btngenerateheatmapimg">
 
       <hr/>
       <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
@@ -1515,7 +1449,7 @@
 
   <div id="viewDiv">
     <div id="sidebar" class="esri-widget" style="display:none">
-
+        <img id="heatimgid" src="{% static 'img/testheatmap2.png' %}" alt="Heatmap" style="width:100%;height:auto;border:0;">
     </div>
   </div>
 

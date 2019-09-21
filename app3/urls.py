@@ -29,7 +29,7 @@ urlpatterns = [
     url(r'^readfile$',TemplateView.as_view(template_name="app3/readfile.html"), name="readfile"),
     path('api-auth/', include('rest_framework.urls')),
     path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),
-
+    path('watershed',TemplateView.as_view(template_name="app3/watershed.html")),
 ]
 
 urlpatterns += router.urls

@@ -167,11 +167,11 @@
 
       const heatmaprenderer = {
         type: "heatmap",
-        blurRadius:20,
+        blurRadius:10,
         colorStops: color_1,
-        field: "Magnitude"//,
-        //maxPixelIntensity: 100,
-        //minPixelIntensity: 0
+        field: "Magnitude",
+        maxPixelIntensity: 100,
+        minPixelIntensity: 0
       };
 
 
@@ -197,12 +197,10 @@
 
     //geometry {coordinate}
     function deletePointsToGeolayer(){
-      //console.log(geojsonLayer);
       const query = geojsonLayer.createQuery();
       var editFeature;
       var t_res=geojsonLayer.queryFeatures(query).then( function(results){
         editFeature=results.features;
-        console.log(editFeature);
         //console.log(editFeature);
         const promise = geojsonLayer.applyEdits({
           deleteFeatures: editFeature
@@ -216,7 +214,7 @@
     function addPointsToGeolayer(arr_points){
       arr_featureset=[];
       var attributes = {};
-
+      attributes["Description"] = "This is the description";
       //attributes["Magnitude"] = 8;
       attributes["Report_Date"] = Date.now();
       //console.log(arr_points);
@@ -1246,6 +1244,7 @@
 
              arr_featureset=[];
              var attributes = {};
+             attributes["Description"] = "This is the description";
              attributes["Report_Date"] = Date.now();
              for (var i=0;i<arr_heatpoints.length;i++){
                if(col3[i]==0){
@@ -1259,19 +1258,23 @@
                });
 
                t_mag=Math.floor(maxdensity*(col3[i]-t_min)/t_stander);
-               //               console.log(t_mag);
-
-               attributes["Magnitude"] =1;
+               //
+               console.log(t_mag);
+               if(col3[i]==t_max){
+                 t_mag=maxdensity;
+               }
+               else {
+                 t_mag=1;
+               }
+               attributes["Magnitude"] =t_mag;
                attributes["OBJECTID"] = i;
 
                var t_graphic =  new Graphic({
                  geometry: in_point,
                  attributes: attributes
                });
-               for(let i=0;i<t_mag;i++){
-                 arr_featureset.push(t_graphic);
-               }
 
+               arr_featureset.push(t_graphic);
              }
              console.log(arr_featureset);
              const deleteFeature = {

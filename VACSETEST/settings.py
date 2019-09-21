@@ -133,6 +133,7 @@ USE_L10N = True
 
 USE_TZ = True
 
+MAX_UPLOAD_SIZE = "5242880"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/

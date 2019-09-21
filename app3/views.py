@@ -116,10 +116,13 @@ class TaskGenerationView(TemplateView):
 
             #image processing watershed opencv pyhon
             tjson=json.loads(elevation_arr)
-            print(tjson)
-            res=AreaSegment.GetWatershedPolygon(elevation_arr,img_w,img_h)
+            #print(tjson)
+            res=AreaSegment.GetWatershedPolygon_contours(tjson,int(img_w),int(img_h),1)
+            #res=AreaSegment.GetWatershedPolygon_vironoi(tjson,int(img_w),int(img_h),1)
+            #res=AreaSegment.GetAdaptiveThresholdingPolygon(tjson,int(img_w),int(img_h),1)
+
             context={'watershedpolygon':res,'flag':'success'}
-            print(context)
+            #print(context)
 
             return HttpResponse(json.dumps(context)) # if everything is OK
         # nothing went well

@@ -98,8 +98,8 @@
 
         function Elevation(event){
           var position = event.mapPoint;
-          var pt_w=100;
-          var pt_h=100;
+          var pt_w=200;
+          var pt_h=200;
           var tpoly=new Polyline({
             paths: [[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax],[view.extent.xmax,view.extent.ymin],[view.extent.xmin,view.extent.ymin]],
             spatialReference: view.spatialReference
@@ -122,12 +122,12 @@
               //results for multipoint: multippoints array[[x,y,z],[x,y,z]...]: results[0].value.geometry.points
               //post data to backend, use python opencv get watershed area segment
               var URL = "{% url 'getwatershed' %}";
-
+              var col3 =  results[0].value.geometry.points.map(function(value,index) { return value[2]; });
               var data = {
                       csrfmiddlewaretoken: '{{ csrf_token }}',
                       'width': pt_w.toString(),
                       'height': pt_h.toString(),
-                      'elevation_arr': JSON.stringify(results[0].value.geometry.points)
+                      'elevation_arr': JSON.stringify(col3)
                      };
                      //console.log(data);
              $.post(URL, data, function(response){

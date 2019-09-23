@@ -21,6 +21,8 @@ Add two methods of generate heatmap
 - add a png file to viewdiv
 
 ![geojsonLayer](screen/heatmap_esri.png)
+![lostpersonmodel](screen/lost_person_model.png)
+![watersheld](screen/watersheld.png)
 
 -----------2019 06 12-------------
 

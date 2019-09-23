@@ -34,8 +34,11 @@ class AreaSegment:
         #img = cv2.imread('bw_img.jpg')
 
         gray= np.uint8(t_arr_img)
+
         img=cv2.cvtColor(gray,cv2.COLOR_GRAY2RGB)
-        #gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        t_gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        #plt.imshow(t_gray)
+        #plt.show()
 
         #create a same size image as the source image, and mark the unknown area as 0
 

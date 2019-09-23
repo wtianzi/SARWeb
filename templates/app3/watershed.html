@@ -61,6 +61,9 @@
     Graphic,FeatureSet,FeatureLayer,
     Polyline,ElevationLayer,promiseUtils,Multipoint) {
 
+      var gcx=-80.556451;
+      var gcy=37.2;
+
         var map = new Map({
           basemap: "topo"//"osm"
         });
@@ -73,7 +76,7 @@
         var view = new MapView({
           map: map,
           container: "viewDiv",
-          center: [-80.98813, 37.030508],
+          center: [gcx, gcy],
           zoom: 15
         });
 

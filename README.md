@@ -23,6 +23,7 @@ Add two methods of generate heatmap
 ![geojsonLayer](screen/heatmap_esri.png)
 ![lostpersonmodel](screen/lost_person_model.png)
 ![watersheld](screen/watersheld.png)
+![watersheld2](screen/watersheld2.png)
 
 -----------2019 06 12-------------
 

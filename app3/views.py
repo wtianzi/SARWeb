@@ -13,6 +13,7 @@ from .serializers import GPSDataSerializer
 
 from rest_framework import permissions
 
+from .py.watershed import AreaSegment
 # Create your views here.
 
 class IndexView(ListView):
@@ -107,6 +108,26 @@ class TaskGenerationView(TemplateView):
         # nothing went well
         return HttpResponse('FAIL!!!!!')
 
+    def getwatershed(request):
+        if request.method == 'POST':
+            elevation_arr = request.POST.get('elevation_arr')
+            img_w=request.POST['width']
+            img_h=request.POST['height']
+
+            #image processing watershed opencv pyhon
+            tjson=json.loads(elevation_arr)
+            #print(tjson)
+            res=AreaSegment.GetWatershedPolygon_contours(tjson,int(img_w),int(img_h),1)
+            #res=AreaSegment.GetWatershedPolygon_vironoi(tjson,int(img_w),int(img_h),1)
+            #res=AreaSegment.GetAdaptiveThresholdingPolygon(tjson,int(img_w),int(img_h),1)
+
+            context={'watershedpolygon':res,'flag':'success'}
+            #print(context)
+
+            return HttpResponse(json.dumps(context)) # if everything is OK
+        # nothing went well
+        return HttpResponse('Getwatershed failed!')
+
 
 class TaskGenerationFormView(TemplateView):
     template_name="app3/taskgenerationform.html"
@@ -143,7 +164,7 @@ class TaskGenerationFormView(TemplateView):
         context={'form': form}
         #print(form)
         return render(request,'app3/demo.html',context)
-        
+
 
 class GPSDataViewSet(viewsets.ModelViewSet):
     """

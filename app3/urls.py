@@ -20,6 +20,7 @@ urlpatterns = [
     path('offlinemapdemo',TemplateView.as_view(template_name="app3/offlinemapdemo.html")),
     url(r'^tasksave$',TaskGenerationView.tasksave,name='tasksave'),
     url(r'^gpsupdate$',TaskGenerationView.gpsupdate,name='gpsupdate'),
+    url(r'^getwatershed$',TaskGenerationView.getwatershed,name='getwatershed'),
     url(r'^gpsdatastorage$',TaskGenerationView.gpsdatastorage,name='gpsdatastorage'),
     url(r'^demo$',TemplateView.as_view(template_name="app3/demo.html"), name="demo"),
     url(r'^openstreatmap$',TemplateView.as_view(template_name="app3/openstreatmap.html"), name="openstreatmap"),
@@ -28,6 +29,7 @@ urlpatterns = [
     url(r'^readfile$',TemplateView.as_view(template_name="app3/readfile.html"), name="readfile"),
     path('api-auth/', include('rest_framework.urls')),
     path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),
+    path('watershed',TemplateView.as_view(template_name="app3/watershed.html")),
 ]
 
 urlpatterns += router.urls

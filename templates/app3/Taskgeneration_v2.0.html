@@ -1018,7 +1018,7 @@
        document.getElementById("savetasks").addEventListener("click",
          function () {
            let py_task_all_array={{ task_all |safe }}
-           console.log(py_task_all_array);
+           //console.log(py_task_all_array);
            if(py_task_all_array.includes(document.getElementById("tasknotes").value)){
              //task_all
              alert("Please try another task name.");
@@ -1042,7 +1042,7 @@
                    //add date and task number and a random number
                    //task name:
                    let task_url="{% url 'taskgenerationform' %}"+"/"+document.getElementById("tasknotes").value+'_'+'0/';
-                   console.log(task_url);
+                   //console.log(task_url);
                    //var win = window.open("{% url 'taskgenerationform' %}", '_blank');
                    var win = window.open(task_url, '_blank');
                    win.focus();

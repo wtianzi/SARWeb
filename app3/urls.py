@@ -30,6 +30,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),
     path('watershed',TemplateView.as_view(template_name="app3/watershed.html")),
+    path('heatmapringdownload',TemplateView.as_view(template_name="app3/Taskgeneration_download.html")),
 ]
 
 urlpatterns += router.urls

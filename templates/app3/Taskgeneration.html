@@ -151,7 +151,9 @@
       var m_lpdata=[];
 
       const graphicInitLayer= new GraphicsLayer();
-      const graphicsLayer = new GraphicsLayer();
+      const graphicsLayer = new GraphicsLayer({
+        opacity:0.6
+      });
       const gpsgraphicsLayer = new GraphicsLayer();
       const graphicPointsLayer = new GraphicsLayer();
       const graphicTrajectoryLayer= new GraphicsLayer();
@@ -737,7 +739,8 @@
         draw = new Draw({
         view: view
         });
-        validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//solid
+        //validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//task generation
+        validSymbol = createSymbol([212,221,222, 0.2], "solid", 2, [255,255, 255]);//task generation
 
       }
 
@@ -776,11 +779,12 @@
           spatialReference: view.spatialReference
         });
         // create a new graphic representing the polygon, add it to the view
+        //taskgeneration
         var graphic = new Graphic({
           geometry: polygon,
           symbol: {
             type: "simple-fill", // autocasts as SimpleFillSymbol
-            color: [178, 102, 234, 0.8],
+            color: [178, 102, 234, 0.8],//[178, 102, 234, 0.1],
             style: "solid",
             outline: { // autocasts as SimpleLineSymbol
               color: [255, 255, 255],
@@ -1711,13 +1715,6 @@
                   Name:ringsname_arr[i],
                   LostHour:2,
                   Type:"hiker"
-                },
-                popupTemplate:{
-                    title: "{Name}",
-                    content: [{
-                        type: "fields",
-                        fieldInfos: [{fieldName: "Name"},{fieldName: "LostHour"},{fieldName: "Type"}]
-                      }]
                 }
              });
 
@@ -1992,15 +1989,9 @@
 
 
   <div id="editArea" class="editArea-container">
-    <h2 class="list-heading">Tools</h2>
-    <div id="addFeatureDiv">
-      <div id="draw">
-        <h3 class="list-heading">Measure Tools</h3>
-        <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
-        <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
-      </div>
-
-      <h3 class="list-heading">Map</h3>
+    <h2 class="list-heading">Search & Rescue Tools</h2>
+    <div>
+      <h3 class="list-heading">Map Division</h3>
       <!--div><input type="checkbox" name="voronoi" class="check" value="random"> Random Voronoi</input></div-->
       <!--div><input type="checkbox" name="voronoi" class="check" value="triangle"> Triangle based on vertices</input></div-->
       <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
@@ -2009,43 +2000,54 @@
 
 
       <hr/>
-      <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
-
-      <hr/>
-      <h2>Task Name</h2>
+      <h3>Task Name</h3>
       <div>
           <div>
             <input type="input" id="tasknotes" value="SAR0001"></input>
             <input type="button" value="Save Tasks" id="savetasks"></input>
           </div>
       </div>
-
-
     </div>
+
+
 
     <hr/>
     <div>
-        <select id="sel_gpsdevice">
-          <option value="">Select a device</option>
-          {% for device in gpsdevice %}
-          <option value="{{ device.id }}">{{ device.deviceid }}</option>
-          {% endfor %}
+      <h3>Lost person model</h3>
+      <div style="display:none">
+        <input type="file" id="file-input" position= "relative"/>
+      </div>
+      <div>
+        <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
+        <input type="button" class="edit-button" value="Load LPM Data" id="loadlpmcsv">
+      </div>
+
+      <div class="slidecontainer">
+        <label for="myRange" id="lmyRange">Hour(0-10): 5</label>
+        <input type="range" min="0" max="10" value="5" class="slider" id="myRange">
+
+      </div>
+      <div class="slidecontainer">
+        <label for="myfilter" id="lmyfilter">Filter(0-10): 7</label>
+        <input type="range" min="0" max="10" value="7" class="slider" id="myfilter">
+
+      </div>
+
+      <div>
+        <select id="sel_lpmodel">
+          <option value="control">Probability</option>
+          <option value="points">Points</option>
+          <option value="trajectory">Trajectory</option>
+          <option value="heatmap">Heat map</option>
         </select>
-        <input type="button" id="GPSStart"  value="Load GPS"></input>
-
-      <p id="daytime"></p>
-
+        <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
+        <label id="lpsum">ippm</label>
+      </div>
     </div>
 
     <hr/>
     <div>
-      <label id="elevation">Elevation</label>
-    </div>
-
-
-    <hr/>
-    <div>
-      <h2>Task Assignment</h2>
+      <h3>Task Assignment</h3>
       <div>
         <label for="cellname">Cell Name: </label>
         <input type="input" id="cellname" value="SX"></input>
@@ -2063,39 +2065,26 @@
     </div>
     </div>
 
+    <hr>
+    <div id="draw">
+      <h3 class="list-heading">Map measurement tools</h3>
+      <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
+      <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
+    </div>
+    <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
+    <div><label id="elevation">Elevation</label></div>
 
     <hr/>
     <div>
-      <h2>Lost person model</h2>
-      <div style="display:none">
-        <input type="file" id="file-input" position= "relative"/>
-      </div>
-      <div>
-        <input type="button" class="edit-button" value="Display lost person info" id="lpinfo">
-        <input type="button" class="edit-button" value="Load LPM Info" id="loadlpmcsv">
-      </div>
-
-      <div class="slidecontainer">
-        <label for="myRange" id="lmyRange">Hour(0-10): 5</label>
-        <input type="range" min="0" max="10" value="5" class="slider" id="myRange">
-
-      </div>
-      <div class="slidecontainer">
-        <label for="myfilter" id="lmyfilter">Filter(0-10): 7</label>
-        <input type="range" min="0" max="10" value="7" class="slider" id="myfilter">
-
-      </div>
-      <div>
-        <select id="sel_lpmodel">
-          <option value="control">Probability</option>
-          <option value="points">Points</option>
-          <option value="trajectory">Trajectory</option>
-          <option value="heatmap">Heat map</option>
+        <select id="sel_gpsdevice">
+          <option value="">Select a device</option>
+          {% for device in gpsdevice %}
+          <option value="{{ device.id }}">{{ device.deviceid }}</option>
+          {% endfor %}
         </select>
-      <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
-        <label id="lpsum">ippm</label>
+        <input type="button" id="GPSStart"  value="Load GPS"></input>
 
-    </div>
+      <p id="daytime"></p>
 
     </div>
 

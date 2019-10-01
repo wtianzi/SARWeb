@@ -149,6 +149,7 @@
       var m_filterprob=0.0000001;
       var m_lpdata_json={};
       var m_lpdata=[];
+      let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
 
       const graphicInitLayer= new GraphicsLayer();
       const graphicsLayer = new GraphicsLayer({
@@ -260,7 +261,7 @@
       const map = new Map({
         basemap: "hybrid",//"hybrid",//"satellite",
         //ground: "world-elevation",
-        layers: [  graphicsLayer,gpsgraphicsLayer,graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicControlLayer,graphicInitLayer]
+        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer]
 
       });
 
@@ -2020,6 +2021,17 @@
       <div>
         <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
         <input type="button" class="edit-button" value="Load LPM Data" id="loadlpmcsv">
+      </div>
+
+      <div>
+        <label id="colormap">Color map: </label>
+        <select id="sel_colormap">
+          <option value="o_rainbow">Rainbow</option>
+          <option value="o_yr">Yellow-red</option>
+          <option value="o_br">Blue-red</option>
+        </select>
+        <input type="button" id="colormap" value="Switch"></input>
+
       </div>
 
       <div class="slidecontainer">

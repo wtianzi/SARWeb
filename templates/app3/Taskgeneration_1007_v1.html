@@ -11,8 +11,10 @@
 
   <script src="{% static 'js/d3.v4.min.js' %}"></script>
   <script src="{% static 'js/d3-polygon-clip.js' %}"></script>
-  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+
   <script src="https://js.arcgis.com/4.12/"></script>
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="{% static 'js/jquery.csv.js' %}"></script>
   <script src="{% static 'js/randompolygon.js' %}"></script>
   <link rel="stylesheet" type="text/css" href="{% static "taskgeneration.css" %}"  />
   <style>
@@ -38,6 +40,16 @@
       #text {
         color: white;
         padding: 3%;
+      }
+      .slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 25px;
+        background: #d3d3d3;
+        outline: none;
+        opacity: 0.7;
+        -webkit-transition: .2s;
+        transition: opacity .2s;
       }
 
 
@@ -70,6 +82,8 @@
       "esri/layers/GeoJSONLayer",
       "esri/geometry/Multipoint",
       "esri/layers/ElevationLayer",
+      "esri/geometry/Polyline",
+      "esri/geometry/Circle",
       "esri/core/promiseUtils"
 
     ], function(
@@ -79,10 +93,10 @@
       DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
       OpenStreetMapLayer,Track,Search,
       GeoJSONLayer,Multipoint,
-      ElevationLayer,promiseUtils
+      ElevationLayer,Polyline,Circle,promiseUtils
     ) {
       let view, sketchViewModel, draw,
-        newDevelopmentGraphic,
+        newDevelopmentGraphic,taskassignment_sketchViewModel,
         instructionsExpand,coordinateLayer;
       let intersects = false,
         contains = true;
@@ -96,14 +110,14 @@
       var width=1600*1.5;
       var height=900*1.5;
 
-      var scale=16;
+      var scale=15;//16
       //36.8176602,-80.363078
       //kentlane farm (-80.572567,37.203604)
       //{" wkid":4326 }: latetude
       //
 
-      var gcx=-80.98813;
-      var gcy=37.030508;
+      var gcx=-80.556451;
+      var gcy=37.2;
 
       var gwidth=10;
       var gheight=10;
@@ -131,9 +145,69 @@
 
       let validSymbol;// = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//solid
 
-      const graphicsLayer = new GraphicsLayer();
+      var m_lpmodeldata=[];
+      var m_filterprob=0.0000001;
+      var m_lpdata_json={};
+      var m_lpdata=[];
+      let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
+      let t_rgb=[];
+      let m_editing=false;
+      /*
+      [
+         {'round':1,
+         'cell'=[{'sname':0,'polygon':rings},{'sname':1,'polygon':rings}...],
+         'teams':[0,0,1,1,2], //'team1':0,'team2':0,'team3':1,'team4':1,'team5':2
+         'responsetime':120,
+         'assigntime':200,
+         'displaytype':'point'},
+         {'round':2,'cell'=[{'sname':5,'polygon':rings},{'sname':6,'polygon':rings}...], 'team1':0,'team2':0,'team3':1,'team4':1,'team5':2, 'responsetime':100,'assigntime':200,'displaytype':'heatmap'},
+
+      ];
+      */
+      let m_taskpolygon={};
+
+      const graphicInitLayer= new GraphicsLayer();
+      const graphicsLayer = new GraphicsLayer({
+        opacity:0.6
+      });
       const gpsgraphicsLayer = new GraphicsLayer();
-      const graphicHeatmapLayer = new GraphicsLayer();
+      const graphicPointsLayer = new GraphicsLayer();
+      const graphicTrajectoryLayer= new GraphicsLayer();
+      const graphicHeatmapsLayer = new GraphicsLayer({
+        opacity:0.5
+      });
+      const graphicControlLayer = new GraphicsLayer({
+        opacity:0.8
+      });
+
+      const teamgraphicsLayer=new GraphicsLayer({
+        opacity:0.9
+      });
+
+      function hslToRgb(h, s, l) {
+          var r, g, b;
+
+           if (s == 0) {
+               r = g = b = l; // achromatic
+           } else {
+               function hue2rgb(p, q, t) {
+                   if (t < 0) t += 1;
+                   if (t > 1) t -= 1;
+                   if (t < 1 / 6) return p + (q - p) * 6 * t;
+                   if (t < 1 / 2) return q;
+                   if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                   return p;
+               }
+
+               var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+               var p = 2 * l - q;
+               r = hue2rgb(p, q, h + 1 / 3);
+               g = hue2rgb(p, q, h);
+               b = hue2rgb(p, q, h - 1 / 3);
+           }
+           return [r * 255, g * 255, b * 255];
+       }
+
       const color_1= [
         { ratio: 0, color: "rgba(133, 193, 200, 0)" },
         { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
@@ -164,14 +238,29 @@
         { ratio: 0.9, color: "rgba(255, 0, 0,0.2)" },
         { ratio: 1, color: "rgba(255, 0, 0, 0.2)" }
       ];
+      const colorStops_2= [
+            { color: "rgba(63, 40, 102, 0)", ratio: 0 },
+            { color: "#472b77", ratio: 0.083 },
+            { color: "#4e2d87", ratio: 0.166 },
+            { color: "#563098", ratio: 0.249 },
+            { color: "#5d32a8", ratio: 0.332 },
+            { color: "#6735be", ratio: 0.415 },
+            { color: "#7139d4", ratio: 0.498 },
+            { color: "#7b3ce9", ratio: 0.581 },
+            { color: "#853fff", ratio: 0.664 },
+            { color: "#a46fbf", ratio: 0.747 },
+            { color: "#c29f80", ratio: 0.83 },
+            { color: "#e0cf40", ratio: 0.913 },
+            { color: "#ffff00", ratio: 1 }
+          ];
 
       const heatmaprenderer = {
         type: "heatmap",
-        blurRadius:10,
-        colorStops: color_0,
-        field: "Magnitude",
-        maxPixelIntensity: 100,
-        minPixelIntensity: 0
+        blurRadius:20,
+        colorStops: colorStops_2,
+        field: "Magnitude"//,
+        //maxPixelIntensity: 100,
+        //minPixelIntensity: 0
       };
 
 
@@ -179,7 +268,7 @@
         url: "{% static 'data/geojsonheatmap.geojson' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
         copyright: "USGS Earthquakes",
         renderer: heatmaprenderer,
-        opacity: 0.2
+        opacity: 0.9
       });
 
       var elevLyr = new ElevationLayer({
@@ -190,17 +279,19 @@
       const map = new Map({
         basemap: "hybrid",//"hybrid",//"satellite",
         //ground: "world-elevation",
-        layers: [  graphicsLayer,gpsgraphicsLayer]
+        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer]
 
       });
 
 
     //geometry {coordinate}
     function deletePointsToGeolayer(){
+      //console.log(geojsonLayer);
       const query = geojsonLayer.createQuery();
       var editFeature;
       var t_res=geojsonLayer.queryFeatures(query).then( function(results){
         editFeature=results.features;
+        //console.log(editFeature);
         //console.log(editFeature);
         const promise = geojsonLayer.applyEdits({
           deleteFeatures: editFeature
@@ -214,7 +305,7 @@
     function addPointsToGeolayer(arr_points){
       arr_featureset=[];
       var attributes = {};
-      attributes["Description"] = "This is the description";
+
       //attributes["Magnitude"] = 8;
       attributes["Report_Date"] = Date.now();
       //console.log(arr_points);
@@ -305,6 +396,11 @@
             //testing forbid mover
             return;
           }
+          if (taskassignment_sketchViewModel.state === "active") {
+            //testing forbid mover
+            return;
+          }
+
           view.hitTest(event).then(function(response) {
             var results = response.results;
             // Check if the new development graphic was clicked and pass
@@ -313,11 +409,18 @@
               //set the assignment: cell to team
               //result
               $("#cellname").val("S"+result.graphic.attributes.cellindex);//result.graphic.attributes.cellindex;
-              if (result.graphic.layer === sketchViewModel.layer &&
-                result.graphic.attributes && result.graphic.attributes
-                .newDevelopment) {
-                sketchViewModel.update([result.graphic], {
-                  tool: "reshape"//"reshape"
+              if(m_editing){
+                if (result.graphic.layer === sketchViewModel.layer &&
+                  result.graphic.attributes && result.graphic.attributes
+                  .newDevelopment) {
+                  sketchViewModel.update([result.graphic], {
+                    tool: "reshape"//"reshape"
+                  });
+                }
+              }
+              if(result.graphic.layer === taskassignment_sketchViewModel.layer){
+                taskassignment_sketchViewModel.update([result.graphic],{
+                  tool:"move"
                 });
               }
             });
@@ -327,9 +430,24 @@
       setUpGraphicClickHandler();
 
       view.when(function() {
+        area_extent=view.extent;
+
+        //drag and drop teams icon for task assignment
+        taskassignment_sketchViewModel = new SketchViewModel({
+          view: view,
+          layer: teamgraphicsLayer,
+          updateOnGraphicClick: false,
+          defaultUpdateOptions: { // set the default options for the update operations
+            toggleToolOnClick: false//false // only reshape operation will be enabled
+          }
+        })
+
+        taskassignment_sketchViewModel.on(["update", "undo", "redo"], onTaskAssignmentGraphicUpdate);
+
         // Query all buffer features from the school buffers featurelayer
 
         // Create a new instance of sketchViewModel and set its required properties
+
         sketchViewModel = new SketchViewModel({
           view: view,
           layer: graphicsLayer,
@@ -344,6 +462,11 @@
         // Listen to sketchViewModel's update event to do
         // graphic reshape or move validation
         sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
+
+
+
+
+
 
       });
 
@@ -631,9 +754,8 @@
           "https://services8.arcgis.com/ZXMBUOxDBbivoAgJ/arcgis/rest/services/RiverMiles/FeatureServer"
           // This property can be used to uniquely identify the layer
         });
-        map.add(riverLayer);
+        //map.add(riverLayer);
         map.add(geojsonLayer);
-        map.add(graphicHeatmapLayer);
         //console.log(riverLayer.gdbVersion);
         view = new MapView({
           container: "viewDiv",
@@ -667,15 +789,32 @@
         draw = new Draw({
         view: view
         });
-        validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//solid
+        //validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//task generation
+        validSymbol = createSymbol([212,221,222, 0.2], "solid", 2, [255,255, 255]);//task generation
 
       }
 
+      document.getElementById("btneditcells").onclick=function() {
+        if(m_editing){
+          document.getElementById("btneditcells").value="Edit cells (Stop)";
+          m_editing=false;
+        }
+        else{
+          document.getElementById("btneditcells").value="Edit cells (Editing)";
+          m_editing=true;
+        }
+
+
+      }
         //generate voronoi
       document.getElementById("btngeneratearea").onclick=function() {
         graphicsLayer.removeAll();
         view.graphics.removeAll();
         gpsgraphicsLayer.removeAll();
+
+        //draw teams
+        AddTeams();
+
         //wholetask=activeWidget.viewModel.measurement;
         allpolygons=[];
         glverticeslist=[];
@@ -706,11 +845,12 @@
           spatialReference: view.spatialReference
         });
         // create a new graphic representing the polygon, add it to the view
+        //taskgeneration
         var graphic = new Graphic({
           geometry: polygon,
           symbol: {
             type: "simple-fill", // autocasts as SimpleFillSymbol
-            color: [178, 102, 234, 0.8],
+            color: [178, 102, 234, 0.8],//[178, 102, 234, 0.1],
             style: "solid",
             outline: { // autocasts as SimpleLineSymbol
               color: [255, 255, 255],
@@ -850,7 +990,8 @@
                   geometry: allpolygons[i].geometry,
                   symbol: validSymbol,
                   attributes: {
-                    newDevelopment: "new store"
+                    newDevelopment: "new store",
+                    cellindex: allpolygons[i].attributes.cellindex
                   }
                 });
                 activepolygonset.push(allpolygons[i]);
@@ -882,6 +1023,11 @@
           }
 
         }
+      }
+      function onTaskAssignmentGraphicUpdate(event){
+        let graphic = event.graphics;
+        console.log("onTaskAssignmentGraphicUpdate");
+        console.log(graphic);
       }
 
       //tpoly is an array[[,],[,]]
@@ -1080,10 +1226,13 @@
          graphicsLayer.removeAll();
          view.graphics.removeAll();
          gpsgraphicsLayer.removeAll();
-         graphicHeatmapLayer.removeAll();
+         graphicPointsLayer.removeAll();
+         graphicTrajectoryLayer.removeAll();
+         graphicHeatmapsLayer.removeAll();
+         graphicControlLayer.removeAll();
          setActiveWidget(null);
          sketchViewModel.complete();
-
+         taskassignment_sketchViewModel.complete();
          view.ui.remove(activeWidget);
          //activeWidget.destroy();
          activeWidget = null;
@@ -1145,131 +1294,682 @@
            }
          });
 
-         document.getElementById("btngenerateheatmap").onclick=function(){
-           //heatmap
-           let totalpoint=200;
-           let maxdensity=80;
-           let t_potion=0.95;
 
-           let x,y;
-
-           var t_mpt=new Array(totalpoint);
-           for(let j=0;j<totalpoint;j++){
-
-
-             //console.log(area_extent);
-             if (area_extent == null){
-               x=view.center.x+ t_potion*(Math.random()-0.5)*view.extent.width;
-               y=view.center.y+ t_potion*(Math.random()-0.5)*view.extent.height;
-             }
-             else{
-               x=area_extent.center.x+ t_potion*(Math.random()-0.5)*area_extent.width;
-               y=area_extent.center.y+ t_potion*(Math.random()-0.5)*area_extent.height;
-             }
-
-             //get elevation, if the elevation is hight, the density is low
-             //average_elevation
-
-             //let t_density= Math.random()*maxdensity;
-             //t_mpt[j]=[x,y,t_density];
-             t_mpt[j]=[x,y];
-           }
-           var queryBeforeLandslide = elevLyr.queryElevation(
-             new Multipoint({
-               points:t_mpt,
-               spatialReference:view.spatialReference
-             })
-           );
-           let heatmappt=[];
-           promiseUtils
-             .eachAlways([queryBeforeLandslide])
-             .then(function(results) {
-               //$("#elevation").text("Elenvation: "+results[0].value.geometry.z);
-               //console.log(results[0].value.geometry.points);
-               let col3 = results[0].value.geometry.points.map(function(value,index) { return value[2]; });
-               let add = (a, b) =>  a + b;
-               let sum = col3.reduce(add);
-               let average_elevation = sum / col3.length;
-               //console.log(average_elevation);
-               let t_min = Math.min(...col3);
-               let t_max=Math.max(...col3);
-               let t_stander=t_max-t_min;
-               let mean_elevation=0.5*(t_max+t_min);
-               for (let t_i=0;t_i<col3.length;t_i++){
-                 if(col3[t_i]<average_elevation && col3[t_i]<mean_elevation){
-                  t_mpt[t_i].push(maxdensity*(1-(col3[t_i]-t_min)/t_stander));
-                   heatmappt.push(t_mpt[t_i]);
-                 }
-                ;
-                 //console.log(t_mpt[t_i]);
-               }
-               deletePointsToGeolayer();
-               addPointsToGeolayer(heatmappt);//(t_mpt);
-             });
-         };
          function readSingleFile(e) {
            //load csv file
-           var file = e.target.files[0];
-           if (!file) {
-             return;
-           }
+           // "{% static 'data/data_0_10_95.json' %}"
+           $.getJSON("{% static 'data/data_0_10_95.json' %}", function(json) {
+             m_lpdata_json=json;
+              //console.log(json); // this will show the info it in firebug console
+          });
+
+
+           document.getElementById("lpmmodeldisplay").disabled=true;
+            var file = e.target.files[0];
+            if (!file) {
+              return;
+            }
            var reader = new FileReader();
-           var arr_heatpoints=[];
+           m_lpmodeldata=[];
            reader.onload = function(e) {
              var contents = e.target.result;
              var lines=contents.split('\n');
-             for (var line=0;line <lines.length;line++){
+             for (var line=0;line <lines.length-1;line++){
                //console.log(lines[line]);
-               arr_heatpoints.push(lines[line].split(',').map(Number));
+               t_point=lines[line].split(',').map(Number);
+               if(t_point[2]>0.00000001){
+                 //console.log(t_point);
+                 m_lpmodeldata.push(t_point);
+               }
+               //get top 3 most probabable points
+
+               //m_lpmodeldata.push(lines[line].split(',').map(Number));
              }
-             console.log(arr_heatpoints);
+           };
+           reader.readAsText(file);
+           document.getElementById("lpmmodeldisplay").disabled=false;
 
-             reader.readAsText(file);
-             //show the heatmap
-             let col3 = arr_heatpoints.map(function(value,index) { return value[2]; });//arr_heatpoints[:,2];
-             console.log(col3);
+
+         }
+         function LoadLPFromCSV(t_url,t_arr_count){
+           var t_data;
+            $.ajax({
+              type: "GET",
+              url:t_url,//"{% static 'data/data_t0_95_res_3.csv' %}",
+              dataType: "text",
+              success: function(response)
+              {
+
+                 t_data = $.csv.toArrays(response).map(function(item){
+                   return item.map(Number);
+                 });
+                 m_lpdata.push(t_data);
+                 //console.log(response);
+                 if (m_lpdata.length == t_arr_count){
+                   document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
+                 }
+              }
+            });
+            return true;
+         }
+
+         function AddTeams(teamcount=5){
+           teamgraphicsLayer.removeAll();
+           arr_featureset=[];
+           //team 1,2,3,4,5
+           let t_y=0.95*view.extent.ymax+0.05*view.extent.ymin;
+           let t_start=0.2*view.extent.xmax+0.8*view.extent.xmin;
+           let t_stop=0.5*view.extent.xmax+0.5*view.extent.xmin;
+           let t_steps=(t_stop-t_start)/teamcount;
+           for(let i=0;i<teamcount;i++){
+             //console.log(view);
+             let in_point=new Point({
+               x:t_start+i*t_steps,
+               y:t_y,
+               spatialReference:view.spatialReference
+             });
+
+             let t_graphic =  new Graphic({
+               geometry: in_point,
+               symbol:  {
+                    type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                    style:"circle",
+                    color: [255, 123, 0,1],
+                    size:20
+                },
+                attributes:{
+                  Name:"Team",
+                  Teamindex:i+1,
+                  Status:"Assigned"
+                }
+              });
+              arr_featureset.push(t_graphic);
+           }
+           teamgraphicsLayer.addMany(arr_featureset);
+
+         }
+
+         function AddLPDataToPointslayer(){
+           graphicPointsLayer.removeAll();
+           arr_featureset=[];
+           arr_hours=m_lpdata_json['points'];
+           let t_start=0,t_end=10;
+           arr_featureset=[];
+
+           for(let rank=2;rank>=0;rank--){
+             let paths=[];
+             let i_hr=document.getElementById("myRange").value;
+               //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
+               let lat=arr_hours[i_hr]['data'][rank]['loc'][1];
+               let long=arr_hours[i_hr]['data'][rank]['loc'][0];
+               let in_point=new Point({
+                 latitude:lat,
+                 longitude:long,
+                 //latitude:parseFloat(arr_hours[i]['data'][rank]['loc'][1]),
+                 //longitude:parseFloat(arr_hours[i]['data'][rank]['loc'][0]),
+                 spatialReference:view.spatialReference
+               });
+
+               //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+               t_rgb=hslToRgb(0.1*rank+0.7,1 , 0.8*(t_end-i_hr)/(t_end-t_start)+0.2);//h:0.5-1,1,0.5, l:0.2-0.8
+               t_rgb.push(0.8);//transparency
+
+               let t_graphic =  new Graphic({
+                 geometry: in_point,
+                 symbol:  {
+                      type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                      style:"circle",
+                      color: t_rgb,//[t_mag, 0,0],
+                      size:10*(4-rank)
+                    },
+                  attributes:{
+                    Name:"Lost person model",
+                    Hour:i_hr,
+                    Rank:rank+1
+                  },
+                  popupTemplate:{
+                      title: "{Name}",
+                      content: [
+                        {
+                          type: "fields",
+                          fieldInfos: [
+                            {
+                              fieldName: "Name"
+                            },
+                            {
+                              fieldName: "Hour"
+                            },
+                            {
+                              fieldName: "Rank"
+                            }
+                          ]
+                        }
+                      ]
+                  }
+               });
+               arr_featureset.push(t_graphic);
+           }
+
+           graphicPointsLayer.addMany(arr_featureset);
+           graphicPointsLayer.visible=true;
+
+           //teamgraphicsLayer.addMany(arr_featureset);
+         }
+
+         function AddLPDataToTrajectorylayer(){
+           graphicTrajectoryLayer.removeAll();
+           //convert area_extent to [long,lat]
+           arr_hours=m_lpdata_json['points'];
+           let t_start=0,t_end=10;
+           arr_featureset=[];
+
+           for(let rank=2;rank>=0;rank--){
+             let paths=[];
+             for(let i=t_start;i<=t_end;i++){
+               //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
+               let lat=arr_hours[i]['data'][rank]['loc'][1];
+               let long=arr_hours[i]['data'][rank]['loc'][0];
+               let in_point=new Point({
+                 latitude:lat,
+                 longitude:long,
+                 //latitude:parseFloat(arr_hours[i]['data'][rank]['loc'][1]),
+                 //longitude:parseFloat(arr_hours[i]['data'][rank]['loc'][0]),
+                 spatialReference:view.spatialReference
+               });
+
+               //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+               t_rgb=hslToRgb(0.1*rank+0.7,1 , 0.8*(t_end-i)/(t_end-t_start)+0.2);//h:0.5-1,1,0.5, l:0.2-0.8
+               t_rgb.push(0.8);//transparency
+
+               let t_graphic =  new Graphic({
+                 geometry: in_point,
+                 symbol:  {
+                      type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                      style:"circle",
+                      color: t_rgb,//[t_mag, 0,0],
+                      size:10*(4-rank)
+                    },
+                  attributes:{
+                    Name:"Lost person model",
+                    Hour:i,
+                    Rank:rank+1
+                  },
+                  popupTemplate:{
+                      title: "{Name}",
+                      content: [
+                        {
+                          type: "fields",
+                          fieldInfos: [
+                            {
+                              fieldName: "Name"
+                            },
+                            {
+                              fieldName: "Hour"
+                            },
+                            {
+                              fieldName: "Rank"
+                            }
+                          ]
+                        }
+                      ]
+                  }
+               });
+               arr_featureset.push(t_graphic);
+
+               //draw lines
+
+               paths.push([long,lat])
+             }
+             let polyline = new Polyline({
+              hasZ: false,
+              hasM: true,
+              paths: [paths],
+              spatialReference: { wkid: 4326 }
+            });
+            let polylineGraphic=new Graphic({
+              geometry: polyline,
+              symbol:{
+                      type: "simple-line", // autocasts as new SimpleLineSymbol()
+                      color: t_rgb, // RGB color values as an array
+                      width: 1
+                    }
+            });
+            //console.log(polylineGraphic);
+            arr_featureset.push(polylineGraphic);
+           }
+
+           //console.log(arr_featureset);
+           graphicTrajectoryLayer.addMany(arr_featureset);
+           graphicTrajectoryLayer.visible=true;
+         }
+
+         function AddLPDataToControllayer(){
+           graphicControlLayer.removeAll();
+           arr_featureset=[];
+           arr_hours=m_lpdata_json['points'];
+           let t_start=0,t_end=10;
+           arr_featureset=[];
+
+           for(let rank=2;rank>=0;rank--){
+             let paths=[];
+             let i_hr=document.getElementById("myRange").value;
+               //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
+               let lat=arr_hours[i_hr]['data'][rank]['loc'][1];
+               let long=arr_hours[i_hr]['data'][rank]['loc'][0];
+               let t_pro=arr_hours[i_hr]['data'][rank]['loc'][2];
+               let in_point=new Point({
+                 latitude:lat,
+                 longitude:long,
+                 //latitude:parseFloat(arr_hours[i]['data'][rank]['loc'][1]),
+                 //longitude:parseFloat(arr_hours[i]['data'][rank]['loc'][0]),
+                 spatialReference:view.spatialReference
+               });
+
+               let t_graphic = new Graphic({
+                 geometry:in_point,
+                 symbol: {
+                   type: "text",
+                   color: "white",
+                   haloColor: "black",
+                   haloSize: "1px",
+                   text: (10000*t_pro).toFixed(2)+"%%",
+                   xoffset: 5,
+                   yoffset: 5,
+                   font: { // autocast as Font
+                     size: 10,
+                     family: "sans-serif"
+                   }
+                 },
+                 attributes:{
+                   Name:"Lost person model",
+                   Hour:i_hr,
+                   Rank:rank+1
+                 },
+                 popupTemplate:{
+                     title: "{Name}",
+                     content: [{type: "fields",fieldInfos: [{fieldName: "Name"},{fieldName: "Hour"},{fieldName: "Rank"}]}]
+                 }
+               });
+
+               arr_featureset.push(t_graphic);
+
+               t_graphic =  new Graphic({
+                 geometry: in_point,
+                 symbol: {
+                  type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()
+                  style: "x",
+                  color: "blue",
+                  size: "10px"  // pixels
+                }
+
+               });
+               arr_featureset.push(t_graphic);
+
+           }
+
+           graphicControlLayer.addMany(arr_featureset);
+           graphicControlLayer.visible=true;
+         }
+
+          function AddLPDataToHeatmapslayer(){
+
+            graphicHeatmapsLayer.removeAll();
+            if(m_lpdata == null){
+              return;
+            }
+            arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
+
+            //loop the first line to find width
+            let t_width=1;
+            while(arr_heatpoints[0][0]==arr_heatpoints[t_width][0]){
+              t_width+=1;
+            }
+
+            let col3 = arr_heatpoints.map(function(value,index) { return value[2]; });
+            let add = (a, b) =>  a + b;
+            const sum = col3.reduce(add);
+
+             $("#lpsum").text("Percent: "+sum);
+
+            let t_min = Math.min(...col3);
+            let t_max=Math.max(...col3);
+            let t_stander=t_max-t_min;
+            let mean_elevation=0.5*(t_max+t_min);
+
+            arr_featureset=[];
+            let j_width=1;
+            let end_index=arr_heatpoints.length-t_width-1;
+            for (var i=0;i<end_index;i++){
+              //the last point doesn't need a polygon
+              if(j_width>=t_width){
+                j_width=1;
+                continue;
+              }
+              j_width+=1;
+
+              //rings
+            let t_pro=(arr_heatpoints[i][2]+arr_heatpoints[i+1][2]+arr_heatpoints[i+t_width+1][2]+arr_heatpoints[i+t_width][2])/4;
+            t_mag=(t_pro-t_min)/t_stander;
+            if(t_mag<0.2){
+              continue;
+            }
+            let rings=[
+                   [arr_heatpoints[i][0], arr_heatpoints[i][1]],
+                   [arr_heatpoints[i+1][0], arr_heatpoints[i+1][1]],
+                   [arr_heatpoints[i+t_width+1][0], arr_heatpoints[i+t_width+1][1]],
+                   [arr_heatpoints[i+t_width][0], arr_heatpoints[i+t_width][1]],
+                   [arr_heatpoints[i][0], arr_heatpoints[i][1]]];
+
+
+              //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+              //rainbow 0-1
+              t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//red
+              //t_rgb=hslToRgb(0.5*t_mag, 1, 0.5);//h:0.5-1,1,0.5
+              t_rgb.push(0.8*t_mag);//oppacity
+              let polygon = new Polygon({
+                  rings: rings,
+                  spatialReference: { wkid: 4326 }
+                });
+                var t_graphic = new Graphic({
+                  geometry: polygon,
+                  symbol: {
+                    type: "simple-fill", // autocasts as SimpleFillSymbol
+                    color: t_rgb,
+                    outline: { // autocasts as SimpleLineSymbol
+
+                      style:"none"
+                    }
+                  },
+                  style: "solid"
+                });
+              arr_featureset.push(t_graphic);
+            }
+            //console.log(arr_featureset);
+          graphicHeatmapsLayer.addMany(arr_featureset);
+          graphicHeatmapsLayer.visible=true;
+
+         }
+
+           function AddLPDataToHeatmapslayerFilter(t_filter){
+
+             graphicHeatmapsLayer.removeAll();
+             if(m_lpdata == null){
+               return;
+             }
+             arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
+
+             //loop the first line to find width
+             let t_width=1;
+             while(arr_heatpoints[0][0]==arr_heatpoints[t_width][0]){
+               t_width+=1;
+             }
+
+             let col3 = arr_heatpoints.map(function(value,index) { return value[2]; });
              let add = (a, b) =>  a + b;
-             let sum = col3.reduce(add);
+             const sum = col3.reduce(add);
 
-             console.log(sum);
-             //console.log(average_elevation);
+              $("#lpsum").text("Percent: "+sum);
+
              let t_min = Math.min(...col3);
              let t_max=Math.max(...col3);
              let t_stander=t_max-t_min;
              let mean_elevation=0.5*(t_max+t_min);
 
-             deletePointsToGeolayer();
-
-             let maxdensity=80;
-
              arr_featureset=[];
-             var attributes = {};
-             attributes["Description"] = "This is the description";
-             attributes["Report_Date"] = Date.now();
-             for (var i=0;i<arr_heatpoints.length;i++){
-               let in_point=new Point({
-                 x:arr_heatpoints[i][0],
-                 y:arr_heatpoints[i][1],
-                 spatialReference:view.spatialReference
-               });
+             let j_width=1;
+             let end_index=arr_heatpoints.length-t_width-1;
+             for (var i=0;i<end_index;i++){
+               //the last point doesn't need a polygon
+               if(j_width>=t_width){
+                 j_width=1;
+                 continue;
+               }
+               j_width+=1;
 
-               attributes["Magnitude"] = maxdensity*(1-(col3[i]-t_min)/t_stander);
-               attributes["OBJECTID"] = i;
+               //rings
+             let t_pro=(arr_heatpoints[i][2]+arr_heatpoints[i+1][2]+arr_heatpoints[i+t_width+1][2]+arr_heatpoints[i+t_width][2])/4;
+             t_mag=(t_pro-t_min)/t_stander;
+             if(t_mag<t_filter){
+               continue;
+             }
+             let rings=[
+                    [arr_heatpoints[i][0], arr_heatpoints[i][1]],
+                    [arr_heatpoints[i+1][0], arr_heatpoints[i+1][1]],
+                    [arr_heatpoints[i+t_width+1][0], arr_heatpoints[i+t_width+1][1]],
+                    [arr_heatpoints[i+t_width][0], arr_heatpoints[i+t_width][1]],
+                    [arr_heatpoints[i][0], arr_heatpoints[i][1]]];
 
-               var t_graphic =  new Graphic({
-                 geometry: in_point,
-                 attributes: attributes
-               });
 
+               //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+               //rainbow 0-1
+               m_colormap=document.getElementById("sel_colormap").selectedIndex;
+               //console.log(m_colormap);
+               if (m_colormap==0){
+                 t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
+               }
+               else if (m_colormap==1){
+                 t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+               }
+               else{
+                 t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//red-blue
+               }
+               //t_rgb=hslToRgb(0.5*t_mag, 1, 0.5);//h:0.5-1,1,0.5
+               t_rgb.push(0.8*t_mag);//oppacity
+               let polygon = new Polygon({
+                   rings: rings,
+                   spatialReference: { wkid: 4326 }
+                 });
+                 var t_graphic = new Graphic({
+                   geometry: polygon,
+                   symbol: {
+                     type: "simple-fill", // autocasts as SimpleFillSymbol
+                     color: t_rgb,
+                     outline: { // autocasts as SimpleLineSymbol
+
+                       style:"none"
+                     }
+                   },
+                   style: "solid"
+                 });
                arr_featureset.push(t_graphic);
              }
-           };
+             //console.log(arr_featureset);
 
 
-         }
+           graphicHeatmapsLayer.addMany(arr_featureset);
+           graphicHeatmapsLayer.visible=true;
+
+          }
 
          document.getElementById('file-input').addEventListener('change', readSingleFile, false);
+
+         document.getElementById("lpinfo").onclick=function() {
+           /*
+           25%: 1100 m
+           50%: 3100 m
+           75%: 5800 m
+           95%: 18300 m
+
+           */
+           graphicInitLayer.removeAll();
+           let t_feature=[];
+
+           let t_graphic =  new Graphic({
+             geometry: area_extent.center,//view.extent.center,
+             symbol:  {
+                  type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                  style:"triangle",
+                  color: [255,0,0],//[t_mag, 0,0],
+                  size:10
+                },
+              attributes:{
+                Name:"Last known position",
+                LostHour:2,
+                Type:"hiker"
+              },
+              popupTemplate:{
+                  title: "{Name}",
+                  content: [
+                    {
+                      type: "fields",
+                      fieldInfos: [{fieldName: "Name"},{fieldName: "LostHour"},{fieldName: "Type"}]
+                    }
+                  ]
+              }
+           });
+           t_feature.push(t_graphic);
+           let rings_arr=[1100,3100,5800,18300];
+           let ringsname_arr=["25% ring","50% ring","75% ring","95% ring"];
+           for(let i=0;i<4;i++){
+             let t_circle=new Circle({
+               center:area_extent.center,
+               radius:rings_arr[i]
+             });
+             t_graphic =  new Graphic({
+               geometry: t_circle,//view.extent.center,
+               symbol:  {
+                    type: "simple-fill", // autocasts as new SimpleMarkerSymbol()
+                    style:"none",
+                    outline:{
+                      color:[255,i*50,0,0.6-0.4*i/4],
+                      width:2
+                    }
+                  },
+                attributes:{
+                  Name:ringsname_arr[i],
+                  LostHour:2,
+                  Type:"hiker"
+                }
+             });
+
+             t_feature.push(t_graphic);
+           }
+
+           //draw 25%,50%,75% ring
+           graphicInitLayer.addMany(t_feature);
+
+         }
+         document.getElementById("loadlpmcsv").onclick=function() {
+           //draw initial condition centerpoints
+
+
+           document.getElementById("lpmmodeldisplay").disabled=true;
+
+           $.getJSON("{% static 'data/data_0_10_95.json' %}", function(json) {
+             m_lpdata_json=json;
+              //console.log(json); // this will show the info it in firebug console
+          });
+
+          let t_arr_count=11;
+
+          document.getElementById("loadlpmcsv").value="Load LPM Data (Loading)";
+
+          LoadLPFromCSV("{% static 'data/data_t0_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t1_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t2_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t3_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t4_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t5_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t6_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t7_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t8_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t9_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t10_95_res_3.csv' %}",t_arr_count);
+
+          //console.log(m_lpdata);
+
+
+          document.getElementById("lpmmodeldisplay").disabled=false;
+         }
+
+          document.getElementById("sel_lpmodel").onchange=function(){
+
+
+            graphicControlLayer.visible=false;
+            graphicPointsLayer.visible=false;
+            graphicTrajectoryLayer.visible=false;
+            graphicHeatmapsLayer.visible=false;
+
+            if(document.getElementById("sel_lpmodel").selectedIndex==0){
+              //display point layer
+              AddLPDataToControllayer();
+            }
+            else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+              //display point layer
+              AddLPDataToPointslayer();
+            }
+            else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+              //display Trajectory
+              AddLPDataToTrajectorylayer();
+            }
+            else{
+              //display heatmap
+              //AddLPDataToHeatmapslayer();
+              AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+            }
+          }
+
+        document.getElementById("myfilter").onchange=function(){
+          //console.log("change");
+          $("#lmyfilter").text("Filter(0-10): "+document.getElementById("myfilter").value);
+
+          if(document.getElementById("sel_lpmodel").selectedIndex==3){
+            //display heatmap
+            AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+          }
+        }
+         document.getElementById("myRange").onchange=function(){
+           //console.log("change");
+
+           $("#lmyRange").text("Hour(0-10): "+document.getElementById("myRange").value);
+
+
+           if(document.getElementById("sel_lpmodel").selectedIndex==0){
+             //display point layer
+             AddLPDataToControllayer();
+           }
+           else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+             //display point layer
+             AddLPDataToPointslayer();
+           }
+           else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+             //display Trajectory
+             AddLPDataToTrajectorylayer();
+           }
+           else{
+             //display heatmap
+             //AddLPDataToHeatmapslayer();
+             AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+           }
+         }
+
          //--------------------------------------------------
+           document.getElementById("lpmmodeldisplay").onclick=function() {
+             geojsonLayer.visible=false;
+             graphicPointsLayer.visible=false;
+             graphicTrajectoryLayer.visible=false;
+             graphicHeatmapsLayer.visible=false;
+             graphicControlLayer.visible=false;
+             //document.getElementById("lpmmodeldisplay").values;
+             if(document.getElementById("sel_lpmodel").selectedIndex==0){
+               //display point layer
+               AddLPDataToControllayer();
+             }
+             else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+               //display point layer
+               AddLPDataToPointslayer();
+             }
+             else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+               //display Trajectory
+               AddLPDataToTrajectorylayer();
+             }
+             else{
+               //display heatmap
+               //AddLPDataToHeatmapslayer();
+               AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+             }
+           }
+
 
           function getRandomInt(max) {
             return Math.floor(Math.random() * Math.floor(max));
@@ -1408,8 +2108,6 @@
            //console.log("GPSStart is null");
          }
 
-        var graphicA = new Graphic();  // graphic with line geometry
-        graphicHeatmapLayer.graphics.add();
       //--------------------------------------------------
     });
 
@@ -1421,38 +2119,102 @@
 
 
   <div id="editArea" class="editArea-container">
-    <h2 class="list-heading">Tools</h2>
-    <div id="addFeatureDiv">
-      <div id="draw">
-        <h3 class="list-heading">Measure Tools</h3>
-        <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
-        <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
-      </div>
-
-      <h3 class="list-heading">Map</h3>
+    <h2 class="list-heading">Search & Rescue Tools</h2>
+    <div>
+      <h3 class="list-heading">Map Division</h3>
       <!--div><input type="checkbox" name="voronoi" class="check" value="random"> Random Voronoi</input></div-->
       <!--div><input type="checkbox" name="voronoi" class="check" value="triangle"> Triangle based on vertices</input></div-->
       <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
 
-      <input type="button" class="edit-button" value="Generate area" id="btngeneratearea"/>
-      <input type="button" class="edit-button" value="Generate random heatmap" id="btngenerateheatmap">
-
-      <input type="file" id="file-input" />
+      <input type="button" class="edit-button" value="Generate task" id="btngeneratearea"/>
+      <input type="button" class="edit-button" value="Edit cells" id="btneditcells"/>
 
       <hr/>
-      <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
-
-      <hr/>
-      <h2>Task Name</h2>
+      <h3>Task Name</h3>
       <div>
           <div>
             <input type="input" id="tasknotes" value="SAR0001"></input>
             <input type="button" value="Save Tasks" id="savetasks"></input>
           </div>
       </div>
-
-
     </div>
+
+
+
+    <hr/>
+    <div>
+      <h3>Lost person model</h3>
+      <div style="display:none">
+        <input type="file" id="file-input" position= "relative"/>
+      </div>
+      <div>
+        <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
+        <input type="button" class="edit-button" value="Load LPM Data" id="loadlpmcsv">
+      </div>
+
+      <div>
+        <label id="colormap">Color map: </label>
+        <select id="sel_colormap">
+          <option value="o_rainbow">Rainbow</option>
+          <option value="o_yr">Yellow-red</option>
+          <option value="o_br">Blue-red</option>
+        </select>
+        <input type="button" id="colormap" value="Switch" style="display:none"></input>
+
+      </div>
+
+      <div class="slidecontainer">
+        <label for="myRange" id="lmyRange">Hour(0-10): 5</label>
+        <input type="range" min="0" max="10" value="5" class="slider" id="myRange">
+
+      </div>
+      <div class="slidecontainer">
+        <label for="myfilter" id="lmyfilter">Filter(0-10): 7</label>
+        <input type="range" min="0" max="10" value="7" class="slider" id="myfilter">
+
+      </div>
+
+      <div>
+        <select id="sel_lpmodel">
+          <option value="control">Probability</option>
+          <option value="points">Points</option>
+          <option value="trajectory">Trajectory</option>
+          <option value="heatmap">Heat map</option>
+        </select>
+        <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
+        <label id="lpsum">ippm</label>
+      </div>
+    </div>
+
+    <hr/>
+    <div>
+      <h3>Task Assignment</h3>
+      <div>
+        <label for="cellname">Cell Name: </label>
+        <input type="input" id="cellname" value="SX"></input>
+      </div>
+
+      <div>
+        <label >Assign to team: </label>
+        <select>
+          <option value="team1">Team 1</option>
+          <option value="team2">Team 2</option>
+          <option value="team3">Team 3</option>
+          <option value="team4">Team 4</option>
+          <option value="team4">Team 5</option>
+        </select>
+      <input type="button" id="taskassignment" value="Assign"></input>
+    </div>
+    </div>
+
+    <hr>
+    <div id="draw">
+      <h3 class="list-heading">Map measurement tools</h3>
+      <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
+      <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
+    </div>
+    <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
+    <div><label id="elevation">Elevation</label></div>
 
     <hr/>
     <div>
@@ -1466,31 +2228,6 @@
 
       <p id="daytime"></p>
 
-    </div>
-
-    <hr/>
-    <div>
-      <label id="elevation">Elevation</label>
-    </div>
-
-    <hr/>
-    <div>
-      <h2>Task Assignment</h2>
-      <div>
-        <label for="cellname">Cell Name: </label>
-        <input type="input" id="cellname" value="SX"></input>
-      </div>
-
-      <div>
-        <label >Assign to team: </label>
-        <select>
-          <option value="team1">Team 1</option>
-          <option value="team2">Team 2</option>
-          <option value="team3">Team 3</option>
-          <option value="team4">Team 4</option>
-        </select>
-      <input type="button" id="taskassignment" value="Assign"></input>
-    </div>
     </div>
 
   </div>

@@ -52,21 +52,6 @@
         transition: opacity .2s;
       }
 
-      table {
-        font-family: arial, sans-serif;
-        border-collapse: collapse;
-        width: 100%;
-      }
-
-      td, th {
-        border: 1px solid #dddddd;
-        text-align: left;
-        padding: 8px;
-      }
-
-      tr:nth-child(even) {
-        background-color: #dddddd;
-      }
 
   </style>
   <script>
@@ -111,7 +96,7 @@
       ElevationLayer,Polyline,Circle,promiseUtils
     ) {
       let view, sketchViewModel, draw,
-        newDevelopmentGraphic,taskassignment_sketchViewModel,
+        newDevelopmentGraphic,
         instructionsExpand,coordinateLayer;
       let intersects = false,
         contains = true;
@@ -165,21 +150,6 @@
       var m_lpdata_json={};
       var m_lpdata=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
-      let t_rgb=[];
-      let m_editing=false;
-      /*
-      [
-         {'round':1,
-         'cell'=[{'sname':0,'polygon':rings},{'sname':1,'polygon':rings}...],
-         'teams':[0,0,1,1,2], //'team1':0,'team2':0,'team3':1,'team4':1,'team5':2
-         'responsetime':120,
-         'assigntime':200,
-         'displaytype':'point'},
-         {'round':2,'cell'=[{'sname':5,'polygon':rings},{'sname':6,'polygon':rings}...], 'team1':0,'team2':0,'team3':1,'team4':1,'team5':2, 'responsetime':100,'assigntime':200,'displaytype':'heatmap'},
-
-      ];
-      */
-      let m_taskpolygon={};
 
       const graphicInitLayer= new GraphicsLayer();
       const graphicsLayer = new GraphicsLayer({
@@ -195,9 +165,6 @@
         opacity:0.8
       });
 
-      const teamgraphicsLayer=new GraphicsLayer({
-        opacity:0.6
-      });
 
       function hslToRgb(h, s, l) {
           var r, g, b;
@@ -294,7 +261,7 @@
       const map = new Map({
         basemap: "hybrid",//"hybrid",//"satellite",
         //ground: "world-elevation",
-        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer]
+        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer]
 
       });
 
@@ -411,11 +378,6 @@
             //testing forbid mover
             return;
           }
-          if (taskassignment_sketchViewModel.state === "active") {
-            //testing forbid mover
-            return;
-          }
-
           view.hitTest(event).then(function(response) {
             var results = response.results;
             // Check if the new development graphic was clicked and pass
@@ -424,17 +386,11 @@
               //set the assignment: cell to team
               //result
               $("#cellname").val("S"+result.graphic.attributes.cellindex);//result.graphic.attributes.cellindex;
-              if(m_editing){
-                if (result.graphic.layer === sketchViewModel.layer) {
-                  sketchViewModel.update([result.graphic], {
-                    tool: "reshape"//"reshape"
-                  });
-                }
-              }
-              if(result.graphic.layer === taskassignment_sketchViewModel.layer){
-                //console.log(taskassignment_sketchViewModel);
-                taskassignment_sketchViewModel.update([result.graphic],{
-                  tool:"point"//move
+              if (result.graphic.layer === sketchViewModel.layer &&
+                result.graphic.attributes && result.graphic.attributes
+                .newDevelopment) {
+                sketchViewModel.update([result.graphic], {
+                  tool: "reshape"//"reshape"
                 });
               }
             });
@@ -445,37 +401,9 @@
 
       view.when(function() {
         area_extent=view.extent;
-
-        //drag and drop teams icon for task assignment
-        taskassignment_sketchViewModel = new SketchViewModel({
-          view: view,
-          layer: teamgraphicsLayer,
-          updatePointSymbol:{
-            type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
-             url: "{% static 'img/user_glow.png' %}",
-             width: "64px",
-             height: "64px"
-                         /*
-            type: "simple-marker",
-            color: [255, 0, 0, 0.2],
-            outline: {
-             color: [255, 0,0,1],
-              width: 2}
-
-            */
-          },
-          updateOnGraphicClick: false,
-          defaultUpdateOptions: { // set the default options for the update operations
-            toggleToolOnClick: false//false // only reshape operation will be enabled
-          }
-        })
-
-        taskassignment_sketchViewModel.on(["update", "undo", "redo"], onTaskAssignmentGraphicUpdate);
-
         // Query all buffer features from the school buffers featurelayer
 
         // Create a new instance of sketchViewModel and set its required properties
-
         sketchViewModel = new SketchViewModel({
           view: view,
           layer: graphicsLayer,
@@ -490,11 +418,6 @@
         // Listen to sketchViewModel's update event to do
         // graphic reshape or move validation
         sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
-
-
-
-
-
 
       });
 
@@ -822,30 +745,11 @@
 
       }
 
-      document.getElementById("btntaskassignment").onclick=function() {
-        //save to the database
-      }
-      document.getElementById("btneditcells").onclick=function() {
-        if(m_editing){
-          document.getElementById("btneditcells").value="Edit cells (Stop)";
-          m_editing=false;
-        }
-        else{
-          document.getElementById("btneditcells").value="Edit cells (Editing)";
-          m_editing=true;
-        }
-
-
-      }
         //generate voronoi
       document.getElementById("btngeneratearea").onclick=function() {
         graphicsLayer.removeAll();
         view.graphics.removeAll();
         gpsgraphicsLayer.removeAll();
-
-        //draw teams
-        AddTeams();
-
         //wholetask=activeWidget.viewModel.measurement;
         allpolygons=[];
         glverticeslist=[];
@@ -955,6 +859,8 @@
 //-----------------adding new functions here---------------------
 
       function onGraphicUpdate(event){
+
+        let graphic = event.graphics[0];
         let mover,temppolyset,t_pointIndex,orignalmover;//for reshape
         let t_pt_array;//for move
 
@@ -963,7 +869,6 @@
         //}
         //if is the first active or not
         if (event.state=="active"){
-          let graphic = event.graphics[0];
           //console.log(event);
           let t_status=0;//1: "reshape", 2: "move";
           mover=event.toolEventInfo.mover.geometry;
@@ -1020,8 +925,7 @@
                   geometry: allpolygons[i].geometry,
                   symbol: validSymbol,
                   attributes: {
-                    newDevelopment: "new store",
-                    cellindex: allpolygons[i].attributes.cellindex
+                    newDevelopment: "new store"
                   }
                 });
                 activepolygonset.push(allpolygons[i]);
@@ -1053,37 +957,6 @@
           }
 
         }
-      }
-      function onTaskAssignmentGraphicUpdate(event){
-        let graphic = event.graphics[0];
-        //console.log("onTaskAssignmentGraphicUpdate");
-        //console.log(graphic);
-        //Teamindex
-
-        //detect the overlap area
-        if (event.state=="active"){
-          mover=event.toolEventInfo.mover.geometry;
-          if(event.toolEventInfo.type=="move-start"){
-
-          }
-          else if(event.toolEventInfo.type=="move"){
-
-
-          }
-          else if(event.toolEventInfo.type=="move-stop"){
-            //console.log(mover);
-            for(let i=0;i<allpolygons.length;i++){
-
-              if(geometryEngine.contains(allpolygons[i].geometry,mover)){
-                $(graphic.attributes.htmlid).text("S"+allpolygons[i].attributes.cellindex.toString());
-                break;
-              }
-
-            }
-
-          }
-        }
-
       }
 
       //tpoly is an array[[,],[,]]
@@ -1288,7 +1161,7 @@
          graphicControlLayer.removeAll();
          setActiveWidget(null);
          sketchViewModel.complete();
-         taskassignment_sketchViewModel.complete();
+
          view.ui.remove(activeWidget);
          //activeWidget.destroy();
          activeWidget = null;
@@ -1387,7 +1260,7 @@
 
 
          }
-         function LoadLPFromCSV(t_url,t_arr_count){
+         function LoadLPFromCSV(t_url){
            var t_data;
             $.ajax({
               type: "GET",
@@ -1401,54 +1274,8 @@
                  });
                  m_lpdata.push(t_data);
                  //console.log(response);
-                 if (m_lpdata.length == t_arr_count){
-                   document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
-                 }
               }
             });
-            return true;
-         }
-
-         function AddTeams(teamcount=5){
-           teamgraphicsLayer.removeAll();
-           arr_featureset=[];
-           //team 1,2,3,4,5
-           let t_y=0.95*view.extent.ymax+0.05*view.extent.ymin;
-           let t_start=0.2*view.extent.xmax+0.8*view.extent.xmin;
-           let t_stop=0.5*view.extent.xmax+0.5*view.extent.xmin;
-           let t_steps=(t_stop-t_start)/teamcount;
-           for(let i=0;i<teamcount;i++){
-             //console.log(view);
-             let in_point=new Point({
-               x:t_start+i*t_steps,
-               y:t_y,
-               spatialReference:view.spatialReference
-             });
-
-             let t_graphic =  new Graphic({
-               geometry: in_point,
-               symbol:  {
-                 type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
-                  url: "{% static 'img/user.png' %}",
-                  width: "64px",
-                  height: "64px"
-                 /*
-                    type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-                    style:"circle",
-                    color: [255, 123, 0,1],
-                    size:20*/
-                },
-                attributes:{
-                  Name:"Team",
-                  Teamindex:i+1,
-                  Status:"Assigned",
-                  htmlid:"#th_team"+(i+1).toString()
-                }
-              });
-              arr_featureset.push(t_graphic);
-           }
-           teamgraphicsLayer.addMany(arr_featureset);
-
          }
 
          function AddLPDataToPointslayer(){
@@ -1512,10 +1339,8 @@
                arr_featureset.push(t_graphic);
            }
 
-           graphicPointsLayer.addMany(arr_featureset);
+           graphicPointsLayer.addMany(arr_featureset)
            graphicPointsLayer.visible=true;
-
-           //teamgraphicsLayer.addMany(arr_featureset);
          }
 
          function AddLPDataToTrajectorylayer(){
@@ -1669,7 +1494,7 @@
 
            }
 
-           graphicControlLayer.addMany(arr_featureset);
+           graphicControlLayer.addMany(arr_featureset)
            graphicControlLayer.visible=true;
          }
 
@@ -1747,7 +1572,7 @@
               arr_featureset.push(t_graphic);
             }
             //console.log(arr_featureset);
-          graphicHeatmapsLayer.addMany(arr_featureset);
+          graphicHeatmapsLayer.addMany(arr_featureset)
           graphicHeatmapsLayer.visible=true;
 
          }
@@ -1804,17 +1629,7 @@
 
                //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
                //rainbow 0-1
-               m_colormap=document.getElementById("sel_colormap").selectedIndex;
-               //console.log(m_colormap);
-               if (m_colormap==0){
-                 t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
-               }
-               else if (m_colormap==1){
-                 t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
-               }
-               else{
-                 t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//red-blue
-               }
+               t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//red
                //t_rgb=hslToRgb(0.5*t_mag, 1, 0.5);//h:0.5-1,1,0.5
                t_rgb.push(0.8*t_mag);//oppacity
                let polygon = new Polygon({
@@ -1838,7 +1653,7 @@
              //console.log(arr_featureset);
 
 
-           graphicHeatmapsLayer.addMany(arr_featureset);
+           graphicHeatmapsLayer.addMany(arr_featureset)
            graphicHeatmapsLayer.visible=true;
 
           }
@@ -1905,11 +1720,10 @@
              });
 
              t_feature.push(t_graphic);
-            }
+           }
 
            //draw 25%,50%,75% ring
            graphicInitLayer.addMany(t_feature);
-
          }
          document.getElementById("loadlpmcsv").onclick=function() {
            //draw initial condition centerpoints
@@ -1922,25 +1736,20 @@
               //console.log(json); // this will show the info it in firebug console
           });
 
-          let t_arr_count=11;
 
-          document.getElementById("loadlpmcsv").value="Load LPM Data (Loading)";
-
-          LoadLPFromCSV("{% static 'data/data_t0_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t1_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t2_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t3_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t4_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t5_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t6_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t7_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t8_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t9_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t10_95_res_3.csv' %}",t_arr_count);
+          LoadLPFromCSV("{% static 'data/data_t0_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t1_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t2_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t3_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t4_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t5_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t6_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t7_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t8_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t9_95_res_3.csv' %}");
+          LoadLPFromCSV("{% static 'data/data_t10_95_res_3.csv' %}");
 
           //console.log(m_lpdata);
-
-
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
 
@@ -2189,9 +1998,16 @@
       <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
 
       <input type="button" class="edit-button" value="Generate task" id="btngeneratearea"/>
-      <input type="button" class="edit-button" value="Edit cells" id="btneditcells"/>
 
 
+      <hr/>
+      <h3>Task Name</h3>
+      <div>
+          <div>
+            <input type="input" id="tasknotes" value="SAR0001"></input>
+            <input type="button" value="Save Tasks" id="savetasks"></input>
+          </div>
+      </div>
     </div>
 
 
@@ -2214,7 +2030,7 @@
           <option value="o_yr">Yellow-red</option>
           <option value="o_br">Blue-red</option>
         </select>
-        <input type="button" id="colormap" value="Switch" style="display:none"></input>
+        <input type="button" id="colormap" value="Switch"></input>
 
       </div>
 
@@ -2245,40 +2061,20 @@
     <div>
       <h3>Task Assignment</h3>
       <div>
-        <table>
-          <thead>
-            <tr>
-              <th>Team</th>
-              <th>Cell</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>1</th>
-              <th>SX</th>
-            </tr>
-            <tr>
-              <th>2</th>
-              <th>SX</th>
-            </tr>
-            <tr>
-              <th>3</th>
-              <th>SX</th>
-            </tr>
-            <tr>
-              <th>4</th>
-              <th>SX</th>
-            </tr>
-            <tr>
-              <th>5</th>
-              <th id="th_team5">SX</th>
-            </tr>
-          </tbocy>
-        </table>
-        <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"></input>
+        <label for="cellname">Cell Name: </label>
+        <input type="input" id="cellname" value="SX"></input>
       </div>
 
-
+      <div>
+        <label >Assign to team: </label>
+        <select>
+          <option value="team1">Team 1</option>
+          <option value="team2">Team 2</option>
+          <option value="team3">Team 3</option>
+          <option value="team4">Team 4</option>
+        </select>
+      <input type="button" id="taskassignment" value="Assign"></input>
+    </div>
     </div>
 
     <hr>
@@ -2304,31 +2100,6 @@
 
     </div>
 
-    <hr/>
-    <h3>Task Name</h3>
-    <div>
-        <div>
-          <input type="input" id="tasknotes" value="SAR0001"></input>
-          <input type="button" value="Save Tasks" id="savetasks"></input>
-        </div>
-    </div>
-
-    <div>
-      <label for="cellname">Cell Name: </label>
-      <input type="input" id="cellname" value="SX"></input>
-    </div>
-
-    <div>
-      <label >Assign to team: </label>
-      <select>
-        <option value="team1">Team 1</option>
-        <option value="team2">Team 2</option>
-        <option value="team3">Team 3</option>
-        <option value="team4">Team 4</option>
-        <option value="team4">Team 5</option>
-      </select>
-
-  </div>
   </div>
 
   <div id="viewDiv">

@@ -196,7 +196,7 @@
       });
 
       const teamgraphicsLayer=new GraphicsLayer({
-        opacity:0.6
+        opacity:0.8
       });
 
       function hslToRgb(h, s, l) {
@@ -824,6 +824,7 @@
 
       document.getElementById("btntaskassignment").onclick=function() {
         //save to the database
+        AddTeams();
       }
       document.getElementById("btneditcells").onclick=function() {
         if(m_editing){
@@ -844,7 +845,7 @@
         gpsgraphicsLayer.removeAll();
 
         //draw teams
-        AddTeams();
+
 
         //wholetask=activeWidget.viewModel.measurement;
         allpolygons=[];
@@ -860,6 +861,9 @@
         else if(voronoistyle=="clear"){
           addFreedraw();
         }
+
+        AddTeams();
+        DisplayLostPersonInfo();
       };
 
       // this function is called from the polygon draw action events
@@ -1072,9 +1076,11 @@
           }
           else if(event.toolEventInfo.type=="move-stop"){
             //console.log(mover);
+            console.log(graphic);
             for(let i=0;i<allpolygons.length;i++){
 
               if(geometryEngine.contains(allpolygons[i].geometry,mover)){
+                //document.getElementById(graphic.attributes.htmlid).text("S"+allpolygons[i].attributes.cellindex.toString());
                 $(graphic.attributes.htmlid).text("S"+allpolygons[i].attributes.cellindex.toString());
                 break;
               }
@@ -1846,13 +1852,10 @@
          document.getElementById('file-input').addEventListener('change', readSingleFile, false);
 
          document.getElementById("lpinfo").onclick=function() {
-           /*
-           25%: 1100 m
-           50%: 3100 m
-           75%: 5800 m
-           95%: 18300 m
+           DisplayLostPersonInfo();
+         }
 
-           */
+         function DisplayLostPersonInfo(){
            graphicInitLayer.removeAll();
            let t_feature=[];
 
@@ -1880,6 +1883,8 @@
               }
            });
            t_feature.push(t_graphic);
+
+            //draw 25%,50%,75% ring
            let rings_arr=[1100,3100,5800,18300];
            let ringsname_arr=["25% ring","50% ring","75% ring","95% ring"];
            for(let i=0;i<4;i++){
@@ -1906,8 +1911,60 @@
 
              t_feature.push(t_graphic);
             }
+            // draw team rectangle
+            //from x: 0.05-0.6
+            //from y: 0.1 - 0.3
+            let t_rect=new Polygon({
+              rings:[
+                [0.85*view.extent.xmin+0.15*view.extent.xmax,0.02*view.extent.ymin+0.98*view.extent.ymax],
+                [0.5*view.extent.xmin+0.5*view.extent.xmax,0.02*view.extent.ymin+0.98*view.extent.ymax],
+                [0.5*view.extent.xmin+0.5*view.extent.xmax,0.08*view.extent.ymin+0.92*view.extent.ymax],
+                [0.85*view.extent.xmin+0.15*view.extent.xmax,0.08*view.extent.ymin+0.92*view.extent.ymax],
+                [0.85*view.extent.xmin+0.15*view.extent.xmax,0.02*view.extent.ymin+0.98*view.extent.ymax],
+              ],
+              spatialReference:view.spatialReference
+            });
 
-           //draw 25%,50%,75% ring
+            t_graphic =  new Graphic({
+              geometry: t_rect,//view.extent.center,
+              symbol:  {
+                   type: "simple-fill", // autocasts as new SimpleMarkerSymbol()
+                   style:"none",
+                   outline:{
+                     color:[255,125,0,1],
+                     width:2
+                   }
+                 },
+               attributes:{
+                 Name:"team group"
+               }
+            });
+            t_feature.push(t_graphic);
+
+            let t_point=new Point({
+              x:0.9*view.extent.xmin+0.1*view.extent.xmax,
+              y:0.07*view.extent.ymin+0.93*view.extent.ymax,
+              spatialReference:view.spatialReference
+            });
+            t_graphic=new Graphic ({
+              geometry:t_point,
+              symbol:{
+                type: "text",  // autocasts as new TextSymbol()
+                color: [255,125,0],//"white",
+                haloColor: "black",
+                haloSize: "1px",
+                text: "Teams: ",
+                xoffset: 3,
+                yoffset: 3,
+                font: {  // autocast as new Font()
+                  size: 50,
+                  family: "sans-serif",
+                  weight: "bold"
+                }
+              }
+            });
+            t_feature.push(t_graphic);
+
            graphicInitLayer.addMany(t_feature);
 
          }
@@ -2255,19 +2312,19 @@
           <tbody>
             <tr>
               <th>1</th>
-              <th>SX</th>
+              <th id="th_team1">SX</th>
             </tr>
             <tr>
               <th>2</th>
-              <th>SX</th>
+              <th id="th_team2">SX</th>
             </tr>
             <tr>
               <th>3</th>
-              <th>SX</th>
+              <th id="th_team3">SX</th>
             </tr>
             <tr>
               <th>4</th>
-              <th>SX</th>
+              <th id="th_team4">SX</th>
             </tr>
             <tr>
               <th>5</th>

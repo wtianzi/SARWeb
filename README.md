@@ -1,5 +1,5 @@
 # SAR Web User Interface Demo
-![Web interface](screen/screen1.png)
+![Web interface](screen/taskassign.png)
 [more examples](screen/)
 ## Built based on
 - DJango as sever

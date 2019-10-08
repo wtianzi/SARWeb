@@ -125,7 +125,7 @@
       var width=1600*1.5;
       var height=900*1.5;
 
-      var scale=15;//16
+      var scale=17;//15
       //36.8176602,-80.363078
       //kentlane farm (-80.572567,37.203604)
       //{" wkid":4326 }: latetude
@@ -150,6 +150,7 @@
 //wkid 102100: left-top (-8970062.142, 4467672.843), right-bottom (-8967625.712	4466311.309)
 
       let allpolygons=[];
+      let allpolygons_text=[];
       let activepolygonset=[];
       let activepolygonpoints=[];
       let move_polygon;
@@ -157,6 +158,7 @@
 
       let gpspatharray=[];
       var arr_featureset=[];
+
 
       let validSymbol;// = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//solid
 
@@ -168,8 +170,11 @@
       let t_rgb=[];
       let m_editing=false;
 
+      let m_teamiconlocation=null;
+
       //let m_searchedarea=[];//all polygon marked gray
       let m_teamassign=[null,null,null,null,null];//
+      let m_targetpolygon;
 
       /*
       [
@@ -720,17 +725,14 @@
             symbol:text_symbol
           });
           allpolygons.push(newDevelopmentGraphic);
-          allpolygons.push(t_point);
+          allpolygons_text.push(t_point);
         }
         updated_polygonring=vtriangles;
 
-        //view.graphics.add(newDevelopmentGraphic);
-        //graphicsLayer.addMany([newDevelopmentGraphic]);
-        //graphicsLayer.graphics.add(newDevelopmentGraphic);
         graphicsLayer.addMany(allpolygons);
+        graphicsLayer.addMany(allpolygons_text);
 
-        // query the average elevation of a cell
-        //elevLyr.createElevationSampler(extent);
+        m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
 
       }
 
@@ -870,29 +872,63 @@
         //m_searchedarea.concat(m_teamassign);
         console.log(m_teamassign);
         for(let i=0;i<m_teamassign.length;i++){
-          console.log(m_teamassign[i]);
+
+          //console.log(m_teamassign[i]);
           if(m_teamassign[i]){
             DrawPolygonToInitLayer(m_teamassign[i]);
+
+            //check if the target is in the array
+            if(m_teamassign[i].attributes.cellindex==m_targetpolygon.attributes.cellindex){
+              //display the targetarea
+              DrawPolygonToInitLayer(m_targetpolygon,"red");
+              DrawCongratulationsToInitLayer();
+            }
           }
+
         }
         m_teamassign=[null,null,null,null,null];
 
+        //console.log(m_targetpolygon);
+        //DrawPolygonToInitLayer(m_targetpolygon,"red");
       }
+      function DrawCongratulationsToInitLayer(){
+        var graphic = new Graphic({
+          geometry: view.extent.center,
+          symbol: {
+            type: "text",
+            color: [255,125,0],
+            haloColor: "black",
+            haloSize: "2px",
+            text: "Congratulations!",
+            xoffset: 3,
+            yoffset: 3,
+            font: { // autocast as Font
+              size: 100,
+              family: "sans-serif"
+            }
+          }
+        });
+        graphicInitLayer.add(graphic);
 
-      function DrawPolygonToInitLayer(t_obj){
+      }
+      function DrawPolygonToInitLayer(t_obj,t_color=[0, 102, 255, 0.8]){
         //draw the polygon into graphicInitLayer
         var graphic = new Graphic({
           geometry: t_obj.geometry,
           symbol: {
             type: "simple-fill", // autocasts as SimpleFillSymbol
-            color: [0, 102, 255, 0.8],//[178, 102, 234, 0.1],
+            color: t_color,//[0, 102, 255, 0.8],//[178, 102, 234, 0.1],
             style: "backward-diagonal"
           }
         });
-        console.log(graphic);
+        //console.log(graphic);
         graphicInitLayer.add(graphic);
       }
 
+
+      document.getElementById("btndisplaytarget").onclick=function() {
+        DrawPolygonToInitLayer(m_targetpolygon,[255,0,0,0.8]);
+      }
       document.getElementById("btneditcells").onclick=function() {
         if(m_editing){
           document.getElementById("btneditcells").value="Edit cells (Stop)";
@@ -916,6 +952,7 @@
 
         //wholetask=activeWidget.viewModel.measurement;
         allpolygons=[];
+        allpolygons_text=[];
         glverticeslist=[];
         if(voronoistyle=="random"){
           addVoronoi();
@@ -1350,6 +1387,7 @@
          //console.log(activeWidget.viewModel.measurementLabel.area);
          deletePointsToGeolayer();
          allpolygons=[];
+         allpolygons_text=[];
          activepolygonset=[];
          activepolygonpoints=[];
          glverticeslist=[];
@@ -1362,6 +1400,7 @@
          graphicTrajectoryLayer.removeAll();
          graphicHeatmapsLayer.removeAll();
          graphicControlLayer.removeAll();
+         graphicInitLayer.removeAll();
          setActiveWidget(null);
          sketchViewModel.complete();
          //taskassignment_sketchViewModel.complete();
@@ -1487,46 +1526,47 @@
 
          function AddTeams(teamcount=5){
            teamgraphicsLayer.removeAll();
-           arr_featureset=[];
            //team 1,2,3,4,5
-           let t_y=0.95*view.extent.ymax+0.05*view.extent.ymin;
-           let t_start=0.2*view.extent.xmax+0.8*view.extent.xmin;
-           let t_stop=0.5*view.extent.xmax+0.5*view.extent.xmin;
-           let t_steps=(t_stop-t_start)/teamcount;
-           for(let i=0;i<teamcount;i++){
-             //console.log(view);
-             let in_point=new Point({
-               x:t_start+i*t_steps,
-               y:t_y,
-               spatialReference:view.spatialReference
-             });
+           if (m_teamiconlocation){
+             for(let i=0;i<m_teamiconlocation.length;i++){
+               $(m_teamiconlocation[i].attributes.htmlid).text("SX");
+             }
 
-             let t_graphic =  new Graphic({
-               geometry: in_point,
-               symbol:  {
-                 type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
-                  url: "{% static 'img/user.png' %}",
-                  width: "64px",
-                  height: "64px"
-                 /*
-                    type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-                    style:"circle",
-                    color: [255, 123, 0,1],
-                    size:20*/
-                },
-                attributes:{
-                  Name:"Team",
-                  Teamindex:i+1,
-                  Status:"Assigned",
-                  htmlid:"#th_team"+(i+1).toString()
-                }
-              });
-              arr_featureset.push(t_graphic);
-              $(t_graphic.attributes.htmlid).text("SX");
            }
-           teamgraphicsLayer.addMany(arr_featureset);
+           else{
+             m_teamiconlocation=[];
+             let t_y=0.95*view.extent.ymax+0.05*view.extent.ymin;
+             let t_start=0.2*view.extent.xmax+0.8*view.extent.xmin;
+             let t_stop=0.5*view.extent.xmax+0.5*view.extent.xmin;
+             let t_steps=(t_stop-t_start)/teamcount;
+             for(let i=0;i<teamcount;i++){
+               //console.log(view);
+               let in_point=new Point({
+                 x:t_start+i*t_steps,
+                 y:t_y,
+                 spatialReference:view.spatialReference
+               });
 
-
+               let t_graphic =  new Graphic({
+                 geometry: in_point,
+                 symbol:  {
+                   type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
+                    url: "{% static 'img/user.png' %}",
+                    width: "64px",
+                    height: "64px"
+                  },
+                  attributes:{
+                    Name:"Team",
+                    Teamindex:i+1,
+                    Status:"Assigned",
+                    htmlid:"#th_team"+(i+1).toString()
+                  }
+                });
+                m_teamiconlocation.push(t_graphic);
+                $(t_graphic.attributes.htmlid).text("SX");
+             }
+           }
+           teamgraphicsLayer.addMany(m_teamiconlocation);
          }
 
          function AddLPDataToPointslayer(){
@@ -2409,6 +2449,9 @@
         </table>
         <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"></input>
       </div>
+      <div>
+        <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
+      </div>
 
 
     </div>
@@ -2461,6 +2504,7 @@
       </select>
 
   </div>
+
   </div>
 
   <div id="viewDiv">

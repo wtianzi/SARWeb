@@ -143,7 +143,7 @@
 
       //acer
 
-      let eacharea=240000;//60 acer;
+      let eacharea=500000;//240000;//60 acer;
       var activeWidget = null;
 //  wkid: 102100 vs wkid: 4326
 //wkid 102100/pix =1.5 (2444,1366/1600,900)
@@ -167,6 +167,10 @@
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_editing=false;
+
+      //let m_searchedarea=[];//all polygon marked gray
+      let m_teamassign=[null,null,null,null,null];//
+
       /*
       [
          {'round':1,
@@ -533,7 +537,8 @@
           y:textent.center.y+ 0.1*(Math.random()-0.5)*textent.height,
           spatialReference:view.spatialReference
         });
-        sites = GetSitesFromN(npoints,in_point,textent);
+        //sites = GetSitesFromN(npoints,in_point,textent);
+        sites = GetSites(npoints,textent);
         var voronoi = d3.voronoi().extent([[lbx,lby], [rtx,rty]]);
         var diagram = voronoi(sites),
             links = diagram.links(),
@@ -554,7 +559,42 @@
         }
         return cpy;
       }
+      function GetSites(n,t_extent){
+        let res_points=[];
+        //center point [0,0]
+        //first round radius:1, second:2,third:3
+        let t_radius=1;
+        let t_firstround=6;
 
+        //second round
+        let res_count=0;
+        let t_wholearea=0;
+        let t_cellarea=t_radius*t_radius/t_firstround;
+
+        while(n>res_count){
+          let t_roundarea=t_radius*t_radius-t_wholearea;
+          let t_celldegree=t_cellarea/t_roundarea;
+          let t_totaldegree=0;
+          while(t_totaldegree<=0.99){
+            res_points.push([(t_radius-0.5)*Math.sin(2*Math.PI*t_totaldegree),(t_radius-0.5)*Math.cos(2*Math.PI*t_totaldegree)]);
+            t_totaldegree=t_totaldegree+t_celldegree;
+            res_count=res_count+1;
+          }
+          t_wholearea=t_radius*t_radius;
+          t_radius=t_radius+1;
+        }
+
+        //standrized from 1:1 into width and height ratio
+        t_radius=t_radius-1;
+        let t_wscale=t_extent.width/(2*t_radius);
+        let t_hscale=t_extent.height/(2*t_radius);
+
+        for(let i=0;i<res_count;i++){
+          res_points[i][0]=res_points[i][0]*t_wscale+t_extent.center.x;
+          res_points[i][1]=res_points[i][1]*t_hscale+t_extent.center.y;
+        }
+        return res_points;
+      }
       function GetSitesFromN(n,in_point,t_extent){
         let t_portion=gwidth/gheight;
         //n points
@@ -670,7 +710,8 @@
             symbol: validSymbol,
             attributes: {
               newDevelopment: "new store",
-              cellindex:(i+1).toString()
+              cellindex:(i+1).toString(),
+              polygonindex:i.toString()
             }
           });
           text_symbol.text="S"+(i+1).toString();
@@ -825,7 +866,33 @@
       document.getElementById("btntaskassignment").onclick=function() {
         //save to the database
         AddTeams();
+        //draw the polygon
+        //m_searchedarea.concat(m_teamassign);
+        console.log(m_teamassign);
+        for(let i=0;i<m_teamassign.length;i++){
+          console.log(m_teamassign[i]);
+          if(m_teamassign[i]){
+            DrawPolygonToInitLayer(m_teamassign[i]);
+          }
+        }
+        m_teamassign=[null,null,null,null,null];
+
       }
+
+      function DrawPolygonToInitLayer(t_obj){
+        //draw the polygon into graphicInitLayer
+        var graphic = new Graphic({
+          geometry: t_obj.geometry,
+          symbol: {
+            type: "simple-fill", // autocasts as SimpleFillSymbol
+            color: [0, 102, 255, 0.8],//[178, 102, 234, 0.1],
+            style: "backward-diagonal"
+          }
+        });
+        console.log(graphic);
+        graphicInitLayer.add(graphic);
+      }
+
       document.getElementById("btneditcells").onclick=function() {
         if(m_editing){
           document.getElementById("btneditcells").value="Edit cells (Stop)";
@@ -1025,7 +1092,8 @@
                   symbol: validSymbol,
                   attributes: {
                     newDevelopment: "new store",
-                    cellindex: allpolygons[i].attributes.cellindex
+                    cellindex: allpolygons[i].attributes.cellindex,
+                    polygonindex: allpolygons.length
                   }
                 });
                 activepolygonset.push(allpolygons[i]);
@@ -1076,12 +1144,14 @@
           }
           else if(event.toolEventInfo.type=="move-stop"){
             //console.log(mover);
-            console.log(graphic);
+            //console.log(graphic);
             for(let i=0;i<allpolygons.length;i++){
 
               if(geometryEngine.contains(allpolygons[i].geometry,mover)){
                 //document.getElementById(graphic.attributes.htmlid).text("S"+allpolygons[i].attributes.cellindex.toString());
+
                 $(graphic.attributes.htmlid).text("S"+allpolygons[i].attributes.cellindex.toString());
+                m_teamassign[graphic.attributes.Teamindex-1]=allpolygons[i];
                 break;
               }
 
@@ -1294,7 +1364,7 @@
          graphicControlLayer.removeAll();
          setActiveWidget(null);
          sketchViewModel.complete();
-         taskassignment_sketchViewModel.complete();
+         //taskassignment_sketchViewModel.complete();
          view.ui.remove(activeWidget);
          //activeWidget.destroy();
          activeWidget = null;
@@ -1452,8 +1522,10 @@
                 }
               });
               arr_featureset.push(t_graphic);
+              $(t_graphic.attributes.htmlid).text("SX");
            }
            teamgraphicsLayer.addMany(arr_featureset);
+
 
          }
 
@@ -1964,10 +2036,13 @@
               }
             });
             t_feature.push(t_graphic);
+            //draw the polygon into graphicInitLayer
+            //console.log(m_searchedarea);
 
            graphicInitLayer.addMany(t_feature);
 
          }
+
          document.getElementById("loadlpmcsv").onclick=function() {
            //draw initial condition centerpoints
 

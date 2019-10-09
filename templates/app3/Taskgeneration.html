@@ -124,13 +124,37 @@
 
       var width=1600*1.5;
       var height=900*1.5;
+      let m_d=new Date();
+      let m_experimentres={
+        "scenario":null,
+        "participantid":null,
+        "participant_index":(m_d.getMonth()+1).toString()+m_d.getDate().toString()+m_d.getHours().toString(),
+        "teamnumber":5,
+        "taskstart":Date.now(),
+        "taskstop":null,
+        "taskduration":100,
+        "targetcellindex":0,
+        "polygonnumbers":0,
+        "visualization_type":"probability",
+        "step_number":5,
+        "step_details":[
+          {"step_index":1,"team1_cell":1,"starttime":0,"stoptime":1,"visualresponsetime":2,"duration":20},
+          {"step_index":2,"team1_cell":1,"starttime":0,"stoptime":1,"visualresponsetime":2,"duration":20}
+        ],//visualresponsetime: time between (the heatmap is loaded) and (active the first team icon)
+        "allpolygons":null
+      };
 
-      var scale=17;//15
+      var scale=18;//15
       //36.8176602,-80.363078
       //kentlane farm (-80.572567,37.203604)
       //{" wkid":4326 }: latetude
       //
-
+      let m_scenario_index=0;
+      let m_scenarios=[
+        {"scenario_index":0,"scenario_name":"hiker1","center":[-80.55645,37.2]},
+        {"scenario_index":1,"scenario_name":"hiker2","center":[-80.420024,37.228648]},
+        {"scenario_index":2,"scenario_name":"hiker3","center":[-80.55645,37.2]}
+      ];
       var gcx=-80.556451;
       var gcy=37.2;
 
@@ -396,7 +420,7 @@
       // This function is called when a user clicks on the view.
       function setUpGraphicClickHandler() {
         view.on("click", function(event) {
-          //console.log(view);
+          //console.log("click");
 
           //elevation=============
           var position = event.mapPoint;
@@ -442,6 +466,7 @@
               }
               if(result.graphic.layer === taskassignment_sketchViewModel.layer){
                 //console.log(taskassignment_sketchViewModel);
+                //console.log("here");
                 taskassignment_sketchViewModel.update([result.graphic],{
                   tool:"point"//move
                 });
@@ -449,6 +474,7 @@
             });
           });
         });
+
       }
       setUpGraphicClickHandler();
 
@@ -731,9 +757,6 @@
 
         graphicsLayer.addMany(allpolygons);
         graphicsLayer.addMany(allpolygons_text);
-
-        m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
-
       }
 
       function addGPSPath(){
@@ -832,8 +855,9 @@
           container: "viewDiv",
           map: map,
           zoom: scale,
-          center: [gcx,gcy],//,35.4
+          center: m_scenarios[m_scenario_index].center//[gcx,gcy],//,35.4
         });
+        m_experimentres["scenario"]=m_scenarios[m_scenario_index];
         var toggle = new BasemapToggle({
           // 2 - Set properties
           view: view, // view that provides access to the map's 'topo' basemap
@@ -870,7 +894,7 @@
         AddTeams();
         //draw the polygon
         //m_searchedarea.concat(m_teamassign);
-        console.log(m_teamassign);
+        //console.log(m_teamassign);
         for(let i=0;i<m_teamassign.length;i++){
 
           //console.log(m_teamassign[i]);
@@ -881,7 +905,14 @@
             if(m_teamassign[i].attributes.cellindex==m_targetpolygon.attributes.cellindex){
               //display the targetarea
               DrawPolygonToInitLayer(m_targetpolygon,"red");
-              DrawCongratulationsToInitLayer();
+              DrawcongratulationsToInitLayer();
+
+              //name:unixtime_participantid_taskid
+              let filename=Date.now().toString();
+              m_experimentres["taskstop"]=Date.now();
+              m_experimentres["taskduration"]=m_experimentres["taskstart"]-m_experimentres["taskstop"];
+              download(filename+".txt",JSON.stringify(m_experimentres));
+
             }
           }
 
@@ -891,9 +922,23 @@
         //console.log(m_targetpolygon);
         //DrawPolygonToInitLayer(m_targetpolygon,"red");
       }
-      function DrawCongratulationsToInitLayer(){
+
+      function download(filename, text) {
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+      }
+
+      function DrawcongratulationsToInitLayer(){
         var graphic = new Graphic({
-          geometry: view.extent.center,
+          geometry: area_extent.center,//view.extent.center,
           symbol: {
             type: "text",
             color: [255,125,0],
@@ -901,9 +946,27 @@
             haloSize: "2px",
             text: "Congratulations!",
             xoffset: 3,
-            yoffset: 3,
+            yoffset: 50,
             font: { // autocast as Font
               size: 100,
+              family: "sans-serif"
+            }
+          }
+        });
+        graphicInitLayer.add(graphic);
+
+        graphic = new Graphic({
+          geometry: area_extent.center,//view.extent.center,
+          symbol: {
+            type: "text",
+            color: [255,125,0],
+            haloColor: "black",
+            haloSize: "2px",
+            text: "Target is found: S"+m_targetpolygon.attributes.cellindex.toString(),
+            xoffset: 3,
+            yoffset: 0,
+            font: { // autocast as Font
+              size: 50,
               family: "sans-serif"
             }
           }
@@ -943,6 +1006,7 @@
       }
         //generate voronoi
       document.getElementById("btngeneratearea").onclick=function() {
+
         graphicsLayer.removeAll();
         view.graphics.removeAll();
         gpsgraphicsLayer.removeAll();
@@ -966,8 +1030,14 @@
           addFreedraw();
         }
 
-        AddTeams();
+        AddTeams(true);
         DisplayLostPersonInfo();
+
+        m_experimentres["allpolygons"]=allpolygons;
+        m_experimentres["polygonnumbers"]=allpolygons.length;
+        m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
+
+        m_experimentres["targetcellindex"]=m_targetpolygon.attributes.cellindex;
       };
 
       // this function is called from the polygon draw action events
@@ -1401,6 +1471,8 @@
          graphicHeatmapsLayer.removeAll();
          graphicControlLayer.removeAll();
          graphicInitLayer.removeAll();
+         teamgraphicsLayer.removeAll();
+
          setActiveWidget(null);
          sketchViewModel.complete();
          //taskassignment_sketchViewModel.complete();
@@ -1524,8 +1596,11 @@
             return true;
          }
 
-         function AddTeams(teamcount=5){
+         function AddTeams(init=false,teamcount=5){
            teamgraphicsLayer.removeAll();
+           if(init){
+             m_teamiconlocation=null;
+           }
            //team 1,2,3,4,5
            if (m_teamiconlocation){
              for(let i=0;i<m_teamiconlocation.length;i++){
@@ -1567,6 +1642,12 @@
              }
            }
            teamgraphicsLayer.addMany(m_teamiconlocation);
+           /*
+           for(let j=0;j<teamgraphicsLayer.graphics.length;j++){
+             taskassignment_sketchViewModel.update([teamgraphicsLayer.graphics.items[j]],{
+               tool:"move"//move
+             });
+           }*/
          }
 
          function AddLPDataToPointslayer(){
@@ -2117,8 +2198,8 @@
          }
 
           document.getElementById("sel_lpmodel").onchange=function(){
-
-
+            m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
+            console.log(m_experimentres);
             graphicControlLayer.visible=false;
             graphicPointsLayer.visible=false;
             graphicTrajectoryLayer.visible=false;

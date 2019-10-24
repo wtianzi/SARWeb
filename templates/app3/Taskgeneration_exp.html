@@ -1895,15 +1895,13 @@
              //console.log(m_lpdata);
              let t_hour=document.getElementById("myRange").value;
              let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
-             console.log(t_hour);
-             console.log(t_rank);
-             console.log(m_lpdata);
+
              arr_heatpoints=[];
              let t_break=m_lpdata.length;
              let t_i=0;
              while(t_i<t_break){
                if(m_lpdata[t_i]['hour']==t_hour && m_lpdata[t_i]['rank']==t_rank){
-                 arr_heatpoints=m_lpdata[t_hour]['data'];
+                 arr_heatpoints=m_lpdata[t_i]['data'];
                  break;
                }
                t_i++;

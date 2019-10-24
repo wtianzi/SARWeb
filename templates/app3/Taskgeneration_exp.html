@@ -155,6 +155,11 @@
         {"scenario_index":1,"scenario_name":"hiker2","center":[-80.543827,37.204546]},
         {"scenario_index":2,"scenario_name":"hiker3","center":[-80.5460, 37.2041]}
       ];
+
+      let m_scenarios_rings={'child10to12':[800,1600,3200,9000],
+      'dementia':[300,800,1900,8300],
+      'hiker':[1100,3100,5800,18300]};
+
       var gcx=-80.556451;
       var gcy=37.2;
 
@@ -2036,6 +2041,8 @@
 
             //draw 25%,50%,75% ring
            let rings_arr=[1100,3100,5800,18300];
+           let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
+           rings_arr=m_scenarios_rings[persontype];
            let ringsname_arr=["25% ring","50% ring","75% ring","95% ring"];
            for(let i=0;i<4;i++){
              let t_circle=new Circle({
@@ -2156,6 +2163,8 @@
            m_lpdata_con=[];
            m_lpdata_json=[];
            document.getElementById("loadlpmcsv").value="Load LPM Data";
+           DisableAllGraphicLayers();
+           DisplayLostPersonInfo();
 
          }
 
@@ -2286,7 +2295,7 @@
           <label >Lost person type: </label>
           <select id="sel_lpm">
             <option value="child10to12">Child</option>
-            <option value="dementia">Dementia</option>            
+            <option value="dementia">Dementia</option>
             <option value="hiker">Hiker</option>
           </select>
           <input type="button" id="label_lpt" value="Switch" style="display:none"></input>

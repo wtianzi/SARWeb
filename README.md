@@ -8,6 +8,9 @@
 - SQLite as database
 - DJango REST freamwork is needed
 
+https://sar.caslab.ece.vt.edu/
+http://sar.caslab.ece.vt.edu/experiment
+
 User interface demo: [https://sites.google.com/vt.edu/vacsesardemo](https://sites.google.com/vt.edu/vacsesardemo/home)
 
 Reference

@@ -67,36 +67,7 @@
       tr:nth-child(even) {
         background-color: #dddddd;
       }
-      .bt_save{
-        padding: 8px;
-        text-decoration: none;
-        cursor: pointer;
-        font-size: 14px;
-        height: 32px;
-        margin-top: 10px;
-        background-color: transparent;
-        border: 1px solid #0079c1;
-        color: #0079c1;
-        width:30%;
-      }
-      .bt_save_edit{
-        padding: 8px;
-        text-decoration: none;
-        cursor: pointer;
-        font-size: 14px;
-        height: 32px;
-        margin-top: 10px;
-        border: 1px solid black;
-        color: black;
-        width:68%;
-      }
-      h3{
-        margin:2px;
-      }
-      .sel_options{
-        margin-top: 6px;
-        margin-bottom: 6px;
-      }
+
   </style>
   <script>
 
@@ -179,7 +150,7 @@
       //
       let m_scenario_index=0;
       let m_scenarios=[
-        {"scenario_index":0,"scenario_name":"hiker1","center":[-80.56,37.203]},
+        {"scenario_index":0,"scenario_name":"hiker1","center":[-80.55645,37.2]},
         {"scenario_index":1,"scenario_name":"hiker2","center":[-80.420024,37.228648]},
         {"scenario_index":2,"scenario_name":"hiker3","center":[-80.55645,37.2]}
       ];
@@ -2063,10 +2034,10 @@
                  t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
                }
                else if (m_colormap==1){
-                 t_rgb=hslToRgb(0, 1, 1-0.6*t_mag);//red
+                 t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
                }
                else{
-                 t_rgb=hslToRgb(0.6, 1, 1-0.6*t_mag);//red-blue
+                 t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//red-blue
                }
                //t_rgb=hslToRgb(0.5*t_mag, 1, 0.5);//h:0.5-1,1,0.5
                t_rgb.push(0.8*t_mag);//oppacity
@@ -2505,13 +2476,11 @@
 
       <input type="button" class="edit-button" value="Generate task" id="btngeneratearea"/>
       <input type="button" class="edit-button" value="Edit cells" id="btneditcells"/>
-      <div>
-      </div>
-      <div>
-        <input type="text" class="bt_save_edit" id="tasknotes" value="Task name"></input>
-        <input type="button" class="bt_save" value="Save Task" id="savetasks"></input>
-      </div>
+
+
     </div>
+
+
 
     <hr/>
     <div>
@@ -2520,12 +2489,13 @@
         <input type="file" id="file-input" position= "relative"/>
       </div>
       <div>
+        <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
         <input type="button" class="edit-button" value="Load LPM Data" id="loadlpmcsv">
       </div>
 
       <div>
         <label id="colormap">Color map: </label>
-        <select id="sel_colormap" class="sel_options">
+        <select id="sel_colormap">
           <option value="o_rainbow">Rainbow</option>
           <option value="o_yr">Yellow-red</option>
           <option value="o_br">Blue-red</option>
@@ -2565,26 +2535,39 @@
           <thead>
             <tr>
               <th>Team</th>
-              <th>1</th>
-              <th>2</th>
-              <th>3</th>
-              <th>4</th>
-              <th>5</th>
+              <th>Cell</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <th>Cell</th>
+              <th>1</th>
               <th id="th_team1">SX</th>
+            </tr>
+            <tr>
+              <th>2</th>
               <th id="th_team2">SX</th>
+            </tr>
+            <tr>
+              <th>3</th>
               <th id="th_team3">SX</th>
+            </tr>
+            <tr>
+              <th>4</th>
               <th id="th_team4">SX</th>
+            </tr>
+            <tr>
+              <th>5</th>
               <th id="th_team5">SX</th>
             </tr>
           </tbocy>
         </table>
         <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"></input>
       </div>
+      <div>
+        <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
+      </div>
+
+
     </div>
 
     <hr>
@@ -2611,10 +2594,17 @@
     </div>
 
     <hr/>
-    <h3>Task Assist</h3>
+    <h3>Task Name</h3>
+    <div>
+        <div>
+          <input type="input" id="tasknotes" value="SAR0001"></input>
+          <input type="button" value="Save Tasks" id="savetasks"></input>
+        </div>
+    </div>
+
     <div>
       <label for="cellname">Cell Name: </label>
-      <input type="text" id="cellname" value="SX"></input>
+      <input type="input" id="cellname" value="SX"></input>
     </div>
 
     <div>
@@ -2626,12 +2616,8 @@
         <option value="team4">Team 4</option>
         <option value="team4">Team 5</option>
       </select>
-    </div>
 
-    <div>
-      <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
-      <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
-    </div>
+  </div>
 
   </div>
 

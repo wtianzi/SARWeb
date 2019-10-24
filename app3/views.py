@@ -180,3 +180,110 @@ class GPSDataViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     queryset = GPSData.objects.all()
     serializer_class = GPSDataSerializer
+
+
+class TaskassignmentExperimentView(TemplateView):
+    template_name='app3/Taskgeneration_exp.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        #tasks_all=Task.objects.only('taskid').distinct('taskid')
+        tasks_all=list(Task.objects.exclude(taskid=None).values_list('taskid', flat=True).distinct())
+        #print(tasks_all)
+        context['task_all']=tasks_all#["SAR0001"]#tasks_all
+
+        #json_serializer = serializers.get_serializer("json")()
+        #gpsdata = json_serializer.serialize(GPSData.objects.all().order_by('id')[:5], ensure_ascii=False)
+        #tempstr=GPSData.objects.values_list('gpsdata', flat=True).get(pk=1)
+
+        #list the last 5 device and let the user to select which one to mark gps
+        #last_n_deviceid=GPSData.objects.values_list('deviceid').order_by('-id')[:5]
+        last_n_deviceid=GPSData.objects.values().order_by('-updated_at')[:5]
+        #print(last_n_deviceid)
+        context['gpsdevice']=last_n_deviceid
+        #gpsdata_all=list(GPSData.objects.all().values_list('deviceid', flat=True).distinct())
+
+        #for testing, get gps data from id=3
+        #test = GPSData.objects.get(id=3)
+        #test.refresh_from_db()
+        #context['gpsdata']=getattr(test, 'gpsdata')
+
+        return context
+
+    def get_values(request):
+        # if this is a POST request we need to process the form data
+        if request.method == 'POST':
+            # create a form instance and populate it with data from the request:
+            form = DemoForm(request.POST)
+            #print(form)
+            # check whether it's valid:
+            if form.is_valid():
+                # process the data in form.cleaned_data as required
+                # ...
+                # redirect to a new URL:
+                #form.save_to_db()
+                return render(request, 'app3/demo.html', {'form': form})#HttpResponseRedirect('sketch')
+
+        # if a GET (or any other method) we'll create a blank form
+            else:
+                form = DemoForm()
+            return render(request, 'app3/demo.html', {'form': form})
+
+    def tasksave(request):
+        if request.method == 'POST':
+            #for item in request.POST:
+            #print(request.POST['Taskarea'])
+            #res=TestingSlideAdd(request.POST['Duress1'],request.POST['Duress2'],request.POST['Duress3'],request.POST['Duress4'])
+            task_instance = Task.objects.create(notes=request.POST['task_notes'],taskid=request.POST['task_id'],taskpolygon=request.POST['task_polygon'])
+
+            context={'title':"This is the result of tasksave",
+            'Taskarea':"here in py",
+            'flag':'success'}
+            return HttpResponse(json.dumps(context)) # if everything is OK
+        # nothing went well
+        return HttpResponse('FAIL!!!!!')
+
+    def gpsupdate(request):
+        if request.method == 'POST':
+            gpsdata_id = request.POST['id_device_id']
+            gpsitem = GPSData.objects.get(id=gpsdata_id)
+            context={'gpsdata':getattr(gpsitem, 'gpsdata'),'flag':'success'}
+            return HttpResponse(json.dumps(context)) # if everything is OK
+        # nothing went well
+        return HttpResponse('FAIL!!!!!')
+
+    def gpsdatastorage(request):
+        if request.method == 'POST':
+            t_datastorage=DataStorage()
+            t_datastorage.taskid = request.POST['task_notes']
+            t_datastorage.subtaskid = request.POST['id_device_id']+request.POST['rand_gpsdevicename']
+
+            all_gpsdata=request.POST.get('all_gpsdata')
+
+            t_datastorage.data = {'device_id':request.POST['device_id'],'gps':all_gpsdata}
+            t_datastorage.save()
+            context={'gpsdata':all_gpsdata,'flag':'success'}
+
+            return HttpResponse(json.dumps(context)) # if everything is OK
+        # nothing went well
+        return HttpResponse('FAIL!!!!!')
+
+    def getwatershed(request):
+        if request.method == 'POST':
+            elevation_arr = request.POST.get('elevation_arr')
+            img_w=request.POST['width']
+            img_h=request.POST['height']
+
+            #image processing watershed opencv pyhon
+            tjson=json.loads(elevation_arr)
+            #print(tjson)
+            res=AreaSegment.GetWatershedPolygon_contours(tjson,int(img_w),int(img_h),1)
+            #res=AreaSegment.GetWatershedPolygon_vironoi(tjson,int(img_w),int(img_h),1)
+            #res=AreaSegment.GetAdaptiveThresholdingPolygon(tjson,int(img_w),int(img_h),1)
+
+            context={'watershedpolygon':res,'flag':'success'}
+            #print(context)
+
+            return HttpResponse(json.dumps(context)) # if everything is OK
+        # nothing went well
+        return HttpResponse('Getwatershed failed!')

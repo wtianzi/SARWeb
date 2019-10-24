@@ -30,3 +30,16 @@
   border: 1px solid #0079c1;
   color: #0079c1;
 }
+
+.bt_save{
+  padding: 8px;
+  text-decoration: none;
+  margin: 2px;
+  cursor: pointer;
+  font-size: 14px;
+  height: 32px;
+  margin-top: 10px;
+  background-color: transparent;
+  border: 1px solid #0079c1;
+  color: #0079c1;
+}

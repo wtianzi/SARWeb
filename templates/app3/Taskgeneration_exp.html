@@ -190,6 +190,7 @@
       var m_filterprob=0.0000001;
       var m_lpdata_json={};
       var m_lpdata=[];
+      var m_lpdata_con=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_editing=false;
@@ -211,6 +212,9 @@
       const graphicPointsLayer = new GraphicsLayer();
       const graphicTrajectoryLayer= new GraphicsLayer();
       const graphicHeatmapsLayer = new GraphicsLayer({
+        opacity:0.5
+      });
+      const graphicContourLayer = new GraphicsLayer({
         opacity:0.5
       });
       const graphicControlLayer = new GraphicsLayer({
@@ -253,7 +257,7 @@
       const map = new Map({
         basemap: "hybrid",//"hybrid",//"satellite",
         //ground: "world-elevation",
-        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer]
+        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicContourLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer]
 
       });
 
@@ -1363,6 +1367,7 @@
          graphicPointsLayer.removeAll();
          graphicTrajectoryLayer.removeAll();
          graphicHeatmapsLayer.removeAll();
+         graphicContourLayer.removeAll();
          graphicControlLayer.removeAll();
          graphicInitLayer.removeAll();
          teamgraphicsLayer.removeAll();
@@ -1424,6 +1429,22 @@
 
          }
 
+         function LoadLPFromCSV_con(t_url,t_arr_count,t_hour=0,t_rank=0){
+           var t_data;
+            $.ajax({
+              type: "GET",
+              url:t_url,//"{% static 'data/data_t0_95_res_3.csv' %}",
+              dataType: "text",
+              success: function(response)
+              {
+                 t_data = $.csv.toArrays(response).map(function(item){
+                   return item.map(Number);
+                 });
+                 m_lpdata_con.push({'hour':t_hour,'rank':t_rank,'data':t_data});
+              }
+            });
+            return true;
+         }
          function LoadLPFromCSV(t_url,t_arr_count,t_hour=0,t_rank=0){
            var t_data;
             $.ajax({
@@ -1435,7 +1456,8 @@
                  t_data = $.csv.toArrays(response).map(function(item){
                    return item.map(Number).slice(1);
                  });
-                 m_lpdata.push(t_data);
+                 //m_lpdata.push(t_data);
+                 m_lpdata.push({'hour':t_hour,'rank':t_rank,'data':t_data});
                  let t_max=0;
                  let t_index=0;
                 t_data.map(function(value,index) {
@@ -1447,7 +1469,10 @@
                 //console.log(m_lpdata_json);
                 m_lpdata_json['points'][t_hour]['data'][t_rank]['loc']=t_data[t_index];
                  //console.log(response);
+
+                 document.getElementById("loadlpmcsv").value="Load LPM Data (Loading "+m_lpdata.length.toString()+")";
                  if (m_lpdata.length == t_arr_count){
+
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                  }
@@ -1522,13 +1547,30 @@
            arr_hours=m_lpdata_json['points'];
            let t_start=0,t_end=10;
            arr_featureset=[];
-
-           for(let rank=2;rank>=0;rank--){
+           let rank_start=0;
+           let rank_stop=2;
+           if(document.getElementById("sel_rank").value=='1'){
+             rank_start=0;
+             rank_stop=0;
+           }
+           else if(document.getElementById("sel_rank").value=='2'){
+             rank_start=1;
+             rank_stop=1;
+           }
+           else if(document.getElementById("sel_rank").value=='3'){
+             rank_start=2;
+             rank_stop=2;
+           }
+           let lat,long;
+           for(let rank=rank_stop;rank>=rank_start;rank--){
              let paths=[];
              let i_hr=document.getElementById("myRange").value;
                //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
-               let lat=arr_hours[i_hr]['data'][rank]['loc'][1];
-               let long=arr_hours[i_hr]['data'][rank]['loc'][0];
+
+              let lat=arr_hours[i_hr]['data'][rank]['loc'][1];
+              let long=arr_hours[i_hr]['data'][rank]['loc'][0];
+
+
                let in_point=new Point({
                  latitude:lat,
                  longitude:long,
@@ -1590,7 +1632,22 @@
            let t_start=0,t_end=10;
            arr_featureset=[];
 
-           for(let rank=2;rank>=0;rank--){
+           let rank_start=0;
+           let rank_stop=2;
+           if(document.getElementById("sel_rank").value=='1'){
+             rank_start=0;
+             rank_stop=0;
+           }
+           else if(document.getElementById("sel_rank").value=='2'){
+             rank_start=1;
+             rank_stop=1;
+           }
+           else if(document.getElementById("sel_rank").value=='3'){
+             rank_start=2;
+             rank_stop=2;
+           }
+
+           for(let rank=rank_stop;rank>=rank_start;rank--){
              let paths=[];
              for(let i=t_start;i<=t_end;i++){
                //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
@@ -1674,11 +1731,26 @@
            graphicControlLayer.removeAll();
            arr_featureset=[];
            arr_hours=m_lpdata_json['points'];
-           console.log(m_lpdata_json);
+           //console.log(m_lpdata_json);
            let t_start=0,t_end=10;
            arr_featureset=[];
 
-           for(let rank=2;rank>=0;rank--){
+          let rank_start=0;
+          let rank_stop=2;
+          if(document.getElementById("sel_rank").value=='1'){
+            rank_start=0;
+            rank_stop=0;
+          }
+          else if(document.getElementById("sel_rank").value=='2'){
+            rank_start=1;
+            rank_stop=1;
+          }
+          else if(document.getElementById("sel_rank").value=='3'){
+            rank_start=2;
+            rank_stop=2;
+          }
+
+          for(let rank=rank_stop;rank>=rank_start;rank--){
              let paths=[];
              let i_hr=document.getElementById("myRange").value;
                //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
@@ -1739,13 +1811,105 @@
            graphicControlLayer.visible=true;
          }
 
+         function AddLPDataToContourlayer(){
+           graphicContourLayer.removeAll();
+           arr_featureset=[];
+
+           if(m_lpdata_con == null){
+             return;
+           }
+           let t_hour=document.getElementById("myRange").value;
+           let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
+           arr_heatpoints=[];
+           let t_break=m_lpdata_con.length;
+           let i=0;
+           while(i<t_break){
+             if(m_lpdata_con[i]['hour']==t_hour && m_lpdata_con[i]['rank']==t_rank){
+               arr_heatpoints=m_lpdata_con[t_hour]['data'];
+               break;
+             }
+             i++;
+           }
+
+           m_colormap=document.getElementById("sel_colormap").selectedIndex;
+           //loop to find rings
+           let t_rings=[];//
+           let all_paths=[];
+           let t_startprobability=arr_heatpoints[0][0];
+           let t_mag=0.1;
+
+           var markerSymbol = {
+             type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+             color: [226, 119, 40],
+             outline: {
+               style:"none"
+             }
+           };
+
+           arr_heatpoints.map(function(item){
+             if(item[0]==t_startprobability){
+               t_rings.push(item.slice(1));
+             }
+             else{
+               //all_paths.push(t_rings);
+               var tmulpt=new Multipoint({
+                  points: t_rings,//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
+                  spatialReference: { wkid: 4326 }
+                });
+
+                var polylineGraphic = new Graphic({
+                  geometry: tmulpt, // Add the geometry created in step 4
+                  symbol: markerSymbol
+                });
+                 arr_featureset.push(polylineGraphic);//t_graphic
+               /*
+               t_mag=t_mag+0.1;
+               if (m_colormap==0){
+                 t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
+               }
+               else if (m_colormap==1){
+                 t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+               }
+               else{
+                 t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//red-blue
+               }
+               t_rgb.push(0.8*t_mag);//oppacity
+               */
+               t_rings=[];
+               t_startprobability=item[0];
+             }
+           });
+
+
+           //console.log(arr_featureset);
+           graphicContourLayer.addMany(arr_featureset);
+           graphicContourLayer.visible=true;
+
+         }
            function AddLPDataToHeatmapslayerFilter(t_filter){
 
              graphicHeatmapsLayer.removeAll();
              if(m_lpdata == null){
                return;
              }
-             arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
+             //console.log(m_lpdata);
+             let t_hour=document.getElementById("myRange").value;
+             let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
+             console.log(t_hour);
+             console.log(t_rank);
+             console.log(m_lpdata);
+             arr_heatpoints=[];
+             let t_break=m_lpdata.length;
+             let t_i=0;
+             while(t_i<t_break){
+               if(m_lpdata[t_i]['hour']==t_hour && m_lpdata[t_i]['rank']==t_rank){
+                 arr_heatpoints=m_lpdata[t_hour]['data'];
+                 break;
+               }
+               t_i++;
+             }
+
+             //arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
 
              //loop the first line to find width
              let t_width=1;
@@ -1767,6 +1931,7 @@
              arr_featureset=[];
              let j_width=1;
              let end_index=arr_heatpoints.length-t_width-1;
+             m_colormap=document.getElementById("sel_colormap").selectedIndex;
              for (var i=0;i<end_index;i++){
                //the last point doesn't need a polygon
                if(j_width>=t_width){
@@ -1791,7 +1956,6 @@
 
                //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
                //rainbow 0-1
-               m_colormap=document.getElementById("sel_colormap").selectedIndex;
                //console.log(m_colormap);
                if (m_colormap==0){
                  t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
@@ -1973,7 +2137,9 @@
           let t_stop = 10;
           for(let i=t_start;i<=t_stop;i++){
             for(let t_rank=1;t_rank<=3;t_rank++){
-              LoadLPFromCSV("/static/data/"+persontype+"/pt/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",t_stop-t_start+1,i-1,t_rank-1);
+              LoadLPFromCSV("/static/data/"+persontype+"/pt/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
+              LoadLPFromCSV_con("/static/data/"+persontype+"/cont/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
+
             }
 
           }
@@ -1981,6 +2147,46 @@
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
 
+         document.getElementById("sel_lpm").onchange=function(){
+           m_lpdata=[];
+           m_lpdata_con=[];
+           m_lpdata_json=[];
+           document.getElementById("loadlpmcsv").value="Load LPM Data";
+
+         }
+
+         document.getElementById("sel_rank").onchange=function(){
+
+                       m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
+                       m_experimentres["actions"].push({"id":"sel_lpmodel","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
+
+                       //console.log(m_experimentres);
+                       graphicControlLayer.visible=false;
+                       graphicPointsLayer.visible=false;
+                       graphicTrajectoryLayer.visible=false;
+                       graphicHeatmapsLayer.visible=false;
+                       graphicContourLayer.visible=false;
+
+                       if(document.getElementById("sel_lpmodel").selectedIndex==0){
+                         //display point layer
+                         AddLPDataToControllayer();
+                       }
+                       else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+                         //display point layer
+                         AddLPDataToPointslayer();
+                       }
+                       else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+                         //display Trajectory
+                         AddLPDataToTrajectorylayer();
+                       }
+                       else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+                         //display heatmap
+                         AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+                       }
+                       else{
+                         AddLPDataToContourlayer();
+                       }
+         }
           document.getElementById("sel_lpmodel").onchange=function(){
 
             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
@@ -1991,6 +2197,7 @@
             graphicPointsLayer.visible=false;
             graphicTrajectoryLayer.visible=false;
             graphicHeatmapsLayer.visible=false;
+            graphicContourLayer.visible=false;
 
             if(document.getElementById("sel_lpmodel").selectedIndex==0){
               //display point layer
@@ -2004,9 +2211,12 @@
               //display Trajectory
               AddLPDataToTrajectorylayer();
             }
-            else{
+            else if (document.getElementById("sel_lpmodel").selectedIndex==3){
               //display heatmap
               AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+            }
+            else{
+              AddLPDataToContourlayer();
             }
           }
 
@@ -2023,8 +2233,8 @@
          document.getElementById("myRange").onchange=function(){
            //console.log("change");
            m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+document.getElementById("myRange").value.toString()});
-
-           $("#lmyRange").text("Hour(0-10): "+document.getElementById("myRange").value+1);
+           let t_hour=parseInt(document.getElementById("myRange").value)+1;
+           $("#lmyRange").text("Hour(1-10): "+t_hour);
 
 
            if(document.getElementById("sel_lpmodel").selectedIndex==0){
@@ -2039,9 +2249,12 @@
              //display Trajectory
              AddLPDataToTrajectorylayer();
            }
-           else{
+           else if (document.getElementById("sel_lpmodel").selectedIndex==3){
              //display heatmap
              AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+           }
+           else {
+             AddLPDataToContourlayer();
            }
          }
 
@@ -2053,6 +2266,7 @@
              graphicTrajectoryLayer.visible=false;
              graphicHeatmapsLayer.visible=false;
              graphicControlLayer.visible=false;
+             graphicContourLayer.visible=false;
              //document.getElementById("lpmmodeldisplay").values;
              if(document.getElementById("sel_lpmodel").selectedIndex==0){
                //display point layer
@@ -2066,10 +2280,13 @@
                //display Trajectory
                AddLPDataToTrajectorylayer();
              }
-             else{
+             else if (document.getElementById("sel_lpmodel").selectedIndex==3){
                //display heatmap
                //AddLPDataToHeatmapslayerFilter_featurelayer(document.getElementById("myfilter").value/10-0.05);
                AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+             }
+             else{
+               AddLPDataToContourlayer();
              }
            }
 
@@ -2099,10 +2316,7 @@
       <input type="button" class="edit-button" value="Generate task" id="btngeneratearea"/>
       <input type="button" class="edit-button" value="Edit cells" id="btneditcells"/>
 
-
     </div>
-
-
 
     <hr/>
     <div>
@@ -2116,11 +2330,12 @@
           <select id="sel_lpm">
             <option value="hiker">Hiker</option>
             <option value="dementia">Dementia</option>
-            <option value="child">Child</option>
+            <option value="child10to12">Child</option>
             <option value="default">Demo</option>
           </select>
           <input type="button" id="label_lpt" value="Switch" style="display:none"></input>
         </div>
+
 
         <input type="button" class="edit-button" value="Load LPM Data" id="loadlpmcsv">
       </div>
@@ -2133,7 +2348,17 @@
           <option value="o_br">Blue-red</option>
         </select>
         <input type="button" id="colormap" value="Switch" style="display:none"></input>
+      </div>
 
+      <div>
+        <label >BF: </label>
+        <select id="sel_rank">
+          <option value="1">bf1</option>
+          <option value="2">bf2</option>
+          <option value="3">bf3</option>
+          <option value="default">All</option>
+        </select>
+        <input type="button" id="label_rank" value="Switch" style="display:none"></input>
       </div>
 
       <div class="slidecontainer">
@@ -2148,11 +2373,13 @@
       </div>
 
       <div>
+        <label >Indicator: </label>
         <select id="sel_lpmodel">
           <option value="control">Probability</option>
           <option value="points">Points</option>
           <option value="trajectory">Trajectory</option>
           <option value="heatmap">Heat map</option>
+          <option value="contourmap">Contour map</option>
         </select>
         <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
         <label id="lpsum">ippm</label>

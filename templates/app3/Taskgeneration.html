@@ -172,16 +172,16 @@
         "allpolygons":null
       };
 
-      var scale=18;//15
+      var scale=16;//15
       //36.8176602,-80.363078
       //kentlane farm (-80.572567,37.203604)
       //{" wkid":4326 }: latetude
       //
-      let m_scenario_index=0;
+      let m_scenario_index=2;
       let m_scenarios=[
         {"scenario_index":0,"scenario_name":"hiker1","center":[-80.56,37.203]},
         {"scenario_index":1,"scenario_name":"hiker2","center":[-80.420024,37.228648]},
-        {"scenario_index":2,"scenario_name":"hiker3","center":[-80.55645,37.2]}
+        {"scenario_index":2,"scenario_name":"hiker3","center":[-80.5460, 37.2041]}
       ];
       var gcx=-80.556451;
       var gcy=37.2;
@@ -218,6 +218,7 @@
       var m_filterprob=0.0000001;
       var m_lpdata_json={};
       var m_lpdata=[];
+      var m_lpdata_con=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_editing=false;
@@ -256,7 +257,9 @@
       const graphicControlLayer = new GraphicsLayer({
         opacity:0.8
       });
-
+      const graphicContourLayer = new GraphicsLayer({
+        opacity:0.5
+      });
       const teamgraphicsLayer=new GraphicsLayer({
         opacity:0.8
       });
@@ -285,36 +288,6 @@
            return [r * 255, g * 255, b * 255];
        }
 
-      const color_1= [
-        { ratio: 0, color: "rgba(133, 193, 200, 0)" },
-        { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
-        { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
-        { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
-        { ratio: 0.0853482, color: "rgba(144, 161, 190, 1)" },
-        { ratio: 0.1606965, color: "rgba(156,129, 132, 1)" },
-        { ratio: 0.2360448, color: "rgba(167, 97, 170, 1)" },
-        { ratio: 0.311393, color: "rgba(175, 73, 128, 1)" },
-        { ratio: 0.386741458, color: "rgba(184, 48, 85, 1)" },
-        { ratio: 0.46208975, color: "rgba(192, 24, 42, 1)" },
-        { ratio: 0.537438, color: "rgba(200, 0, 0, 1)" },
-        { ratio: 0.612786, color: "rgba(211, 51, 0, 1)" },
-        { ratio: 0.688134625, color: "rgba(222, 102, 0, 1)" },
-        { ratio: 0.7634829166666667, color: "rgba(233, 153, 0, 1)" },
-        { ratio: 0.8388312, color: "rgba(244, 204, 0, 1)" },
-        { ratio: 0.9141795, color: "rgba(255, 255, 0, 1)" }
-      ];
-      const color_0= [
-        { ratio: 0, color: "rgba(255, 255, 255, 0)" },
-        { ratio: 0.1, color: "rgba(128, 0, 255, 0.2)" },
-        { ratio: 0.12, color: "rgba(128, 0, 255, 0.2)" },
-        { ratio: 0.15, color: "rgba(128, 0, 255, 0.2)" },
-        { ratio: 0.2, color: "rgba(128, 0, 255, 0.2)" },
-        { ratio: 0.3, color: "rgba(0, 0, 255, 0.2)" },
-        { ratio: 0.5, color: "rgba(0, 255, 0, 0.2)" },
-        { ratio: 0.7, color: "rgba(255, 255, 0, 0.2)" },
-        { ratio: 0.9, color: "rgba(255, 0, 0,0.2)" },
-        { ratio: 1, color: "rgba(255, 0, 0, 0.2)" }
-      ];
       const colorStops_2= [
             { color: "rgba(63, 40, 102, 0)", ratio: 0 },
             { color: "#472b77", ratio: 0.083 },
@@ -356,7 +329,7 @@
       const map = new Map({
         basemap: "hybrid",//"hybrid",//"satellite",
         //ground: "world-elevation",
-        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer]
+        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicContourLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer]
 
       });
 
@@ -1524,6 +1497,7 @@
          graphicControlLayer.removeAll();
          graphicInitLayer.removeAll();
          teamgraphicsLayer.removeAll();
+         graphicContourLayer.removeAll();
 
          setActiveWidget(null);
          sketchViewModel.complete();
@@ -1549,8 +1523,10 @@
          function () {
            m_experimentres["actions"].push({"id":"savetasks","timestamp": Date.now(), "description":"savetasks"});
            let py_task_all_array={{ task_all |safe }}
+           let t_tasknotes=document.getElementById("tasknotes").value;
+           t_tasknotes=t_tasknotes.split(' ').join('_');
            //console.log(py_task_all_array);
-           if(py_task_all_array.includes(document.getElementById("tasknotes").value)){
+           if(py_task_all_array.includes(t_tasknotes)){
              //task_all
              alert("Please try another task name.");
              //console.log(document.getElementById("tasknotes").value+" is already exist, please enter another one!");
@@ -1560,8 +1536,8 @@
              let dbpolystr=PolyArrayToJson(updated_polygonring);
              var data = {
                      csrfmiddlewaretoken: '{{ csrf_token }}',
-                     'task_notes': document.getElementById("tasknotes").value,
-                     'task_id': document.getElementById("tasknotes").value,
+                     'task_notes': t_tasknotes,
+                     'task_id': t_tasknotes,
                      'Taskarea': updated_polygonring.length.toString(),
                      'task_polygon': dbpolystr
                     };
@@ -1572,7 +1548,7 @@
                    //console.log(res.Taskarea);
                    //add date and task number and a random number
                    //task name:
-                   let task_url="{% url 'taskgenerationform' %}"+"/"+document.getElementById("tasknotes").value+'_'+'0/';
+                   let task_url="{% url 'taskgenerationform' %}"+"/"+t_tasknotes+'_'+'0/';
                    //console.log(task_url);
                    //var win = window.open("{% url 'taskgenerationform' %}", '_blank');
                    var win = window.open(task_url, '_blank');
@@ -1627,7 +1603,8 @@
 
 
          }
-         function LoadLPFromCSV(t_url,t_arr_count){
+
+         function LoadLPFromCSV(t_url,t_arr_count,t_hour=0,t_rank=0){
            var t_data;
             $.ajax({
               type: "GET",
@@ -1635,18 +1612,37 @@
               dataType: "text",
               success: function(response)
               {
-
                  t_data = $.csv.toArrays(response).map(function(item){
-                   return item.map(Number);
+                   return item.map(Number).slice(1);
                  });
-                 m_lpdata.push(t_data);
+                 //m_lpdata.push(t_data);
+                 m_lpdata.push({'hour':t_hour,'rank':t_rank,'data':t_data});
+                 let t_max=0;
+                 let t_index=0;
+                t_data.map(function(value,index) {
+                  if(t_max<value[2]){
+                    t_max=value[2];
+                    t_index=index;
+                  }
+                });
+                //console.log(m_lpdata_json);
+                m_lpdata_json['points'][t_hour]['data'][t_rank]['loc']=t_data[t_index];
                  //console.log(response);
+
+                 document.getElementById("loadlpmcsv").value="Load LPM Data (Loading "+m_lpdata.length.toString()+")";
                  if (m_lpdata.length == t_arr_count){
+
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                  }
               }
             });
+            //get json file for m_lpdata_json
+
+            /*{"points":[
+            {"hour":0,"data"}
+                    ]}
+                    */
             return true;
          }
 
@@ -1704,72 +1700,91 @@
            }*/
          }
 
-         function AddLPDataToPointslayer(){
-           graphicPointsLayer.removeAll();
-           arr_featureset=[];
-           arr_hours=m_lpdata_json['points'];
-           let t_start=0,t_end=10;
-           arr_featureset=[];
 
-           for(let rank=2;rank>=0;rank--){
-             let paths=[];
-             let i_hr=document.getElementById("myRange").value;
-               //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
+          function AddLPDataToPointslayer(){
+            graphicPointsLayer.removeAll();
+            arr_featureset=[];
+            arr_hours=m_lpdata_json['points'];
+            let t_start=0,t_end=10;
+            arr_featureset=[];
+            let rank_start=0;
+            let rank_stop=2;
+            if(document.getElementById("sel_rank").value=='1'){
+              rank_start=0;
+              rank_stop=0;
+            }
+            else if(document.getElementById("sel_rank").value=='2'){
+              rank_start=1;
+              rank_stop=1;
+            }
+            else if(document.getElementById("sel_rank").value=='3'){
+              rank_start=2;
+              rank_stop=2;
+            }
+            let lat,long;
+            for(let rank=rank_stop;rank>=rank_start;rank--){
+              let paths=[];
+              let i_hr=document.getElementById("myRange").value;
+                //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
+
                let lat=arr_hours[i_hr]['data'][rank]['loc'][1];
                let long=arr_hours[i_hr]['data'][rank]['loc'][0];
-               let in_point=new Point({
-                 latitude:lat,
-                 longitude:long,
-                 //latitude:parseFloat(arr_hours[i]['data'][rank]['loc'][1]),
-                 //longitude:parseFloat(arr_hours[i]['data'][rank]['loc'][0]),
-                 spatialReference:view.spatialReference
-               });
 
-               //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
-               t_rgb=hslToRgb(0.1*rank+0.7,1 , 0.8*(t_end-i_hr)/(t_end-t_start)+0.2);//h:0.5-1,1,0.5, l:0.2-0.8
-               t_rgb.push(0.8);//transparency
 
-               let t_graphic =  new Graphic({
-                 geometry: in_point,
-                 symbol:  {
-                      type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-                      style:"circle",
-                      color: t_rgb,//[t_mag, 0,0],
-                      size:10*(4-rank)
-                    },
-                  attributes:{
-                    Name:"Lost person model",
-                    Hour:i_hr,
-                    Rank:rank+1
-                  },
-                  popupTemplate:{
-                      title: "{Name}",
-                      content: [
-                        {
-                          type: "fields",
-                          fieldInfos: [
-                            {
-                              fieldName: "Name"
-                            },
-                            {
-                              fieldName: "Hour"
-                            },
-                            {
-                              fieldName: "Rank"
-                            }
-                          ]
-                        }
-                      ]
-                  }
-               });
-               arr_featureset.push(t_graphic);
-           }
+                let in_point=new Point({
+                  latitude:lat,
+                  longitude:long,
+                  //latitude:parseFloat(arr_hours[i]['data'][rank]['loc'][1]),
+                  //longitude:parseFloat(arr_hours[i]['data'][rank]['loc'][0]),
+                  spatialReference:view.spatialReference
+                });
 
-           graphicPointsLayer.addMany(arr_featureset);
-           graphicPointsLayer.visible=true;
+                //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+                t_rgb=hslToRgb(0.1*rank+0.7,1 , 0.8*(t_end-i_hr)/(t_end-t_start)+0.2);//h:0.5-1,1,0.5, l:0.2-0.8
+                t_rgb.push(0.8);//transparency
 
-           //teamgraphicsLayer.addMany(arr_featureset);
-         }
+                let t_graphic =  new Graphic({
+                  geometry: in_point,
+                  symbol:  {
+                       type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                       style:"circle",
+                       color: t_rgb,//[t_mag, 0,0],
+                       size:10*(4-rank)
+                     },
+                   attributes:{
+                     Name:"Lost person model",
+                     Hour:i_hr,
+                     Rank:rank+1
+                   },
+                   popupTemplate:{
+                       title: "{Name}",
+                       content: [
+                         {
+                           type: "fields",
+                           fieldInfos: [
+                             {
+                               fieldName: "Name"
+                             },
+                             {
+                               fieldName: "Hour"
+                             },
+                             {
+                               fieldName: "Rank"
+                             }
+                           ]
+                         }
+                       ]
+                   }
+                });
+                arr_featureset.push(t_graphic);
+            }
+
+            graphicPointsLayer.addMany(arr_featureset);
+            graphicPointsLayer.visible=true;
+
+            //teamgraphicsLayer.addMany(arr_featureset);
+          }
+
 
          function AddLPDataToTrajectorylayer(){
            graphicTrajectoryLayer.removeAll();
@@ -1778,7 +1793,22 @@
            let t_start=0,t_end=10;
            arr_featureset=[];
 
-           for(let rank=2;rank>=0;rank--){
+           let rank_start=0;
+           let rank_stop=2;
+           if(document.getElementById("sel_rank").value=='1'){
+             rank_start=0;
+             rank_stop=0;
+           }
+           else if(document.getElementById("sel_rank").value=='2'){
+             rank_start=1;
+             rank_stop=1;
+           }
+           else if(document.getElementById("sel_rank").value=='3'){
+             rank_start=2;
+             rank_stop=2;
+           }
+
+           for(let rank=rank_stop;rank>=rank_start;rank--){
              let paths=[];
              for(let i=t_start;i<=t_end;i++){
                //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
@@ -1862,10 +1892,26 @@
            graphicControlLayer.removeAll();
            arr_featureset=[];
            arr_hours=m_lpdata_json['points'];
+           //console.log(m_lpdata_json);
            let t_start=0,t_end=10;
            arr_featureset=[];
 
-           for(let rank=2;rank>=0;rank--){
+          let rank_start=0;
+          let rank_stop=2;
+          if(document.getElementById("sel_rank").value=='1'){
+            rank_start=0;
+            rank_stop=0;
+          }
+          else if(document.getElementById("sel_rank").value=='2'){
+            rank_start=1;
+            rank_stop=1;
+          }
+          else if(document.getElementById("sel_rank").value=='3'){
+            rank_start=2;
+            rank_stop=2;
+          }
+
+          for(let rank=rank_stop;rank>=rank_start;rank--){
              let paths=[];
              let i_hr=document.getElementById("myRange").value;
                //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
@@ -1887,7 +1933,7 @@
                    color: "white",
                    haloColor: "black",
                    haloSize: "1px",
-                   text: (10000*t_pro).toFixed(2)+"%%",
+                   text: (100*t_pro).toFixed(6)+"%",
                    xoffset: 5,
                    yoffset: 5,
                    font: { // autocast as Font
@@ -1925,176 +1971,173 @@
            graphicControlLayer.addMany(arr_featureset);
            graphicControlLayer.visible=true;
          }
+         function AddLPDataToContourlayer(){
+           graphicContourLayer.removeAll();
+           arr_featureset=[];
 
-          function AddLPDataToHeatmapslayer(){
+           if(m_lpdata_con == null){
+             return;
+           }
+           let t_hour=document.getElementById("myRange").value;
+           let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
+           arr_heatpoints=[];
+           let t_break=m_lpdata_con.length;
+           let i=0;
+           while(i<t_break){
+             if(m_lpdata_con[i]['hour']==t_hour && m_lpdata_con[i]['rank']==t_rank){
+               arr_heatpoints=m_lpdata_con[t_hour]['data'];
+               break;
+             }
+             i++;
+           }
 
-            graphicHeatmapsLayer.removeAll();
-            if(m_lpdata == null){
-              return;
-            }
-            arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
+           m_colormap=document.getElementById("sel_colormap").selectedIndex;
+           //loop to find rings
+           let t_rings=[];//
+           let all_paths=[];
+           let t_startprobability=arr_heatpoints[0][0];
+           let t_mag=0.1;
 
-            //loop the first line to find width
-            let t_width=1;
-            while(arr_heatpoints[0][0]==arr_heatpoints[t_width][0]){
-              t_width+=1;
-            }
+           var markerSymbol = {
+             type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+             color: [226, 119, 40],
+             outline: {
+               style:"none"
+             }
+           };
 
-            let col3 = arr_heatpoints.map(function(value,index) { return value[2]; });
-            let add = (a, b) =>  a + b;
-            const sum = col3.reduce(add);
-
-             $("#lpsum").text("Percent: "+sum);
-
-            let t_min = Math.min(...col3);
-            let t_max=Math.max(...col3);
-            let t_stander=t_max-t_min;
-            let mean_elevation=0.5*(t_max+t_min);
-
-            arr_featureset=[];
-            let j_width=1;
-            let end_index=arr_heatpoints.length-t_width-1;
-            for (var i=0;i<end_index;i++){
-              //the last point doesn't need a polygon
-              if(j_width>=t_width){
-                j_width=1;
-                continue;
-              }
-              j_width+=1;
-
-              //rings
-            let t_pro=(arr_heatpoints[i][2]+arr_heatpoints[i+1][2]+arr_heatpoints[i+t_width+1][2]+arr_heatpoints[i+t_width][2])/4;
-            t_mag=(t_pro-t_min)/t_stander;
-            if(t_mag<0.2){
-              continue;
-            }
-            let rings=[
-                   [arr_heatpoints[i][0], arr_heatpoints[i][1]],
-                   [arr_heatpoints[i+1][0], arr_heatpoints[i+1][1]],
-                   [arr_heatpoints[i+t_width+1][0], arr_heatpoints[i+t_width+1][1]],
-                   [arr_heatpoints[i+t_width][0], arr_heatpoints[i+t_width][1]],
-                   [arr_heatpoints[i][0], arr_heatpoints[i][1]]];
-
-
-              //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
-              //rainbow 0-1
-              t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//red
-              //t_rgb=hslToRgb(0.5*t_mag, 1, 0.5);//h:0.5-1,1,0.5
-              t_rgb.push(0.8*t_mag);//oppacity
-              let polygon = new Polygon({
-                  rings: rings,
+           arr_heatpoints.map(function(item){
+             if(item[0]==t_startprobability){
+               t_rings.push(item.slice(1));
+             }
+             else{
+               //all_paths.push(t_rings);
+               var tmulpt=new Multipoint({
+                  points: t_rings,//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
                   spatialReference: { wkid: 4326 }
                 });
-                var t_graphic = new Graphic({
-                  geometry: polygon,
-                  symbol: {
-                    type: "simple-fill", // autocasts as SimpleFillSymbol
-                    color: t_rgb,
-                    outline: { // autocasts as SimpleLineSymbol
 
-                      style:"none"
-                    }
-                  },
-                  style: "solid"
+                var polylineGraphic = new Graphic({
+                  geometry: tmulpt, // Add the geometry created in step 4
+                  symbol: markerSymbol
                 });
-              arr_featureset.push(t_graphic);
-            }
-            //console.log(arr_featureset);
-          graphicHeatmapsLayer.addMany(arr_featureset);
-          graphicHeatmapsLayer.visible=true;
-          m_experimentres["actions"].push({"id":"heatmaploading","timestamp": Date.now(), "description":"displayed"});
+                 arr_featureset.push(polylineGraphic);//t_graphic
+               t_rings=[];
+               t_startprobability=item[0];
+             }
+           });
+
+
+           //console.log(arr_featureset);
+           graphicContourLayer.addMany(arr_featureset);
+           graphicContourLayer.visible=true;
+
          }
+         function AddLPDataToHeatmapslayerFilter(t_filter){
 
-           function AddLPDataToHeatmapslayerFilter(t_filter){
+           graphicHeatmapsLayer.removeAll();
+           if(m_lpdata == null){
+             return;
+           }
+           //console.log(m_lpdata);
+           let t_hour=document.getElementById("myRange").value;
+           let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
 
-             graphicHeatmapsLayer.removeAll();
-             if(m_lpdata == null){
-               return;
+           arr_heatpoints=[];
+           let t_break=m_lpdata.length;
+           let t_i=0;
+           while(t_i<t_break){
+             if(m_lpdata[t_i]['hour']==t_hour && m_lpdata[t_i]['rank']==t_rank){
+               arr_heatpoints=m_lpdata[t_i]['data'];
+               break;
              }
-             arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
+             t_i++;
+           }
 
-             //loop the first line to find width
-             let t_width=1;
-             while(arr_heatpoints[0][0]==arr_heatpoints[t_width][0]){
-               t_width+=1;
-             }
+           //arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
 
-             let col3 = arr_heatpoints.map(function(value,index) { return value[2]; });
-             let add = (a, b) =>  a + b;
-             const sum = col3.reduce(add);
+           //loop the first line to find width
+           let t_width=1;
+           while(arr_heatpoints[0][0]==arr_heatpoints[t_width][0]){
+             t_width+=1;
+           }
 
-              $("#lpsum").text("Percent: "+sum);
+           let col3 = arr_heatpoints.map(function(value,index) { return value[2]; });
+           let add = (a, b) =>  a + b;
+           const sum = col3.reduce(add);
 
-             let t_min = Math.min(...col3);
-             let t_max=Math.max(...col3);
-             let t_stander=t_max-t_min;
-             let mean_elevation=0.5*(t_max+t_min);
+            $("#lpsum").text("Percent: "+sum);
 
-             arr_featureset=[];
-             let j_width=1;
-             let end_index=arr_heatpoints.length-t_width-1;
-             for (var i=0;i<end_index;i++){
-               //the last point doesn't need a polygon
-               if(j_width>=t_width){
-                 j_width=1;
-                 continue;
-               }
-               j_width+=1;
+           let t_min = Math.min(...col3);
+           let t_max=Math.max(...col3);
+           let t_stander=t_max-t_min;
+           let mean_elevation=0.5*(t_max+t_min);
 
-               //rings
-             let t_pro=(arr_heatpoints[i][2]+arr_heatpoints[i+1][2]+arr_heatpoints[i+t_width+1][2]+arr_heatpoints[i+t_width][2])/4;
-             t_mag=(t_pro-t_min)/t_stander;
-             if(t_mag<t_filter){
+           arr_featureset=[];
+           let j_width=1;
+           let end_index=arr_heatpoints.length-t_width-1;
+           m_colormap=document.getElementById("sel_colormap").selectedIndex;
+           for (var i=0;i<end_index;i++){
+             //the last point doesn't need a polygon
+             if(j_width>=t_width){
+               j_width=1;
                continue;
              }
-             let rings=[
-                    [arr_heatpoints[i][0], arr_heatpoints[i][1]],
-                    [arr_heatpoints[i+1][0], arr_heatpoints[i+1][1]],
-                    [arr_heatpoints[i+t_width+1][0], arr_heatpoints[i+t_width+1][1]],
-                    [arr_heatpoints[i+t_width][0], arr_heatpoints[i+t_width][1]],
-                    [arr_heatpoints[i][0], arr_heatpoints[i][1]]];
+             j_width+=1;
+
+             //rings
+           let t_pro=(arr_heatpoints[i][2]+arr_heatpoints[i+1][2]+arr_heatpoints[i+t_width+1][2]+arr_heatpoints[i+t_width][2])/4;
+           t_mag=(t_pro-t_min)/t_stander;
+           if(t_mag<t_filter){
+             continue;
+           }
+           let rings=[
+                  [arr_heatpoints[i][0], arr_heatpoints[i][1]],
+                  [arr_heatpoints[i+1][0], arr_heatpoints[i+1][1]],
+                  [arr_heatpoints[i+t_width+1][0], arr_heatpoints[i+t_width+1][1]],
+                  [arr_heatpoints[i+t_width][0], arr_heatpoints[i+t_width][1]],
+                  [arr_heatpoints[i][0], arr_heatpoints[i][1]]];
 
 
-               //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
-               //rainbow 0-1
-               m_colormap=document.getElementById("sel_colormap").selectedIndex;
-               //console.log(m_colormap);
-               if (m_colormap==0){
-                 t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
-               }
-               else if (m_colormap==1){
-                 t_rgb=hslToRgb(0, 1, 1-0.6*t_mag);//red
-               }
-               else{
-                 t_rgb=hslToRgb(0.6, 1, 1-0.6*t_mag);//red-blue
-               }
-               //t_rgb=hslToRgb(0.5*t_mag, 1, 0.5);//h:0.5-1,1,0.5
-               t_rgb.push(0.8*t_mag);//oppacity
-               let polygon = new Polygon({
-                   rings: rings,
-                   spatialReference: { wkid: 4326 }
-                 });
-                 var t_graphic = new Graphic({
-                   geometry: polygon,
-                   symbol: {
-                     type: "simple-fill", // autocasts as SimpleFillSymbol
-                     color: t_rgb,
-                     outline: { // autocasts as SimpleLineSymbol
-
-                       style:"none"
-                     }
-                   },
-                   style: "solid"
-                 });
-               arr_featureset.push(t_graphic);
+             //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+             //rainbow 0-1
+             //console.log(m_colormap);
+             if (m_colormap==0){
+               t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
              }
-             //console.log(arr_featureset);
+             else if (m_colormap==1){
+               t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+             }
+             else{
+               t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//red-blue
+             }
+             //t_rgb=hslToRgb(0.5*t_mag, 1, 0.5);//h:0.5-1,1,0.5
+             t_rgb.push(0.8*t_mag);//oppacity
+             let polygon = new Polygon({
+                 rings: rings,
+                 spatialReference: { wkid: 4326 }
+               });
+               var t_graphic = new Graphic({
+                 geometry: polygon,
+                 symbol: {
+                   type: "simple-fill", // autocasts as SimpleFillSymbol
+                   color: t_rgb,
+                   outline: { // autocasts as SimpleLineSymbol
+
+                     style:"none"
+                   }
+                 },
+                 style: "solid"
+               });
+             arr_featureset.push(t_graphic);
+           }
+           //console.log(arr_featureset);
 
 
-           graphicHeatmapsLayer.addMany(arr_featureset);
-           graphicHeatmapsLayer.visible=true;
+         graphicHeatmapsLayer.addMany(arr_featureset);
+         graphicHeatmapsLayer.visible=true;
 
-          }
+         }
 
          document.getElementById('file-input').addEventListener('change', readSingleFile, false);
 
@@ -2107,8 +2150,14 @@
            graphicInitLayer.removeAll();
            let t_feature=[];
 
+           let t_center=new Point({
+             longitude:m_scenarios[m_scenario_index].center[0],
+             latitude:m_scenarios[m_scenario_index].center[1],
+             spatialReference:view.spatialReference
+           });//m_scenarios[m_scenario_index].center;
+
            let t_graphic =  new Graphic({
-             geometry: area_extent.center,//view.extent.center,
+             geometry: t_center,//area_extent.center,//view.extent.center,
              symbol:  {
                   type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
                   style:"triangle",
@@ -2137,7 +2186,7 @@
            let ringsname_arr=["25% ring","50% ring","75% ring","95% ring"];
            for(let i=0;i<4;i++){
              let t_circle=new Circle({
-               center:area_extent.center,
+               center:t_center,//area_extent.center,
                radius:rings_arr[i]
              });
              t_graphic =  new Graphic({
@@ -2187,7 +2236,7 @@
                  Name:"team group"
                }
             });
-            t_feature.push(t_graphic);
+            //t_feature.push(t_graphic);
 
             let t_point=new Point({
               x:0.9*view.extent.xmin+0.1*view.extent.xmax,
@@ -2223,10 +2272,9 @@
            //draw initial condition centerpoints
            m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"start loading"});
 
-
            document.getElementById("lpmmodeldisplay").disabled=true;
 
-           $.getJSON("{% static 'data/data_0_10_95.json' %}", function(json) {
+           $.getJSON("{% static 'data/lpmdata.json' %}", function(json) {
              m_lpdata_json=json;
               //console.log(json); // this will show the info it in firebug console
           });
@@ -2235,22 +2283,59 @@
 
           document.getElementById("loadlpmcsv").value="Load LPM Data (Loading)";
 
-          LoadLPFromCSV("{% static 'data/data_t0_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t1_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t2_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t3_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t4_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t5_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t6_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t7_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t8_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t9_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t10_95_res_3.csv' %}",t_arr_count);
+          let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
+          let t_start = 1;
+          let t_stop = 10;
+          for(let i=t_start;i<=t_stop;i++){
+            for(let t_rank=1;t_rank<=3;t_rank++){
+              LoadLPFromCSV("/static/data/"+persontype+"/pt/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
+              //LoadLPFromCSV_con("/static/data/"+persontype+"/cont/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
 
-          //console.log(m_lpdata);
+            }
 
-
+          }
+          //console.log(m_lpdata_json);
           document.getElementById("lpmmodeldisplay").disabled=false;
+         }
+
+         document.getElementById("sel_lpm").onchange=function(){
+           m_lpdata=[];
+           m_lpdata_con=[];
+           m_lpdata_json=[];
+           document.getElementById("loadlpmcsv").value="Load LPM Data";
+
+         }
+         document.getElementById("sel_rank").onchange=function(){
+
+                       m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
+                       m_experimentres["actions"].push({"id":"sel_lpmodel","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
+
+                       //console.log(m_experimentres);
+                       graphicControlLayer.visible=false;
+                       graphicPointsLayer.visible=false;
+                       graphicTrajectoryLayer.visible=false;
+                       graphicHeatmapsLayer.visible=false;
+                       graphicContourLayer.visible=false;
+
+                       if(document.getElementById("sel_lpmodel").selectedIndex==0){
+                         //display point layer
+                         AddLPDataToControllayer();
+                       }
+                       else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+                         //display point layer
+                         AddLPDataToPointslayer();
+                       }
+                       else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+                         //display Trajectory
+                         AddLPDataToTrajectorylayer();
+                       }
+                       else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+                         //display heatmap
+                         AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+                       }
+                       else{
+                         AddLPDataToContourlayer();
+                       }
          }
 
           document.getElementById("sel_lpmodel").onchange=function(){
@@ -2263,6 +2348,7 @@
             graphicPointsLayer.visible=false;
             graphicTrajectoryLayer.visible=false;
             graphicHeatmapsLayer.visible=false;
+            graphicContourLayer.visible=false;
 
             if(document.getElementById("sel_lpmodel").selectedIndex==0){
               //display point layer
@@ -2277,8 +2363,6 @@
               AddLPDataToTrajectorylayer();
             }
             else{
-              //display heatmap
-              //AddLPDataToHeatmapslayer();
               AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
             }
           }
@@ -2286,7 +2370,8 @@
         document.getElementById("myfilter").onchange=function(){
           m_experimentres["actions"].push({"id":"myfilter","timestamp": Date.now(), "description":"Change heatmap filter to "+document.getElementById("myfilter").value.toString()});
           //console.log("change");
-          $("#lmyfilter").text("Filter(0-10): "+document.getElementById("myfilter").value);
+          let t_v=10-parseInt(document.getElementById("myfilter").value);
+          $("#lmyfilter").text("Heatmapsize(10-1): "+t_v.toString());
 
           if(document.getElementById("sel_lpmodel").selectedIndex==3){
             //display heatmap
@@ -2296,8 +2381,8 @@
          document.getElementById("myRange").onchange=function(){
            //console.log("change");
            m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+document.getElementById("myRange").value.toString()});
-
-           $("#lmyRange").text("Hour(0-10): "+document.getElementById("myRange").value);
+           let t_hour=parseInt(document.getElementById("myRange").value)+1;
+            $("#lmyRange").text("Hour(1-10): "+t_hour);
 
 
            if(document.getElementById("sel_lpmodel").selectedIndex==0){
@@ -2313,12 +2398,19 @@
              AddLPDataToTrajectorylayer();
            }
            else{
-             //display heatmap
-             //AddLPDataToHeatmapslayer();
+
              AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
            }
          }
+         document.getElementById("sel_colormap").onchange=function(){
 
+             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
+             m_experimentres["actions"].push({"id":"sel_colormap","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
+
+             //console.log(m_experimentres);
+             DisableAllGraphicLayers();
+             UpdateVisualization();
+         }
          //--------------------------------------------------
            document.getElementById("lpmmodeldisplay").onclick=function() {
              m_experimentres["actions"].push({"id":"lpmmodeldisplay","timestamp": Date.now(), "description":"diplay model"});
@@ -2342,8 +2434,39 @@
              }
              else{
                //display heatmap
-               //AddLPDataToHeatmapslayer();
+
                AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+             }
+           }
+
+           function DisableAllGraphicLayers(){
+             graphicPointsLayer.visible=false;
+             graphicTrajectoryLayer.visible=false;
+             graphicHeatmapsLayer.visible=false;
+             graphicControlLayer.visible=false;
+           }
+           function UpdateVisualization(){
+
+             //document.getElementById("lpmmodeldisplay").values;
+             if(document.getElementById("sel_lpmodel").selectedIndex==0){
+               //display point layer
+               AddLPDataToControllayer();
+             }
+             else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+               //display point layer
+               AddLPDataToPointslayer();
+             }
+             else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+               //display Trajectory
+               AddLPDataToTrajectorylayer();
+             }
+             else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+               //display heatmap
+               //AddLPDataToHeatmapslayerFilter_featurelayer(document.getElementById("myfilter").value/10-0.05);
+               AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+             }
+             else{
+               AddLPDataToControllayer();
              }
            }
 
@@ -2508,7 +2631,7 @@
       <div>
       </div>
       <div>
-        <input type="text" class="bt_save_edit" id="tasknotes" value="Task name"></input>
+        <input type="text" class="bt_save_edit" id="tasknotes" value="Task_name"></input>
         <input type="button" class="bt_save" value="Save Task" id="savetasks"></input>
       </div>
     </div>
@@ -2519,6 +2642,18 @@
       <div style="display:none">
         <input type="file" id="file-input" position= "relative"/>
       </div>
+
+      <div>
+        <div>
+          <label >Lost person type: </label>
+          <select id="sel_lpm">
+            <option value="child10to12">Child</option>
+            <option value="dementia">Dementia</option>
+            <option value="hiker">Hiker</option>
+          </select>
+          <input type="button" id="label_lpt" value="Switch" style="display:none"></input>
+        </div>
+
       <div>
         <input type="button" class="edit-button" value="Load LPM Data" id="loadlpmcsv">
       </div>
@@ -2534,13 +2669,23 @@
 
       </div>
 
+      <div>
+        <label >Model best fit: </label>
+        <select id="sel_rank">
+          <option value="1">bf1</option>
+          <option value="2">bf2</option>
+          <option value="3">bf3</option>
+        </select>
+        <input type="button" id="label_rank" value="Switch" style="display:none"></input>
+      </div>
+
       <div class="slidecontainer">
-        <label for="myRange" id="lmyRange">Hour(0-10): 5</label>
-        <input type="range" min="0" max="10" value="5" class="slider" id="myRange">
+        <label for="myRange" id="lmyRange">Hour(1-10): 5</label>
+        <input type="range" min="0" max="9" value="5" class="slider" id="myRange">
 
       </div>
       <div class="slidecontainer">
-        <label for="myfilter" id="lmyfilter">Filter(0-10): 7</label>
+        <label for="myfilter" id="lmyfilter">Heatmapsize(10-1): 7</label>
         <input type="range" min="0" max="10" value="7" class="slider" id="myfilter">
 
       </div>
@@ -2556,6 +2701,7 @@
         <label id="lpsum">ippm</label>
       </div>
     </div>
+  </div>
 
     <hr/>
     <div>
@@ -2593,45 +2739,49 @@
       <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
       <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
     </div>
-    <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
-    <div><label id="elevation">Elevation</label></div>
-
-    <hr/>
-    <div>
-        <select id="sel_gpsdevice">
-          <option value="">Select a device</option>
-          {% for device in gpsdevice %}
-          <option value="{{ device.id }}">{{ device.deviceid }}</option>
-          {% endfor %}
-        </select>
-        <input type="button" id="GPSStart"  value="Load GPS"></input>
-
-      <p id="daytime"></p>
-
-    </div>
-
-    <hr/>
-    <h3>Task Assist</h3>
-    <div>
-      <label for="cellname">Cell Name: </label>
-      <input type="text" id="cellname" value="SX"></input>
-    </div>
-
-    <div>
-      <label >Assign to team: </label>
-      <select>
-        <option value="team1">Team 1</option>
-        <option value="team2">Team 2</option>
-        <option value="team3">Team 3</option>
-        <option value="team4">Team 4</option>
-        <option value="team4">Team 5</option>
-      </select>
-    </div>
-
     <div>
       <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
       <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
     </div>
+    <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
+
+<div style="display:none">
+      <div><label id="elevation">Elevation</label></div>
+    <hr/>
+          <div>
+              <select id="sel_gpsdevice">
+                <option value="">Select a device</option>
+                {% for device in gpsdevice %}
+                <option value="{{ device.id }}">{{ device.deviceid }}</option>
+                {% endfor %}
+              </select>
+              <input type="button" id="GPSStart"  value="Load GPS"></input>
+
+            <p id="daytime"></p>
+
+          </div>
+
+          <hr/>
+          <h3 >Task Assist</h3>
+          <div>
+            <label for="cellname">Cell Name: </label>
+            <input type="text" id="cellname" value="SX"></input>
+          </div>
+
+          <div>
+            <label >Assign to team: </label>
+            <select>
+              <option value="team1">Team 1</option>
+              <option value="team2">Team 2</option>
+              <option value="team3">Team 3</option>
+              <option value="team4">Team 4</option>
+              <option value="team4">Team 5</option>
+            </select>
+          </div>
+
+
+</div>
+
 
   </div>
 

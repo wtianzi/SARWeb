@@ -1772,7 +1772,7 @@
                    color: "white",
                    haloColor: "black",
                    haloSize: "1px",
-                   text: (100*t_pro).toFixed(6)+"%",
+                   text: (10000*t_pro).toFixed(2)+"%%",
                    xoffset: 5,
                    yoffset: 5,
                    font: { // autocast as Font
@@ -2003,14 +2003,8 @@
            graphicInitLayer.removeAll();
            let t_feature=[];
 
-           let t_center=new Point({
-             longitude:m_scenarios[m_scenario_index].center[0],
-             latitude:m_scenarios[m_scenario_index].center[1],
-             spatialReference:view.spatialReference
-           });//m_scenarios[m_scenario_index].center;
-
            let t_graphic =  new Graphic({
-             geometry: t_center,//area_extent.center,//view.extent.center,
+             geometry: area_extent.center,//view.extent.center,
              symbol:  {
                   type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
                   style:"triangle",
@@ -2039,7 +2033,7 @@
            let ringsname_arr=["25% ring","50% ring","75% ring","95% ring"];
            for(let i=0;i<4;i++){
              let t_circle=new Circle({
-               center:t_center,//area_extent.center,
+               center:area_extent.center,
                radius:rings_arr[i]
              });
              t_graphic =  new Graphic({
@@ -2089,7 +2083,7 @@
                  Name:"team group"
                }
             });
-            //t_feature.push(t_graphic);
+            t_feature.push(t_graphic);
 
             let t_point=new Point({
               x:0.9*view.extent.xmin+0.1*view.extent.xmax,
@@ -2142,7 +2136,7 @@
           for(let i=t_start;i<=t_stop;i++){
             for(let t_rank=1;t_rank<=3;t_rank++){
               LoadLPFromCSV("/static/data/"+persontype+"/pt/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
-              //LoadLPFromCSV_con("/static/data/"+persontype+"/cont/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
+              LoadLPFromCSV_con("/static/data/"+persontype+"/cont/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
 
             }
 
@@ -2161,38 +2155,73 @@
 
          document.getElementById("sel_rank").onchange=function(){
 
-             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
-             m_experimentres["actions"].push({"id":"sel_lpmodel","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
+                       m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
+                       m_experimentres["actions"].push({"id":"sel_lpmodel","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
 
-             //console.log(m_experimentres);
-             DisableAllGraphicLayers();
-             UpdateVisualization();
-         }
+                       //console.log(m_experimentres);
+                       graphicControlLayer.visible=false;
+                       graphicPointsLayer.visible=false;
+                       graphicTrajectoryLayer.visible=false;
+                       graphicHeatmapsLayer.visible=false;
+                       graphicContourLayer.visible=false;
 
-         document.getElementById("sel_colormap").onchange=function(){
-
-             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
-             m_experimentres["actions"].push({"id":"sel_colormap","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
-
-             //console.log(m_experimentres);
-             DisableAllGraphicLayers();
-             UpdateVisualization();
+                       if(document.getElementById("sel_lpmodel").selectedIndex==0){
+                         //display point layer
+                         AddLPDataToControllayer();
+                       }
+                       else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+                         //display point layer
+                         AddLPDataToPointslayer();
+                       }
+                       else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+                         //display Trajectory
+                         AddLPDataToTrajectorylayer();
+                       }
+                       else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+                         //display heatmap
+                         AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+                       }
+                       else{
+                         AddLPDataToContourlayer();
+                       }
          }
           document.getElementById("sel_lpmodel").onchange=function(){
 
             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
             m_experimentres["actions"].push({"id":"sel_lpmodel","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
-            DisableAllGraphicLayers();
-            UpdateVisualization();
+
+            //console.log(m_experimentres);
+            graphicControlLayer.visible=false;
+            graphicPointsLayer.visible=false;
+            graphicTrajectoryLayer.visible=false;
+            graphicHeatmapsLayer.visible=false;
+            graphicContourLayer.visible=false;
+
+            if(document.getElementById("sel_lpmodel").selectedIndex==0){
+              //display point layer
+              AddLPDataToControllayer();
+            }
+            else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+              //display point layer
+              AddLPDataToPointslayer();
+            }
+            else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+              //display Trajectory
+              AddLPDataToTrajectorylayer();
+            }
+            else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+              //display heatmap
+              AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+            }
+            else{
+              AddLPDataToContourlayer();
+            }
           }
 
         document.getElementById("myfilter").onchange=function(){
           m_experimentres["actions"].push({"id":"myfilter","timestamp": Date.now(), "description":"Change heatmap filter to "+document.getElementById("myfilter").value.toString()});
           //console.log("change");
-          let t_v=10-parseInt(document.getElementById("myfilter").value);
-          $("#lmyfilter").text("Heatmapsize(10-1): "+t_v.toString());
-
-          //$("#lmyfilter").text("Filter(0-10): "+document.getElementById("myfilter").value);
+          $("#lmyfilter").text("Filter(0-10): "+document.getElementById("myfilter").value);
 
           if(document.getElementById("sel_lpmodel").selectedIndex==3){
             //display heatmap
@@ -2205,25 +2234,37 @@
            let t_hour=parseInt(document.getElementById("myRange").value)+1;
            $("#lmyRange").text("Hour(1-10): "+t_hour);
 
-           UpdateVisualization();
+
+           if(document.getElementById("sel_lpmodel").selectedIndex==0){
+             //display point layer
+             AddLPDataToControllayer();
+           }
+           else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+             //display point layer
+             AddLPDataToPointslayer();
+           }
+           else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+             //display Trajectory
+             AddLPDataToTrajectorylayer();
+           }
+           else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+             //display heatmap
+             AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+           }
+           else {
+             AddLPDataToContourlayer();
+           }
          }
 
          //--------------------------------------------------
            document.getElementById("lpmmodeldisplay").onclick=function() {
              m_experimentres["actions"].push({"id":"lpmmodeldisplay","timestamp": Date.now(), "description":"diplay model"});
 
-             DisableAllGraphicLayers();
-             UpdateVisualization();
-           }
-           function DisableAllGraphicLayers(){
              graphicPointsLayer.visible=false;
              graphicTrajectoryLayer.visible=false;
              graphicHeatmapsLayer.visible=false;
              graphicControlLayer.visible=false;
              graphicContourLayer.visible=false;
-           }
-           function UpdateVisualization(){
-
              //document.getElementById("lpmmodeldisplay").values;
              if(document.getElementById("sel_lpmodel").selectedIndex==0){
                //display point layer
@@ -2285,9 +2326,10 @@
         <div>
           <label >Lost person type: </label>
           <select id="sel_lpm">
-            <option value="child10to12">Child</option>
-            <option value="dementia">Dementia</option>            
             <option value="hiker">Hiker</option>
+            <option value="dementia">Dementia</option>
+            <option value="child10to12">Child</option>
+            <option value="default">Demo</option>
           </select>
           <input type="button" id="label_lpt" value="Switch" style="display:none"></input>
         </div>
@@ -2322,7 +2364,7 @@
 
       </div>
       <div class="slidecontainer">
-        <label for="myfilter" id="lmyfilter">Heatmapsize(10-1): 3</label>
+        <label for="myfilter" id="lmyfilter">Filter(0-10): 7</label>
         <input type="range" min="0" max="10" value="7" class="slider" id="myfilter">
 
       </div>
@@ -2334,6 +2376,7 @@
           <option value="points">Points</option>
           <option value="trajectory">Trajectory</option>
           <option value="heatmap">Heat map</option>
+          <option value="contourmap">Contour map</option>
         </select>
         <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
         <label id="lpsum">ippm</label>
@@ -2376,14 +2419,12 @@
       <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
       <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
     </div>
-
+    <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
     <div>
       <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
       <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
     </div>
-
-    <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
     <div><label id="elevation">Elevation</label></div>
   </div>

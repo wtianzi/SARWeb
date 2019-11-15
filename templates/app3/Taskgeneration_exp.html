@@ -1438,7 +1438,7 @@
            var t_data;
             $.ajax({
               type: "GET",
-              url:t_url,//"{% static 'data/data_t0_95_res_3.csv' %}",
+              url:t_url,
               dataType: "text",
               success: function(response)
               {
@@ -1454,7 +1454,7 @@
            var t_data;
             $.ajax({
               type: "GET",
-              url:t_url,//"{% static 'data/data_t0_95_res_3.csv' %}",
+              url:t_url,
               dataType: "text",
               success: function(response)
               {
@@ -2146,9 +2146,10 @@
           let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
           let t_start = 1;
           let t_stop = 10;
+          //data->LPMdata3
           for(let i=t_start;i<=t_stop;i++){
             for(let t_rank=1;t_rank<=3;t_rank++){
-              LoadLPFromCSV("/static/data/"+persontype+"/pt/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
+              LoadLPFromCSV("/static/LPMdata3/"+persontype+"/pt/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
               //LoadLPFromCSV_con("/static/data/"+persontype+"/cont/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
 
             }
@@ -2343,6 +2344,7 @@
           <option value="points">Points</option>
           <option value="trajectory">Trajectory</option>
           <option value="heatmap">Heat map</option>
+          <option value="contour">Contour map</option>
         </select>
         <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
         <label id="lpsum">ippm</label>

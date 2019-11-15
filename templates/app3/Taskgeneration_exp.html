@@ -61,13 +61,15 @@
       td, th {
         border: 1px solid #dddddd;
         text-align: left;
-        padding: 8px;
+        padding: 6px;
       }
 
       tr:nth-child(even) {
         background-color: #dddddd;
       }
-
+      h3{
+        margin:2px;
+      }
   </style>
   <script>
 
@@ -94,7 +96,6 @@
       "esri/layers/OpenStreetMapLayer",
       "esri/widgets/Track",
       "esri/widgets/Search",
-      "esri/layers/GeoJSONLayer",
       "esri/geometry/Multipoint",
       "esri/layers/ElevationLayer",
       "esri/geometry/Polyline",
@@ -107,7 +108,7 @@
       Draw,CoordinateConversion,
       DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
       OpenStreetMapLayer,Track,Search,
-      GeoJSONLayer,Multipoint,
+      Multipoint,
       ElevationLayer,Polyline,Circle,promiseUtils
     ) {
       let view, sketchViewModel, draw,
@@ -143,17 +144,22 @@
         "allpolygons":null
       };
 
-      var scale=18;//15
+      var scale=16;//15
       //36.8176602,-80.363078
       //kentlane farm (-80.572567,37.203604)
       //{" wkid":4326 }: latetude
       //
-      let m_scenario_index=0;
+      let m_scenario_index=2;
       let m_scenarios=[
         {"scenario_index":0,"scenario_name":"hiker1","center":[-80.55645,37.2]},
-        {"scenario_index":1,"scenario_name":"hiker2","center":[-80.420024,37.228648]},
-        {"scenario_index":2,"scenario_name":"hiker3","center":[-80.55645,37.2]}
+        {"scenario_index":1,"scenario_name":"hiker2","center":[-80.543827,37.204546]},
+        {"scenario_index":2,"scenario_name":"hiker3","center":[-80.5460, 37.2041]}
       ];
+
+      let m_scenarios_rings={'child10to12':[800,1600,3200,9000],
+      'dementia':[300,800,1900,8300],
+      'hiker':[1100,3100,5800,18300]};
+
       var gcx=-80.556451;
       var gcy=37.2;
 
@@ -189,6 +195,7 @@
       var m_filterprob=0.0000001;
       var m_lpdata_json={};
       var m_lpdata=[];
+      var m_lpdata_con=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_editing=false;
@@ -200,18 +207,6 @@
       let m_targetpolygon;
       let m_taskstarttime=null;
 
-      /*
-      [
-         {'round':1,
-         'cell'=[{'sname':0,'polygon':rings},{'sname':1,'polygon':rings}...],
-         'teams':[0,0,1,1,2], //'team1':0,'team2':0,'team3':1,'team4':1,'team5':2
-         'responsetime':120,
-         'assigntime':200,
-         'displaytype':'point'},
-         {'round':2,'cell'=[{'sname':5,'polygon':rings},{'sname':6,'polygon':rings}...], 'team1':0,'team2':0,'team3':1,'team4':1,'team5':2, 'responsetime':100,'assigntime':200,'displaytype':'heatmap'},
-
-      ];
-      */
       let m_taskpolygon={};
 
       const graphicInitLayer= new GraphicsLayer();
@@ -222,6 +217,9 @@
       const graphicPointsLayer = new GraphicsLayer();
       const graphicTrajectoryLayer= new GraphicsLayer();
       const graphicHeatmapsLayer = new GraphicsLayer({
+        opacity:0.5
+      });
+      const graphicContourLayer = new GraphicsLayer({
         opacity:0.5
       });
       const graphicControlLayer = new GraphicsLayer({
@@ -256,69 +254,6 @@
            return [r * 255, g * 255, b * 255];
        }
 
-      const color_1= [
-        { ratio: 0, color: "rgba(133, 193, 200, 0)" },
-        { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
-        { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
-        { ratio: 0.01, color: "rgba(133, 193, 200, 1)" },
-        { ratio: 0.0853482, color: "rgba(144, 161, 190, 1)" },
-        { ratio: 0.1606965, color: "rgba(156,129, 132, 1)" },
-        { ratio: 0.2360448, color: "rgba(167, 97, 170, 1)" },
-        { ratio: 0.311393, color: "rgba(175, 73, 128, 1)" },
-        { ratio: 0.386741458, color: "rgba(184, 48, 85, 1)" },
-        { ratio: 0.46208975, color: "rgba(192, 24, 42, 1)" },
-        { ratio: 0.537438, color: "rgba(200, 0, 0, 1)" },
-        { ratio: 0.612786, color: "rgba(211, 51, 0, 1)" },
-        { ratio: 0.688134625, color: "rgba(222, 102, 0, 1)" },
-        { ratio: 0.7634829166666667, color: "rgba(233, 153, 0, 1)" },
-        { ratio: 0.8388312, color: "rgba(244, 204, 0, 1)" },
-        { ratio: 0.9141795, color: "rgba(255, 255, 0, 1)" }
-      ];
-      const color_0= [
-        { ratio: 0, color: "rgba(255, 255, 255, 0)" },
-        { ratio: 0.1, color: "rgba(128, 0, 255, 0.2)" },
-        { ratio: 0.12, color: "rgba(128, 0, 255, 0.2)" },
-        { ratio: 0.15, color: "rgba(128, 0, 255, 0.2)" },
-        { ratio: 0.2, color: "rgba(128, 0, 255, 0.2)" },
-        { ratio: 0.3, color: "rgba(0, 0, 255, 0.2)" },
-        { ratio: 0.5, color: "rgba(0, 255, 0, 0.2)" },
-        { ratio: 0.7, color: "rgba(255, 255, 0, 0.2)" },
-        { ratio: 0.9, color: "rgba(255, 0, 0,0.2)" },
-        { ratio: 1, color: "rgba(255, 0, 0, 0.2)" }
-      ];
-      const colorStops_2= [
-            { color: "rgba(63, 40, 102, 0)", ratio: 0 },
-            { color: "#472b77", ratio: 0.083 },
-            { color: "#4e2d87", ratio: 0.166 },
-            { color: "#563098", ratio: 0.249 },
-            { color: "#5d32a8", ratio: 0.332 },
-            { color: "#6735be", ratio: 0.415 },
-            { color: "#7139d4", ratio: 0.498 },
-            { color: "#7b3ce9", ratio: 0.581 },
-            { color: "#853fff", ratio: 0.664 },
-            { color: "#a46fbf", ratio: 0.747 },
-            { color: "#c29f80", ratio: 0.83 },
-            { color: "#e0cf40", ratio: 0.913 },
-            { color: "#ffff00", ratio: 1 }
-          ];
-
-      const heatmaprenderer = {
-        type: "heatmap",
-        blurRadius:20,
-        colorStops: colorStops_2,
-        field: "Magnitude"//,
-        //maxPixelIntensity: 100,
-        //minPixelIntensity: 0
-      };
-
-
-      const geojsonLayer = new GeoJSONLayer({
-        url: "{% static 'data/geojsonheatmap.geojson' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
-        copyright: "USGS Earthquakes",
-        renderer: heatmaprenderer,
-        opacity: 0.9
-      });
-
       var elevLyr = new ElevationLayer({
         // Custom elevation service
         url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
@@ -327,63 +262,10 @@
       const map = new Map({
         basemap: "hybrid",//"hybrid",//"satellite",
         //ground: "world-elevation",
-        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer]
+        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicContourLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer]
 
       });
 
-
-    //geometry {coordinate}
-    function deletePointsToGeolayer(){
-      //console.log(geojsonLayer);
-      const query = geojsonLayer.createQuery();
-      var editFeature;
-      var t_res=geojsonLayer.queryFeatures(query).then( function(results){
-        editFeature=results.features;
-        //console.log(editFeature);
-        //console.log(editFeature);
-        const promise = geojsonLayer.applyEdits({
-          deleteFeatures: editFeature
-        });
-
-      });
-
-
-    }
-
-    function addPointsToGeolayer(arr_points){
-      arr_featureset=[];
-      var attributes = {};
-
-      //attributes["Magnitude"] = 8;
-      attributes["Report_Date"] = Date.now();
-      //console.log(arr_points);
-      for (var i=0;i<arr_points.length;i++){
-        let in_point=new Point({
-          x:arr_points[i][0],
-          y:arr_points[i][1],
-          spatialReference:view.spatialReference
-        });
-
-        attributes["Magnitude"] = arr_points[i][2];
-        attributes["OBJECTID"] = i;
-
-        var t_graphic =  new Graphic({
-          geometry: in_point,
-          attributes: attributes
-        });
-
-        arr_featureset.push(t_graphic);
-      }
-      //console.log(arr_featureset);
-
-      const deleteFeature = {
-       objectId: [0]
-      };
-
-      const promise = geojsonLayer.applyEdits({
-        addFeatures: arr_featureset//[addFeature]//[arr_featureset[0],arr_featureset[1]]//
-      });
-    }
 
       setUpView();
 
@@ -456,7 +338,7 @@
             results.forEach(function(result) {
               //set the assignment: cell to team
               //result
-              $("#cellname").val("S"+result.graphic.attributes.cellindex);//result.graphic.attributes.cellindex;
+              //$("#cellname").val("S"+result.graphic.attributes.cellindex);//result.graphic.attributes.cellindex;
               if(m_editing){
                 if (result.graphic.layer === sketchViewModel.layer) {
                   sketchViewModel.update([result.graphic], {
@@ -848,8 +730,7 @@
           "https://services8.arcgis.com/ZXMBUOxDBbivoAgJ/arcgis/rest/services/RiverMiles/FeatureServer"
           // This property can be used to uniquely identify the layer
         });
-        //map.add(riverLayer);
-        map.add(geojsonLayer);
+
         //console.log(riverLayer.gdbVersion);
         view = new MapView({
           container: "viewDiv",
@@ -1260,7 +1141,7 @@
         if (event.state=="active"){
           mover=event.toolEventInfo.mover.geometry;
           if(event.toolEventInfo.type=="move-start"){
-            if(m_taskstarttime ==null){
+            if(m_taskstarttime == null){
               m_taskstarttime=Date.now();
             }
 
@@ -1477,7 +1358,6 @@
        function ClearAll(){
          //console.log(activeWidget);
          //console.log(activeWidget.viewModel.measurementLabel.area);
-         deletePointsToGeolayer();
          allpolygons=[];
          allpolygons_text=[];
          activepolygonset=[];
@@ -1492,6 +1372,7 @@
          graphicPointsLayer.removeAll();
          graphicTrajectoryLayer.removeAll();
          graphicHeatmapsLayer.removeAll();
+         graphicContourLayer.removeAll();
          graphicControlLayer.removeAll();
          graphicInitLayer.removeAll();
          teamgraphicsLayer.removeAll();
@@ -1516,56 +1397,10 @@
          return JSON.stringify(res_json);
        }
 
-       document.getElementById("savetasks").addEventListener("click",
-         function () {
-           m_experimentres["actions"].push({"id":"savetasks","timestamp": Date.now(), "description":"savetasks"});
-           let py_task_all_array={{ task_all |safe }}
-           //console.log(py_task_all_array);
-           if(py_task_all_array.includes(document.getElementById("tasknotes").value)){
-             //task_all
-             alert("Please try another task name.");
-             //console.log(document.getElementById("tasknotes").value+" is already exist, please enter another one!");
-           }
-           else {
-             var URL = "{% url 'tasksave' %}";
-             let dbpolystr=PolyArrayToJson(updated_polygonring);
-             var data = {
-                     csrfmiddlewaretoken: '{{ csrf_token }}',
-                     'task_notes': document.getElementById("tasknotes").value,
-                     'task_id': document.getElementById("tasknotes").value,
-                     'Taskarea': updated_polygonring.length.toString(),
-                     'task_polygon': dbpolystr
-                    };
-             $.post(URL, data, function(response){
-               var res=JSON.parse(response);
-
-                 if(res.flag == 'success'){
-                   //console.log(res.Taskarea);
-                   //add date and task number and a random number
-                   //task name:
-                   let task_url="{% url 'taskgenerationform' %}"+"/"+document.getElementById("tasknotes").value+'_'+'0/';
-                   //console.log(task_url);
-                   //var win = window.open("{% url 'taskgenerationform' %}", '_blank');
-                   var win = window.open(task_url, '_blank');
-                   win.focus();
-                   //open a new tab for task TaskGeneration
-
-                   /*
-                   document.getElementById("tasknotes").value=res.taskinpy;
-                   document.getElementById("myRange3").value=res.DuressJ3;
-                   document.getElementById("myRange4").value=res.DuressJ4;
-                   */
-                  }
-                 else{ alert(response); }
-             });
-           }
-         });
-
-
          function readSingleFile(e) {
            //load csv file
            // "{% static 'data/data_0_10_95.json' %}"
-           $.getJSON("{% static 'data/data_0_10_95.json' %}", function(json) {
+           $.getJSON("{% static 'data/lpmdata.json' %}", function(json) {
              m_lpdata_json=json;
               //console.log(json); // this will show the info it in firebug console
           });
@@ -1598,7 +1433,8 @@
 
 
          }
-         function LoadLPFromCSV(t_url,t_arr_count){
+
+         function LoadLPFromCSV_con(t_url,t_arr_count,t_hour=0,t_rank=0){
            var t_data;
             $.ajax({
               type: "GET",
@@ -1606,18 +1442,53 @@
               dataType: "text",
               success: function(response)
               {
-
                  t_data = $.csv.toArrays(response).map(function(item){
                    return item.map(Number);
                  });
-                 m_lpdata.push(t_data);
+                 m_lpdata_con.push({'hour':t_hour,'rank':t_rank,'data':t_data});
+              }
+            });
+            return true;
+         }
+         function LoadLPFromCSV(t_url,t_arr_count,t_hour=0,t_rank=0){
+           var t_data;
+            $.ajax({
+              type: "GET",
+              url:t_url,//"{% static 'data/data_t0_95_res_3.csv' %}",
+              dataType: "text",
+              success: function(response)
+              {
+                 t_data = $.csv.toArrays(response).map(function(item){
+                   return item.map(Number).slice(1);
+                 });
+                 //m_lpdata.push(t_data);
+                 m_lpdata.push({'hour':t_hour,'rank':t_rank,'data':t_data});
+                 let t_max=0;
+                 let t_index=0;
+                t_data.map(function(value,index) {
+                  if(t_max<value[2]){
+                    t_max=value[2];
+                    t_index=index;
+                  }
+                });
+                //console.log(m_lpdata_json);
+                m_lpdata_json['points'][t_hour]['data'][t_rank]['loc']=t_data[t_index];
                  //console.log(response);
+
+                 document.getElementById("loadlpmcsv").value="Load LPM Data (Loading "+m_lpdata.length.toString()+")";
                  if (m_lpdata.length == t_arr_count){
+
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                  }
               }
             });
+            //get json file for m_lpdata_json
+
+            /*{"points":[
+            {"hour":0,"data"}
+                    ]}
+                    */
             return true;
          }
 
@@ -1681,13 +1552,30 @@
            arr_hours=m_lpdata_json['points'];
            let t_start=0,t_end=10;
            arr_featureset=[];
-
-           for(let rank=2;rank>=0;rank--){
+           let rank_start=0;
+           let rank_stop=2;
+           if(document.getElementById("sel_rank").value=='1'){
+             rank_start=0;
+             rank_stop=0;
+           }
+           else if(document.getElementById("sel_rank").value=='2'){
+             rank_start=1;
+             rank_stop=1;
+           }
+           else if(document.getElementById("sel_rank").value=='3'){
+             rank_start=2;
+             rank_stop=2;
+           }
+           let lat,long;
+           for(let rank=rank_stop;rank>=rank_start;rank--){
              let paths=[];
              let i_hr=document.getElementById("myRange").value;
                //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
-               let lat=arr_hours[i_hr]['data'][rank]['loc'][1];
-               let long=arr_hours[i_hr]['data'][rank]['loc'][0];
+
+              let lat=arr_hours[i_hr]['data'][rank]['loc'][1];
+              let long=arr_hours[i_hr]['data'][rank]['loc'][0];
+
+
                let in_point=new Point({
                  latitude:lat,
                  longitude:long,
@@ -1749,7 +1637,22 @@
            let t_start=0,t_end=10;
            arr_featureset=[];
 
-           for(let rank=2;rank>=0;rank--){
+           let rank_start=0;
+           let rank_stop=2;
+           if(document.getElementById("sel_rank").value=='1'){
+             rank_start=0;
+             rank_stop=0;
+           }
+           else if(document.getElementById("sel_rank").value=='2'){
+             rank_start=1;
+             rank_stop=1;
+           }
+           else if(document.getElementById("sel_rank").value=='3'){
+             rank_start=2;
+             rank_stop=2;
+           }
+
+           for(let rank=rank_stop;rank>=rank_start;rank--){
              let paths=[];
              for(let i=t_start;i<=t_end;i++){
                //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
@@ -1833,10 +1736,26 @@
            graphicControlLayer.removeAll();
            arr_featureset=[];
            arr_hours=m_lpdata_json['points'];
+           //console.log(m_lpdata_json);
            let t_start=0,t_end=10;
            arr_featureset=[];
 
-           for(let rank=2;rank>=0;rank--){
+          let rank_start=0;
+          let rank_stop=2;
+          if(document.getElementById("sel_rank").value=='1'){
+            rank_start=0;
+            rank_stop=0;
+          }
+          else if(document.getElementById("sel_rank").value=='2'){
+            rank_start=1;
+            rank_stop=1;
+          }
+          else if(document.getElementById("sel_rank").value=='3'){
+            rank_start=2;
+            rank_stop=2;
+          }
+
+          for(let rank=rank_stop;rank>=rank_start;rank--){
              let paths=[];
              let i_hr=document.getElementById("myRange").value;
                //draw points, light of color changed with hours, end is the darkest, color hue changes with rank
@@ -1858,7 +1777,7 @@
                    color: "white",
                    haloColor: "black",
                    haloSize: "1px",
-                   text: (10000*t_pro).toFixed(2)+"%%",
+                   text: (100*t_pro).toFixed(6)+"%",
                    xoffset: 5,
                    yoffset: 5,
                    font: { // autocast as Font
@@ -1897,92 +1816,103 @@
            graphicControlLayer.visible=true;
          }
 
-          function AddLPDataToHeatmapslayer(){
+         function AddLPDataToContourlayer(){
+           graphicContourLayer.removeAll();
+           arr_featureset=[];
 
-            graphicHeatmapsLayer.removeAll();
-            if(m_lpdata == null){
-              return;
-            }
-            arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
+           if(m_lpdata_con == null){
+             return;
+           }
+           let t_hour=document.getElementById("myRange").value;
+           let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
+           arr_heatpoints=[];
+           let t_break=m_lpdata_con.length;
+           let i=0;
+           while(i<t_break){
+             if(m_lpdata_con[i]['hour']==t_hour && m_lpdata_con[i]['rank']==t_rank){
+               arr_heatpoints=m_lpdata_con[t_hour]['data'];
+               break;
+             }
+             i++;
+           }
 
-            //loop the first line to find width
-            let t_width=1;
-            while(arr_heatpoints[0][0]==arr_heatpoints[t_width][0]){
-              t_width+=1;
-            }
+           m_colormap=document.getElementById("sel_colormap").selectedIndex;
+           //loop to find rings
+           let t_rings=[];//
+           let all_paths=[];
+           let t_startprobability=arr_heatpoints[0][0];
+           let t_mag=0.1;
 
-            let col3 = arr_heatpoints.map(function(value,index) { return value[2]; });
-            let add = (a, b) =>  a + b;
-            const sum = col3.reduce(add);
+           var markerSymbol = {
+             type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+             color: [226, 119, 40],
+             outline: {
+               style:"none"
+             }
+           };
 
-             $("#lpsum").text("Percent: "+sum);
-
-            let t_min = Math.min(...col3);
-            let t_max=Math.max(...col3);
-            let t_stander=t_max-t_min;
-            let mean_elevation=0.5*(t_max+t_min);
-
-            arr_featureset=[];
-            let j_width=1;
-            let end_index=arr_heatpoints.length-t_width-1;
-            for (var i=0;i<end_index;i++){
-              //the last point doesn't need a polygon
-              if(j_width>=t_width){
-                j_width=1;
-                continue;
-              }
-              j_width+=1;
-
-              //rings
-            let t_pro=(arr_heatpoints[i][2]+arr_heatpoints[i+1][2]+arr_heatpoints[i+t_width+1][2]+arr_heatpoints[i+t_width][2])/4;
-            t_mag=(t_pro-t_min)/t_stander;
-            if(t_mag<0.2){
-              continue;
-            }
-            let rings=[
-                   [arr_heatpoints[i][0], arr_heatpoints[i][1]],
-                   [arr_heatpoints[i+1][0], arr_heatpoints[i+1][1]],
-                   [arr_heatpoints[i+t_width+1][0], arr_heatpoints[i+t_width+1][1]],
-                   [arr_heatpoints[i+t_width][0], arr_heatpoints[i+t_width][1]],
-                   [arr_heatpoints[i][0], arr_heatpoints[i][1]]];
-
-
-              //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
-              //rainbow 0-1
-              t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//red
-              //t_rgb=hslToRgb(0.5*t_mag, 1, 0.5);//h:0.5-1,1,0.5
-              t_rgb.push(0.8*t_mag);//oppacity
-              let polygon = new Polygon({
-                  rings: rings,
+           arr_heatpoints.map(function(item){
+             if(item[0]==t_startprobability){
+               t_rings.push(item.slice(1));
+             }
+             else{
+               //all_paths.push(t_rings);
+               var tmulpt=new Multipoint({
+                  points: t_rings,//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
                   spatialReference: { wkid: 4326 }
                 });
-                var t_graphic = new Graphic({
-                  geometry: polygon,
-                  symbol: {
-                    type: "simple-fill", // autocasts as SimpleFillSymbol
-                    color: t_rgb,
-                    outline: { // autocasts as SimpleLineSymbol
 
-                      style:"none"
-                    }
-                  },
-                  style: "solid"
+                var polylineGraphic = new Graphic({
+                  geometry: tmulpt, // Add the geometry created in step 4
+                  symbol: markerSymbol
                 });
-              arr_featureset.push(t_graphic);
-            }
-            //console.log(arr_featureset);
-          graphicHeatmapsLayer.addMany(arr_featureset);
-          graphicHeatmapsLayer.visible=true;
-          m_experimentres["actions"].push({"id":"heatmaploading","timestamp": Date.now(), "description":"displayed"});
-         }
+                 arr_featureset.push(polylineGraphic);//t_graphic
+               /*
+               t_mag=t_mag+0.1;
+               if (m_colormap==0){
+                 t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
+               }
+               else if (m_colormap==1){
+                 t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
+               }
+               else{
+                 t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//red-blue
+               }
+               t_rgb.push(0.8*t_mag);//oppacity
+               */
+               t_rings=[];
+               t_startprobability=item[0];
+             }
+           });
 
+
+           //console.log(arr_featureset);
+           graphicContourLayer.addMany(arr_featureset);
+           graphicContourLayer.visible=true;
+
+         }
            function AddLPDataToHeatmapslayerFilter(t_filter){
 
              graphicHeatmapsLayer.removeAll();
              if(m_lpdata == null){
                return;
              }
-             arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
+             //console.log(m_lpdata);
+             let t_hour=document.getElementById("myRange").value;
+             let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
+
+             arr_heatpoints=[];
+             let t_break=m_lpdata.length;
+             let t_i=0;
+             while(t_i<t_break){
+               if(m_lpdata[t_i]['hour']==t_hour && m_lpdata[t_i]['rank']==t_rank){
+                 arr_heatpoints=m_lpdata[t_i]['data'];
+                 break;
+               }
+               t_i++;
+             }
+
+             //arr_heatpoints=m_lpdata[document.getElementById("myRange").value];
 
              //loop the first line to find width
              let t_width=1;
@@ -2004,6 +1934,7 @@
              arr_featureset=[];
              let j_width=1;
              let end_index=arr_heatpoints.length-t_width-1;
+             m_colormap=document.getElementById("sel_colormap").selectedIndex;
              for (var i=0;i<end_index;i++){
                //the last point doesn't need a polygon
                if(j_width>=t_width){
@@ -2028,7 +1959,6 @@
 
                //t_rgb=hslToRgb(0, 1, 1-0.5*t_mag);//red
                //rainbow 0-1
-               m_colormap=document.getElementById("sel_colormap").selectedIndex;
                //console.log(m_colormap);
                if (m_colormap==0){
                  t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
@@ -2078,8 +2008,14 @@
            graphicInitLayer.removeAll();
            let t_feature=[];
 
+           let t_center=new Point({
+             longitude:m_scenarios[m_scenario_index].center[0],
+             latitude:m_scenarios[m_scenario_index].center[1],
+             spatialReference:view.spatialReference
+           });//m_scenarios[m_scenario_index].center;
+
            let t_graphic =  new Graphic({
-             geometry: area_extent.center,//view.extent.center,
+             geometry: t_center,//area_extent.center,//view.extent.center,
              symbol:  {
                   type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
                   style:"triangle",
@@ -2105,10 +2041,12 @@
 
             //draw 25%,50%,75% ring
            let rings_arr=[1100,3100,5800,18300];
+           let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
+           rings_arr=m_scenarios_rings[persontype];
            let ringsname_arr=["25% ring","50% ring","75% ring","95% ring"];
            for(let i=0;i<4;i++){
              let t_circle=new Circle({
-               center:area_extent.center,
+               center:t_center,//area_extent.center,
                radius:rings_arr[i]
              });
              t_graphic =  new Graphic({
@@ -2158,7 +2096,7 @@
                  Name:"team group"
                }
             });
-            t_feature.push(t_graphic);
+            //t_feature.push(t_graphic);
 
             let t_point=new Point({
               x:0.9*view.extent.xmin+0.1*view.extent.xmax,
@@ -2194,10 +2132,9 @@
            //draw initial condition centerpoints
            m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"start loading"});
 
-
            document.getElementById("lpmmodeldisplay").disabled=true;
 
-           $.getJSON("{% static 'data/data_0_10_95.json' %}", function(json) {
+           $.getJSON("{% static 'data/lpmdata.json' %}", function(json) {
              m_lpdata_json=json;
               //console.log(json); // this will show the info it in firebug console
           });
@@ -2206,58 +2143,65 @@
 
           document.getElementById("loadlpmcsv").value="Load LPM Data (Loading)";
 
-          LoadLPFromCSV("{% static 'data/data_t0_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t1_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t2_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t3_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t4_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t5_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t6_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t7_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t8_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t9_95_res_3.csv' %}",t_arr_count);
-          LoadLPFromCSV("{% static 'data/data_t10_95_res_3.csv' %}",t_arr_count);
+          let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
+          let t_start = 1;
+          let t_stop = 10;
+          for(let i=t_start;i<=t_stop;i++){
+            for(let t_rank=1;t_rank<=3;t_rank++){
+              LoadLPFromCSV("/static/data/"+persontype+"/pt/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
+              //LoadLPFromCSV_con("/static/data/"+persontype+"/cont/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",30,i-1,t_rank-1);
 
-          //console.log(m_lpdata);
+            }
 
-
+          }
+          //console.log(m_lpdata_json);
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
 
+         document.getElementById("sel_lpm").onchange=function(){
+           m_lpdata=[];
+           m_lpdata_con=[];
+           m_lpdata_json=[];
+           document.getElementById("loadlpmcsv").value="Load LPM Data";
+           DisableAllGraphicLayers();
+           DisplayLostPersonInfo();
+
+         }
+
+         document.getElementById("sel_rank").onchange=function(){
+
+             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
+             m_experimentres["actions"].push({"id":"sel_lpmodel","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
+
+             //console.log(m_experimentres);
+             DisableAllGraphicLayers();
+             UpdateVisualization();
+         }
+
+         document.getElementById("sel_colormap").onchange=function(){
+
+             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
+             m_experimentres["actions"].push({"id":"sel_colormap","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
+
+             //console.log(m_experimentres);
+             DisableAllGraphicLayers();
+             UpdateVisualization();
+         }
           document.getElementById("sel_lpmodel").onchange=function(){
 
             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
             m_experimentres["actions"].push({"id":"sel_lpmodel","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
-
-            //console.log(m_experimentres);
-            graphicControlLayer.visible=false;
-            graphicPointsLayer.visible=false;
-            graphicTrajectoryLayer.visible=false;
-            graphicHeatmapsLayer.visible=false;
-
-            if(document.getElementById("sel_lpmodel").selectedIndex==0){
-              //display point layer
-              AddLPDataToControllayer();
-            }
-            else if(document.getElementById("sel_lpmodel").selectedIndex==1){
-              //display point layer
-              AddLPDataToPointslayer();
-            }
-            else if (document.getElementById("sel_lpmodel").selectedIndex==2){
-              //display Trajectory
-              AddLPDataToTrajectorylayer();
-            }
-            else{
-              //display heatmap
-              //AddLPDataToHeatmapslayer();
-              AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
-            }
+            DisableAllGraphicLayers();
+            UpdateVisualization();
           }
 
         document.getElementById("myfilter").onchange=function(){
           m_experimentres["actions"].push({"id":"myfilter","timestamp": Date.now(), "description":"Change heatmap filter to "+document.getElementById("myfilter").value.toString()});
           //console.log("change");
-          $("#lmyfilter").text("Filter(0-10): "+document.getElementById("myfilter").value);
+          let t_v=10-parseInt(document.getElementById("myfilter").value);
+          $("#lmyfilter").text("Heatmapsize(10-1): "+t_v.toString());
+
+          //$("#lmyfilter").text("Filter(0-10): "+document.getElementById("myfilter").value);
 
           if(document.getElementById("sel_lpmodel").selectedIndex==3){
             //display heatmap
@@ -2267,37 +2211,28 @@
          document.getElementById("myRange").onchange=function(){
            //console.log("change");
            m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+document.getElementById("myRange").value.toString()});
+           let t_hour=parseInt(document.getElementById("myRange").value)+1;
+           $("#lmyRange").text("Hour(1-10): "+t_hour);
 
-           $("#lmyRange").text("Hour(0-10): "+document.getElementById("myRange").value);
-
-
-           if(document.getElementById("sel_lpmodel").selectedIndex==0){
-             //display point layer
-             AddLPDataToControllayer();
-           }
-           else if(document.getElementById("sel_lpmodel").selectedIndex==1){
-             //display point layer
-             AddLPDataToPointslayer();
-           }
-           else if (document.getElementById("sel_lpmodel").selectedIndex==2){
-             //display Trajectory
-             AddLPDataToTrajectorylayer();
-           }
-           else{
-             //display heatmap
-             //AddLPDataToHeatmapslayer();
-             AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
-           }
+           UpdateVisualization();
          }
 
          //--------------------------------------------------
            document.getElementById("lpmmodeldisplay").onclick=function() {
              m_experimentres["actions"].push({"id":"lpmmodeldisplay","timestamp": Date.now(), "description":"diplay model"});
-             geojsonLayer.visible=false;
+
+             DisableAllGraphicLayers();
+             UpdateVisualization();
+           }
+           function DisableAllGraphicLayers(){
              graphicPointsLayer.visible=false;
              graphicTrajectoryLayer.visible=false;
              graphicHeatmapsLayer.visible=false;
              graphicControlLayer.visible=false;
+             graphicContourLayer.visible=false;
+           }
+           function UpdateVisualization(){
+
              //document.getElementById("lpmmodeldisplay").values;
              if(document.getElementById("sel_lpmodel").selectedIndex==0){
                //display point layer
@@ -2311,10 +2246,13 @@
                //display Trajectory
                AddLPDataToTrajectorylayer();
              }
-             else{
+             else if (document.getElementById("sel_lpmodel").selectedIndex==3){
                //display heatmap
-               //AddLPDataToHeatmapslayer();
+               //AddLPDataToHeatmapslayerFilter_featurelayer(document.getElementById("myfilter").value/10-0.05);
                AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+             }
+             else{
+               AddLPDataToContourlayer();
              }
            }
 
@@ -2323,140 +2261,7 @@
             return Math.floor(Math.random() * Math.floor(max));
           }
 
-          let gpstimerid;
-          let all_gpsdata=[];
-          let rand_gpsdevicename;
 
-          function readDB() {
-            if(document.getElementById("sel_gpsdevice").selectedIndex==0){
-              readSimulation();
-              return;
-            }
-            clearInterval(gpstimerid);
-
-             if(el.value=="Load GPS"){
-               el.value='Stop & Save';
-               rand_gpsdevicename=Date.now().toString();
-               all_gpsdata=[];
-               gpspatharray=[];
-               //console.log(gpsdevicename);
-             }
-             else{
-               //save data to db
-               el.value="Load GPS"
-               savewholegpsdatatodb();
-
-               function savewholegpsdatatodb(){
-                 var sel_gpsdevice = document.getElementById("sel_gpsdevice");
-                   var URL = "{% url 'gpsdatastorage' %}";
-                   var data = {
-                           csrfmiddlewaretoken: '{{ csrf_token }}',
-                           'task_notes': document.getElementById("tasknotes").value,
-                           'rand_gpsdevicename':rand_gpsdevicename,
-                           'id_device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].value,
-                           'device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text,
-                           'all_gpsdata' : all_gpsdata.toString()
-                          };
-                   $.post(URL, data, function(response){
-                     var res=JSON.parse(response);
-                       if(res.flag == 'success'){
-                         //console.log(res.gpsdata);
-                        }
-                       else{ alert(response); }
-                   });
-               }
-               return
-             }
-
-             gpstimerid=setInterval(myTimer, 1000);
-
-             function myTimer(e){
-               //readdb
-
-               //display gps
-               //gpspatharray=[[],[],[]]
-               getGPSDataUpdate();
-               addGPSPath();
-
-               //display datetime
-               var d = new Date();
-               var t = d.toLocaleTimeString();
-               document.getElementById("daytime").innerHTML = t;
-
-             }
-           }
-
-         function readSimulation(){
-           //testing only
-           let rand_x=gcx+(Math.random()-0.5)*0.005;
-           let rand_y=gcy+(Math.random()-0.5)*0.005;
-           clearInterval(gpstimerid);
-
-            if(el.value=="Load GPS"){
-              el.value='Stop & Save';
-              rand_gpsdevicename=Date.now().toString();
-              all_gpsdata=[];
-              gpspatharray=[];
-            }
-            else{
-              //save data to db
-              el.value="Load GPS"
-              return
-            }
-
-              gpstimerid=setInterval(myTimer, 500);
-
-              function myTimer(e){
-                rand_x=rand_x+(Math.random()-0.5)*0.005;
-                rand_y=rand_y+(Math.random()-0.5)*0.005;
-                gpspatharray.push([rand_x,rand_y]);
-
-                addGPSPath();
-
-                //display datetime
-                var d = new Date();
-                var t = d.toLocaleTimeString();
-                document.getElementById("daytime").innerHTML = 'Simulation ' + t;
-
-            }
-        }
-
-         function getGPSDataUpdate(){
-           var sel_gpsdevice = document.getElementById("sel_gpsdevice");
-           var id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].value;
-             var URL = "{% url 'gpsupdate' %}";
-             var data = {
-                     csrfmiddlewaretoken: '{{ csrf_token }}',
-                     'task_notes': document.getElementById("tasknotes").value,
-                     'id_device_id': id_device_id
-                    };
-             $.post(URL, data, function(response){
-               var res=JSON.parse(response);
-                 if(res.flag == 'success'){
-                     //[x,y]
-                    gps_json=JSON.parse(res.gpsdata);
-                     //{lat: 0, stamp: 430, log: 0}
-                     // gpspatharray.push([gps_json.gps[0].lat,gps_json.gps[0].log]);
-                    //Testing
-                    //console.log(sel_gpsdevice.selectedIndex);
-
-                    gpspatharray.push([gps_json.gps[0].lat,gps_json.gps[0].log]);
-                    all_gpsdata.push(gps_json.gps[0]);
-                    //console.log(gps_json.gps[0]);
-                  }
-                 else{ alert(response); }
-             });
-         }
-
-         var el = document.getElementById('GPSStart');
-         if(el){
-            el.addEventListener('click', readDB, false);
-         }
-         else{
-           //console.log("GPSStart is null");
-         }
-
-      //--------------------------------------------------
     });
 
 
@@ -2477,10 +2282,7 @@
       <input type="button" class="edit-button" value="Generate task" id="btngeneratearea"/>
       <input type="button" class="edit-button" value="Edit cells" id="btneditcells"/>
 
-
     </div>
-
-
 
     <hr/>
     <div>
@@ -2489,33 +2291,53 @@
         <input type="file" id="file-input" position= "relative"/>
       </div>
       <div>
-        <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
+        <div>
+          <label >Lost person type: </label>
+          <select id="sel_lpm">
+            <option value="child10to12">Child</option>
+            <option value="dementia">Dementia</option>
+            <option value="hiker">Hiker</option>
+          </select>
+          <input type="button" id="label_lpt" value="Switch" style="display:none"></input>
+        </div>
+
+
         <input type="button" class="edit-button" value="Load LPM Data" id="loadlpmcsv">
       </div>
 
       <div>
-        <label id="colormap">Color map: </label>
+        <label>Color map: </label>
         <select id="sel_colormap">
           <option value="o_rainbow">Rainbow</option>
           <option value="o_yr">Yellow-red</option>
           <option value="o_br">Blue-red</option>
         </select>
         <input type="button" id="colormap" value="Switch" style="display:none"></input>
+      </div>
 
+      <div>
+        <label >Best fit: </label>
+        <select id="sel_rank">
+          <option value="1">bf1</option>
+          <option value="2">bf2</option>
+          <option value="3">bf3</option>
+        </select>
+        <input type="button" id="label_rank" value="Switch" style="display:none"></input>
       </div>
 
       <div class="slidecontainer">
-        <label for="myRange" id="lmyRange">Hour(0-10): 5</label>
-        <input type="range" min="0" max="10" value="5" class="slider" id="myRange">
+        <label for="myRange" id="lmyRange">Hour(1-10): 5</label>
+        <input type="range" min="0" max="9" value="5" class="slider" id="myRange">
 
       </div>
       <div class="slidecontainer">
-        <label for="myfilter" id="lmyfilter">Filter(0-10): 7</label>
+        <label for="myfilter" id="lmyfilter">Heatmapsize(10-1): 3</label>
         <input type="range" min="0" max="10" value="7" class="slider" id="myfilter">
 
       </div>
 
       <div>
+        <label >Indicator: </label>
         <select id="sel_lpmodel">
           <option value="control">Probability</option>
           <option value="points">Points</option>
@@ -2535,39 +2357,26 @@
           <thead>
             <tr>
               <th>Team</th>
-              <th>Cell</th>
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+              <th>4</th>
+              <th>5</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <th>1</th>
+              <th>Cell</th>
               <th id="th_team1">SX</th>
-            </tr>
-            <tr>
-              <th>2</th>
               <th id="th_team2">SX</th>
-            </tr>
-            <tr>
-              <th>3</th>
               <th id="th_team3">SX</th>
-            </tr>
-            <tr>
-              <th>4</th>
               <th id="th_team4">SX</th>
-            </tr>
-            <tr>
-              <th>5</th>
               <th id="th_team5">SX</th>
             </tr>
           </tbocy>
         </table>
         <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"></input>
       </div>
-      <div>
-        <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
-      </div>
-
-
     </div>
 
     <hr>
@@ -2576,49 +2385,16 @@
       <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
       <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
     </div>
+
+
+    <div>
+      <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
+      <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
+    </div>
+
     <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
+
     <div><label id="elevation">Elevation</label></div>
-
-    <hr/>
-    <div>
-        <select id="sel_gpsdevice">
-          <option value="">Select a device</option>
-          {% for device in gpsdevice %}
-          <option value="{{ device.id }}">{{ device.deviceid }}</option>
-          {% endfor %}
-        </select>
-        <input type="button" id="GPSStart"  value="Load GPS"></input>
-
-      <p id="daytime"></p>
-
-    </div>
-
-    <hr/>
-    <h3>Task Name</h3>
-    <div>
-        <div>
-          <input type="input" id="tasknotes" value="SAR0001"></input>
-          <input type="button" value="Save Tasks" id="savetasks"></input>
-        </div>
-    </div>
-
-    <div>
-      <label for="cellname">Cell Name: </label>
-      <input type="input" id="cellname" value="SX"></input>
-    </div>
-
-    <div>
-      <label >Assign to team: </label>
-      <select>
-        <option value="team1">Team 1</option>
-        <option value="team2">Team 2</option>
-        <option value="team3">Team 3</option>
-        <option value="team4">Team 4</option>
-        <option value="team4">Team 5</option>
-      </select>
-
-  </div>
-
   </div>
 
   <div id="viewDiv">

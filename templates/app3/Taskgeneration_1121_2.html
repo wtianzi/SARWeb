@@ -1687,7 +1687,7 @@
             graphicPointsLayer.removeAll();
             arr_featureset=[];
             arr_hours=m_lpdata_json['points'];
-            let t_start=0,t_end=12;
+            let t_start=0,t_end=10;
             arr_featureset=[];
             let rank_start=0;
             let rank_stop=2;
@@ -1772,7 +1772,7 @@
            graphicTrajectoryLayer.removeAll();
            //convert area_extent to [long,lat]
            arr_hours=m_lpdata_json['points'];
-           let t_start=0,t_end=11;
+           let t_start=0,t_end=12;
            arr_featureset=[];
            let rank=0;
 
@@ -1840,7 +1840,7 @@
 
                //draw lines
 
-               paths.push([long,lat]);
+               paths.push([long,lat])
              }
              let polyline = new Polyline({
               hasZ: false,
@@ -1870,7 +1870,7 @@
            arr_featureset=[];
            arr_hours=m_lpdata_json['points'];
            //console.log(m_lpdata_json);
-           let t_start=0,t_end=12;
+           let t_start=0,t_end=10;
            arr_featureset=[];
 
           let rank =0;
@@ -1956,7 +1956,6 @@
            let i=0;
            while(i<t_break){
              if(m_lpdata_con[i]['hour']==t_hour && m_lpdata_con[i]['rank']==t_rank){
-               console.log(m_lpdata_con[i]);
                arr_heatpoints=m_lpdata_con[t_hour]['data'];
                break;
              }
@@ -1984,42 +1983,41 @@
                style:"none"
              }
            };
-          var fillSymbol= {
-            type: "simple-fill", // autocasts as SimpleFillSymbol
-            color: [226, 119, 40],
-            outline: { // autocasts as SimpleLineSymbol
 
-              style:"none"
-            }
-          };
-          m_colormap=document.getElementById("sel_colormap").selectedIndex;
            arr_heatpoints.map(function(item){
              if(item[0]==t_startprobability){
                t_rings.push(item.slice(1));
              }
              else{
                //all_paths.push(t_rings);
-               t_rings.push(t_rings[t_rings.length-1]);
+               //t_rings.push(t_rings[t_rings.length-1]);
+               let testring=[];
 
+              testring.push(t_rings[0]);
+              testring.push(t_rings[30]);
+              testring.push(t_rings[10]);
+
+              testring.push(t_rings[0]);
+
+               var tmulpt=new Polygon({
+                  rings: [testring],//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
+                  spatialReference: { wkid: 4326 }
+                });
+
+               /*
                var tmulpt=new Polygon({
                   rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
                   spatialReference: { wkid: 4326 }
                 });
-                if (m_colormap==0){
-                  t_rgb=hslToRgb(1-t_mag, 1, 1-0.6*t_mag);//rainbow
-                }
-                else if (m_colormap==1){
-                  t_rgb=hslToRgb(0.2*(1-t_mag), 1, 1-0.5*t_mag);//red:0, yellow:0.2
-                }
-                else{
-                  t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//blue:0.6
-                }
+                */
+
+                t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
                 t_rgb.push(0.8*t_mag);//oppacity
 
-                fillSymbol.color=t_rgb;
+                markerSymbol.color=t_rgb;
                 var polylineGraphic = new Graphic({
                   geometry: tmulpt, // Add the geometry created in step 4
-                  symbol: fillSymbol
+                  symbol: markerSymbol
                 });
                  arr_featureset.push(polylineGraphic);//t_graphic
                t_rings=[];
@@ -2027,6 +2025,82 @@
                t_mag=(t_startprobability-t_min)/t_range;
              }
            });
+           console.log(arr_featureset);
+           graphicContourLayer.addMany(arr_featureset);
+           graphicContourLayer.visible=true;
+
+         }
+         function AddLPDataToContourlayer2(){
+           graphicContourLayer.removeAll();
+           arr_featureset=[];
+
+           if(m_lpdata_con == null){
+             return;
+           }
+           let t_hour=document.getElementById("myRange").value;
+           let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
+           arr_heatpoints=[];
+           //console.log(m_lpdata_con);
+           let t_break=m_lpdata_con.length;
+           let i=0;
+           while(i<t_break){
+             if(m_lpdata_con[i]['hour']==t_hour && m_lpdata_con[i]['rank']==t_rank){
+               arr_heatpoints=m_lpdata_con[t_hour]['data'];
+               break;
+             }
+             i++;
+           }
+           //console.log(arr_heatpoints);
+
+           m_colormap=document.getElementById("sel_colormap").selectedIndex;
+           //loop to find rings
+           let t_rings=[];//
+           let all_paths=[];
+           let t_startprobability=arr_heatpoints[0][0];
+
+           let col3 = arr_heatpoints.map(function(value,index) { return value[0]; });
+           let t_min = Math.min(...col3);
+           let t_max=Math.max(...col3);
+           let t_range=t_max-t_min;
+
+           let t_mag=(t_startprobability-t_min)/t_range;
+
+           var markerSymbol = {
+             type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+             color: [226, 119, 40],
+             outline: {
+               style:"none"
+             }
+           };
+
+           arr_heatpoints.map(function(item){
+             if(item[0]==t_startprobability){
+               t_rings.push(item.slice(1));
+             }
+             else{
+
+               //all_paths.push(t_rings);
+               var tmulpt=new Multipoint({
+                  points: t_rings,//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
+                  spatialReference: { wkid: 4326 }
+                });
+
+                t_rgb=hslToRgb(1-t_mag, 1, 1-0.5*t_mag);//rainbow
+                t_rgb.push(0.8*t_mag);//oppacity
+
+                markerSymbol.color=t_rgb;
+                var polylineGraphic = new Graphic({
+                  geometry: tmulpt, // Add the geometry created in step 4
+                  symbol: markerSymbol
+                });
+                 arr_featureset.push(polylineGraphic);//t_graphic
+               t_rings=[];
+               t_startprobability=item[0];
+               t_mag=(t_startprobability-t_min)/t_range;
+             }
+           });
+
+
            //console.log(arr_featureset);
            graphicContourLayer.addMany(arr_featureset);
            graphicContourLayer.visible=true;
@@ -2285,8 +2359,8 @@
           document.getElementById("loadlpmcsv").value="Load LPM Data (Loading)";
 
           let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
-          let t_start = 1;//1
-          let t_stop = 12;//12;
+          let t_start = 4;
+          let t_stop = 6;//12;
           let totalfiles=3*(t_stop-t_start+1);
           //data->LPMdata3
           for(let i=t_start;i<=t_stop;i++){
@@ -2338,8 +2412,8 @@
                //display heatmap
                AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
              }
-             else{
-               console.log("here");
+             else if (document.getElementById("sel_lpmodel").selectedIndex==4){
+
                AddLPDataToContourlayer();
              }
          }
@@ -2391,7 +2465,7 @@
            //console.log("change");
            m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+document.getElementById("myRange").value.toString()});
            let t_hour=parseInt(document.getElementById("myRange").value)+1;
-            $("#lmyRange").text("Hour(1-12): "+t_hour);
+            $("#lmyRange").text("Hour(1-10): "+t_hour);
 
 
            if(document.getElementById("sel_lpmodel").selectedIndex==0){
@@ -2411,8 +2485,6 @@
              AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
            }
            else {
-             //testing
-             AddLPDataToPointslayer();
              AddLPDataToContourlayer();
            }
          }
@@ -2433,7 +2505,6 @@
              graphicTrajectoryLayer.visible=false;
              graphicHeatmapsLayer.visible=false;
              graphicControlLayer.visible=false;
-             graphicContourLayer.visible=false;
              //document.getElementById("lpmmodeldisplay").values;
              if(document.getElementById("sel_lpmodel").selectedIndex==0){
                //display point layer
@@ -2462,7 +2533,6 @@
              graphicTrajectoryLayer.visible=false;
              graphicHeatmapsLayer.visible=false;
              graphicControlLayer.visible=false;
-             graphicContourLayer.visible=false;
            }
            function UpdateVisualization(){
 
@@ -2485,7 +2555,7 @@
                AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
              }
              else{
-               AddLPDataToContourlayer();
+               AddLPDataToControllayer();
              }
            }
 
@@ -2696,8 +2766,8 @@
       </div>
 
       <div class="slidecontainer">
-        <label for="myRange" id="lmyRange">Hour(1-12): 5</label>
-        <input type="range" min="0" max="11" value="4" class="slider" id="myRange">
+        <label for="myRange" id="lmyRange">Hour(1-10): 5</label>
+        <input type="range" min="0" max="9" value="5" class="slider" id="myRange">
 
       </div>
       <div class="slidecontainer">

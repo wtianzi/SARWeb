@@ -772,6 +772,24 @@
         //random a color
         //draw all gpsdata
         for (const key in gpspatharray){
+          //Testing
+          console.log(gpspatharray[key]);
+          let in_point=new Point({
+                  latitude:gpspatharray[key][0][1],//lat,
+                  longitude:gpspatharray[key][0][0],//long,
+                  spatialReference:view.spatialReference
+                });
+          let t_graphic1=  new Graphic({
+            geometry: in_point,
+            symbol:  {
+                 type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                 style:"circle",
+                 color: [getRandomInt(255), getRandomInt(255), getRandomInt(255)],//[t_mag, 0,0],
+                 size:20
+               }
+          });
+          gpsgraphicsLayer.add(t_graphic1);
+
           // First create a line geometry (this is the Keystone pipeline)
           var polyline = {
             type: "polyline", // autocasts as new Polyline()

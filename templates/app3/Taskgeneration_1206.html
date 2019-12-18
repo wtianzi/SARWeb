@@ -213,8 +213,7 @@
       let move_polygon;
       let area_extent;
 
-      let gpspatharray={};
-      let all_gpsdata={};
+      let gpspatharray=[];
       var arr_featureset=[];
 
 
@@ -767,55 +766,54 @@
         graphicsLayer.addMany(allpolygons_text);
       }
 
-      function getGPSDisplayUpdate(){
+      function addGPSPath(){
         gpsgraphicsLayer.removeAll();
-        //random a color
-        //draw all gpsdata
-        for (const key in gpspatharray){
-          // First create a line geometry (this is the Keystone pipeline)
-          var polyline = {
-            type: "polyline", // autocasts as new Polyline()
-            paths: gpspatharray[key]//  [[-80.582342,37.199622],[-80.581031,37.204559],[-80.577359,37.207806]]//[[-111.3, 52.68], [-98, 49.5], [-93.94, 29.89]]
-          };
-          // Create a symbol for drawing the line
-          var lineSymbol = {
-            type: "simple-line", // autocasts as SimpleLineSymbol()
-            color: [getRandomInt(255), getRandomInt(255), getRandomInt(255)],
-            width: 4
-          };
-          // Create an object for storing attributes related to the line
-          var lineAtt = {
-            Name: "GPS "+document.getElementById('sel_gpsdevice').options[key].text,
-            Owner: "SAR",
-            Length: "..."
-          };
-          var polylineGraphic = new Graphic({
-            geometry: polyline,
-            symbol: lineSymbol,
-            attributes: lineAtt,
-            popupTemplate: {
-              // autocasts as new PopupTemplate()
-              title: "{Name}",
-              content: [
-                {
-                  type: "fields",
-                  fieldInfos: [
-                    {
-                      fieldName: "Name"
-                    },
-                    {
-                      fieldName: "Owner"
-                    },
-                    {
-                      fieldName: "Length"
-                    }
-                  ]
-                }
-              ]
-            }
-          });
-          gpsgraphicsLayer.add(polylineGraphic);
-        }
+        /****************************
+         * Create a polyline graphic
+         ****************************/
+        // First create a line geometry (this is the Keystone pipeline)
+        var polyline = {
+          type: "polyline", // autocasts as new Polyline()
+          paths: gpspatharray//  [[-80.582342,37.199622],[-80.581031,37.204559],[-80.577359,37.207806]]//[[-111.3, 52.68], [-98, 49.5], [-93.94, 29.89]]
+        };
+        // Create a symbol for drawing the line
+        var lineSymbol = {
+          type: "simple-line", // autocasts as SimpleLineSymbol()
+          color: [226, 119, 40],
+          width: 4
+        };
+        // Create an object for storing attributes related to the line
+        var lineAtt = {
+          Name: "GPS Test data",
+          Owner: "SAR",
+          Length: "..."
+        };
+        var polylineGraphic = new Graphic({
+          geometry: polyline,
+          symbol: lineSymbol,
+          attributes: lineAtt,
+          popupTemplate: {
+            // autocasts as new PopupTemplate()
+            title: "{Name}",
+            content: [
+              {
+                type: "fields",
+                fieldInfos: [
+                  {
+                    fieldName: "Name"
+                  },
+                  {
+                    fieldName: "Owner"
+                  },
+                  {
+                    fieldName: "Length"
+                  }
+                ]
+              }
+            ]
+          }
+        });
+        gpsgraphicsLayer.add(polylineGraphic);
       }
 
       function createGeometry(vertices) {
@@ -2270,13 +2268,6 @@
 
          }
 
-          document.getElementById("gotoGPSLocation").onclick=function(){
-            view.goTo(gpspatharray[document.getElementById("sel_gpsdevice").selectedIndex]);
-          }
-          document.getElementById("gotoGPSLocation2").onclick=function(){
-            view.goTo(gpspatharray[document.getElementById("sel_gpsdevice2").selectedIndex]);
-          }
-
          document.getElementById("loadlpmcsv").onclick=function() {
            //draw initial condition centerpoints
            m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"start loading"});
@@ -2331,8 +2322,25 @@
              graphicHeatmapsLayer.visible=false;
              graphicContourLayer.visible=false;
 
-            //document.getElementById("sel_lpmodel").selectedIndex==0
-             UpdateVisualization();
+             if(document.getElementById("sel_lpmodel").selectedIndex==0){
+               //display point layer
+               AddLPDataToControllayer();
+             }
+             else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+               //display point layer
+               AddLPDataToPointslayer();
+             }
+             else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+               //display Trajectory
+               AddLPDataToTrajectorylayer();
+             }
+             else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+               //display heatmap
+               AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+             }
+             else{
+               AddLPDataToContourlayer();
+             }
          }
 
           document.getElementById("sel_lpmodel").onchange=function(){
@@ -2347,7 +2355,24 @@
             graphicHeatmapsLayer.visible=false;
             graphicContourLayer.visible=false;
 
-            UpdateVisualization();
+            if(document.getElementById("sel_lpmodel").selectedIndex==0){
+              //display point layer
+              AddLPDataToControllayer();
+            }
+            else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+              //display point layer
+              AddLPDataToPointslayer();
+            }
+            else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+              //display Trajectory
+              AddLPDataToTrajectorylayer();
+            }
+            else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+              AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+            }
+            else {
+              AddLPDataToContourlayer();
+            }
           }
 
         document.getElementById("myfilter").onchange=function(){
@@ -2356,7 +2381,7 @@
           let t_v=10-parseInt(document.getElementById("myfilter").value);
           $("#lmyfilter").text("Heatmapsize(10-1): "+t_v.toString());
 
-          if(document.getElementById("sel_lpmodel").value==3){
+          if(document.getElementById("sel_lpmodel").selectedIndex==3){
             //display heatmap
             AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
           }
@@ -2368,11 +2393,30 @@
             $("#lmyRange").text("Hour(1-12): "+t_hour);
 
 
-           UpdateVisualization();
+           if(document.getElementById("sel_lpmodel").selectedIndex==0){
+             //display point layer
+             AddLPDataToControllayer();
+           }
+           else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+             //display point layer
+             AddLPDataToPointslayer();
+           }
+           else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+             //display Trajectory
+             AddLPDataToTrajectorylayer();
+           }
+           else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+
+             AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+           }
+           else {
+             //testing
+             AddLPDataToPointslayer();
+             AddLPDataToContourlayer();
+           }
          }
          document.getElementById("sel_ic").onchange=function(){
            m_scenario_index=document.getElementById("sel_ic").selectedIndex;
-
            view.goTo([ m_scenarios[m_scenario_index]['center'] ]);
 
            m_lpdata=[];
@@ -2402,7 +2446,26 @@
              graphicControlLayer.visible=false;
              graphicContourLayer.visible=false;
              //document.getElementById("lpmmodeldisplay").values;
-             UpdateVisualization();
+             if(document.getElementById("sel_lpmodel").selectedIndex==0){
+               //display point layer
+               AddLPDataToControllayer();
+             }
+             else if(document.getElementById("sel_lpmodel").selectedIndex==1){
+               //display point layer
+               AddLPDataToPointslayer();
+             }
+             else if (document.getElementById("sel_lpmodel").selectedIndex==2){
+               //display Trajectory
+               AddLPDataToTrajectorylayer();
+             }
+             else if (document.getElementById("sel_lpmodel").selectedIndex==3){
+               //display heatmap
+
+               AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
+             }
+             else{
+               AddLPDataToContourlayer();
+             }
            }
 
            function DisableAllGraphicLayers(){
@@ -2415,120 +2478,134 @@
            function UpdateVisualization(){
 
              //document.getElementById("lpmmodeldisplay").values;
-             if(document.getElementById("sel_lpmodel").value=="control"){
+             if(document.getElementById("sel_lpmodel").selectedIndex==0){
                //display point layer
                AddLPDataToControllayer();
              }
-             else if(document.getElementById("sel_lpmodel").value=="points"){
+             else if(document.getElementById("sel_lpmodel").selectedIndex==1){
                //display point layer
                AddLPDataToPointslayer();
              }
-             else if (document.getElementById("sel_lpmodel").value=="trajectory"){
+             else if (document.getElementById("sel_lpmodel").selectedIndex==2){
                //display Trajectory
                AddLPDataToTrajectorylayer();
              }
-             else if (document.getElementById("sel_lpmodel").value=="heatmap"){
+             else if (document.getElementById("sel_lpmodel").selectedIndex==3){
                //display heatmap
                //AddLPDataToHeatmapslayerFilter_featurelayer(document.getElementById("myfilter").value/10-0.05);
                AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
              }
-             else if (document.getElementById("sel_lpmodel").value=="contour"){
-               AddLPDataToControllayer();
+             else{
                AddLPDataToContourlayer();
              }
            }
+
 
           function getRandomInt(max) {
             return Math.floor(Math.random() * Math.floor(max));
           }
 
-          let timerid1,timerid2;
-          function readDB(gpsdevice,Loadgpsid){
+          let gpstimerid;
+          let all_gpsdata=[];
+          let rand_gpsdevicename;
 
-            var sel_gpsdevice = document.getElementById(gpsdevice);
+          function readDB() {
+            if(document.getElementById("sel_gpsdevice").selectedIndex==0){
+              readSimulation();
+              return;
+            }
+            clearInterval(gpstimerid);
 
-              clearInterval(timerid1);
+             if(el.value=="Load GPS"){
+               el.value='Stop & Save';
+               rand_gpsdevicename=Date.now().toString();
+               all_gpsdata=[];
+               gpspatharray=[];
+               //console.log(gpsdevicename);
+             }
+             else{
+               //save data to db
+               el.value="Load GPS"
+               savewholegpsdatatodb();
 
-               if(document.getElementById(Loadgpsid).value=="Load GPS"){
-                 document.getElementById(Loadgpsid).value='Stop&Save';
-                 all_gpsdata[sel_gpsdevice.selectedIndex]=[];
-                 gpspatharray[sel_gpsdevice.selectedIndex]=[];
-                 timerid1=setInterval(myTimer, 1000);
+               function savewholegpsdatatodb(){
+                 var sel_gpsdevice = document.getElementById("sel_gpsdevice");
+                   var URL = "{% url 'gpsdatastorage' %}";
+                   var data = {
+                           csrfmiddlewaretoken: '{{ csrf_token }}',
+                           'task_notes': document.getElementById("tasknotes").value,
+                           'rand_gpsdevicename':rand_gpsdevicename,
+                           'id_device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].value,
+                           'device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text,
+                           'all_gpsdata' : all_gpsdata.toString()
+                          };
+                   $.post(URL, data, function(response){
+                     var res=JSON.parse(response);
+                       if(res.flag == 'success'){
+                         //console.log(res.gpsdata);
+                        }
+                       else{ alert(response); }
+                   });
                }
-               else{
-                 document.getElementById(Loadgpsid).value="Load GPS";
-                 savewholegpsdatatodb(sel_gpsdevice);
-                 return
-               }
-               function myTimer(e){
-                 getGPSDataUpdate(gpsdevice);
-                 getGPSDisplayUpdate();
-                 //addGPSPath();
-
-                 //display datetime
-                 var d = new Date();
-                 var t = d.toLocaleTimeString();
-                 document.getElementById("daytime").innerHTML = t;
-
-               }
+               return
              }
 
-             function readDB2(gpsdevice,Loadgpsid){
+             gpstimerid=setInterval(myTimer, 1000);
 
-               var sel_gpsdevice = document.getElementById(gpsdevice);
+             function myTimer(e){
+               //readdb
 
-                 clearInterval(timerid2);
+               //display gps
+               //gpspatharray=[[],[],[]]
+               getGPSDataUpdate();
+               addGPSPath();
 
-                  if(document.getElementById(Loadgpsid).value=="Load GPS"){
-                    document.getElementById(Loadgpsid).value='Stop&Save';
-                    all_gpsdata[sel_gpsdevice.selectedIndex]=[];
-                    gpspatharray[sel_gpsdevice.selectedIndex]=[];
-                    timerid2=setInterval(myTimer, 1000);
-                  }
-                  else{
-                    document.getElementById(Loadgpsid).value="Load GPS";
-                    savewholegpsdatatodb(sel_gpsdevice);
-                    return
-                  }
-                  function myTimer(e){
-                    getGPSDataUpdate(gpsdevice);
-                    getGPSDisplayUpdate();
-                    //addGPSPath();
+               //display datetime
+               var d = new Date();
+               var t = d.toLocaleTimeString();
+               document.getElementById("daytime").innerHTML = t;
 
-                    //display datetime
-                    var d = new Date();
-                    var t = d.toLocaleTimeString();
-                    document.getElementById("daytime").innerHTML = t;
-
-                  }
-                }
-
-           function savewholegpsdatatodb(sel_gpsdevice){
-
-               var URL = "{% url 'gpsdatastorage' %}";
-
-               var data = {
-                       csrfmiddlewaretoken: '{{ csrf_token }}',
-                       'task_notes': document.getElementById("tasknotes").value,
-                       'rand_gpsdevicename':Date.now().toString(),
-                       'id_device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text,
-                       'device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text,
-                       'all_gpsdata' : all_gpsdata[sel_gpsdevice.selectedIndex].toString()
-                      };
-               $.post(URL, data, function(response){
-                 var res=JSON.parse(response);
-                   if(res.flag == 'success'){
-                     //console.log(res.gpsdata);
-                    }
-                   else{ alert(response); }
-               });
+             }
            }
 
+         function readSimulation(){
+           //testing only
+           let rand_x=gcx+(Math.random()-0.5)*0.005;
+           let rand_y=gcy+(Math.random()-0.5)*0.005;
+           clearInterval(gpstimerid);
 
-         function getGPSDataUpdate(gpsdevice){
-           var sel_gpsdevice = document.getElementById(gpsdevice);
-           //console.log(document.getElementById("sel_gpsdevice").value);
-           var id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
+            if(el.value=="Load GPS"){
+              el.value='Stop & Save';
+              rand_gpsdevicename=Date.now().toString();
+              all_gpsdata=[];
+              gpspatharray=[];
+            }
+            else{
+              //save data to db
+              el.value="Load GPS"
+              return
+            }
+
+              gpstimerid=setInterval(myTimer, 500);
+
+              function myTimer(e){
+                rand_x=rand_x+(Math.random()-0.5)*0.005;
+                rand_y=rand_y+(Math.random()-0.5)*0.005;
+                gpspatharray.push([rand_x,rand_y]);
+
+                addGPSPath();
+
+                //display datetime
+                var d = new Date();
+                var t = d.toLocaleTimeString();
+                document.getElementById("daytime").innerHTML = 'Simulation ' + t;
+
+            }
+        }
+
+         function getGPSDataUpdate(){
+           var sel_gpsdevice = document.getElementById("sel_gpsdevice");
+           var id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].value;
              var URL = "{% url 'gpsupdate' %}";
              var data = {
                      csrfmiddlewaretoken: '{{ csrf_token }}',
@@ -2538,33 +2615,28 @@
              $.post(URL, data, function(response){
                var res=JSON.parse(response);
                  if(res.flag == 'success'){
+                     //[x,y]
                     gps_json=JSON.parse(res.gpsdata);
-                    gpspatharray[sel_gpsdevice.selectedIndex].push([gps_json.lat,gps_json.log]);
-                    all_gpsdata[sel_gpsdevice.selectedIndex].push([gps_json.stamp,gps_json.lat,gps_json.log]);
+                     //{lat: 0, stamp: 430, log: 0}
+                     // gpspatharray.push([gps_json.gps[0].lat,gps_json.gps[0].log]);
+                    //Testing
+                    //console.log(sel_gpsdevice.selectedIndex);
+
+                    gpspatharray.push([gps_json.gps[0].lat,gps_json.gps[0].log]);
+                    all_gpsdata.push(gps_json.gps[0]);
                     //console.log(gps_json.gps[0]);
                   }
                  else{ alert(response); }
              });
          }
 
-
-         document.getElementById('GPSStart').addEventListener('click',function(){
-           readDB("sel_gpsdevice","GPSStart");
-         });
-         document.getElementById('GPSStart2').addEventListener('click',function(){
-           readDB2("sel_gpsdevice2","GPSStart2");
-         });
-         /*
-         document.getElementById("GPSStart").onclick=function() {
-
-           readDB2("sel_gpsdevice","GPSStart");
+         var el = document.getElementById('GPSStart');
+         if(el){
+            el.addEventListener('click', readDB, false);
          }
-
-         document.getElementById("GPSStart2").onclick=function() {
-
-           readDB2("sel_gpsdevice2","GPSStart2");
-         }*/
-
+         else{
+           //console.log("GPSStart is null");
+         }
 
       //--------------------------------------------------
     });
@@ -2609,9 +2681,10 @@
       <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
 
       <input type="button" class="edit-button" value="Generate task" id="btngeneratearea"/>
-      <input type="button" class="edit-button" value="Edit cells" id="btneditcells" style="display:none"/>
-
-      <div  style="display:none">
+      <input type="button" class="edit-button" value="Edit cells" id="btneditcells"/>
+      <div>
+      </div>
+      <div>
         <input type="text" class="bt_save_edit" id="tasknotes" value="Task_name"></input>
         <input type="button" class="bt_save" value="Save Task" id="savetasks"></input>
       </div>
@@ -2650,7 +2723,7 @@
         <input type="range" min="0" max="11" value="4" class="slider" id="myRange">
 
       </div>
-      <div class="slidecontainer" style="display:none">
+      <div class="slidecontainer">
         <label for="myfilter" id="lmyfilter">Heatmapsize(10-1): 3</label>
         <input type="range" min="0" max="10" value="7" class="slider" id="myfilter">
 
@@ -2661,8 +2734,8 @@
           <option value="control">Probability</option>
           <option value="points">Points</option>
           <option value="trajectory">Trajectory</option>
+          <option value="heatmap">Heat map</option>
           <option value="contour">Contour map</option>
-          <option value="heatmap" style="display:none">Heat map</option>
         </select>
         <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
         <label id="lpsum">ippm</label>
@@ -2701,45 +2774,33 @@
     </div>
 
     <hr>
-    <div id="draw" style="display:none">
+    <div id="draw">
       <h3 class="list-heading">Map measurement tools</h3>
       <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
       <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
     </div>
-    <div style="display:none">
+    <div>
       <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
       <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
     </div>
     <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
-    <hr/>
-    <div>
-        <div>
-          <select id="sel_gpsdevice">
-            <option value="">Select a device</option>
-            {% for device in gpsdevice %}
-            <option value="{{ device.id }}">{{ device.deviceid }}</option>
-            {% endfor %}
-          </select>
-          <input type="button" id="GPSStart"  value="Load GPS"></input>
-          <input type="button" id="gotoGPSLocation"  value="Locate"></input>
-        </div>
-        <div>
-          <select id="sel_gpsdevice2">
-            <option value="">Select a device</option>
-            {% for device in gpsdevice %}
-            <option value="{{ device.id }}">{{ device.deviceid }}</option>
-            {% endfor %}
-          </select>
-          <input type="button" id="GPSStart2"  value="Load GPS"></input>
-          <input type="button" id="gotoGPSLocation2"  value="Locate"></input>
-        </div>
-      <p id="daytime"></p>
-
-    </div>
-
 <div style="display:none">
       <div><label id="elevation">Elevation</label></div>
+    <hr/>
+          <div>
+              <select id="sel_gpsdevice">
+                <option value="">Select a device</option>
+                {% for device in gpsdevice %}
+                <option value="{{ device.id }}">{{ device.deviceid }}</option>
+                {% endfor %}
+              </select>
+              <input type="button" id="GPSStart"  value="Load GPS"></input>
+
+            <p id="daytime"></p>
+
+          </div>
+
           <hr/>
           <h3 >Task Assist</h3>
           <div>

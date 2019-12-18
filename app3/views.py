@@ -86,7 +86,8 @@ class TaskGenerationView(TemplateView):
     def gpsupdate(request):
         if request.method == 'POST':
             gpsdata_id = request.POST['id_device_id']
-            gpsitem = GPSData.objects.get(id=gpsdata_id)
+            #print("The id:"+gpsdata_id)
+            gpsitem = GPSData.objects.get(deviceid=gpsdata_id)
             context={'gpsdata':getattr(gpsitem, 'gpsdata'),'flag':'success'}
             return HttpResponse(json.dumps(context)) # if everything is OK
         # nothing went well
@@ -99,6 +100,7 @@ class TaskGenerationView(TemplateView):
             t_datastorage.subtaskid = request.POST['id_device_id']+request.POST['rand_gpsdevicename']
 
             all_gpsdata=request.POST.get('all_gpsdata')
+            #print(all_gpsdata)
 
             t_datastorage.data = {'device_id':request.POST['device_id'],'gps':all_gpsdata}
             t_datastorage.save()

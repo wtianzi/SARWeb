@@ -11,7 +11,7 @@ router.register(r'gpsdatas', views.GPSDataViewSet)
 
 urlpatterns = [
     path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
-    path('experiment', TaskassignmentExperimentView.as_view(),name='mapdivisioninit'),
+    path('experiment', TaskassignmentExperimentView.as_view(),name='experiment'),
     path('members', IndexView.as_view()),
     path('edit',TemplateView.as_view(template_name="app3/edit.html"),name='edit'),
     path('sketch',TemplateView.as_view(template_name="app3/sketch.html")),

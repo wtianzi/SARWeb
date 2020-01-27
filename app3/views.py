@@ -289,3 +289,6 @@ class TaskassignmentExperimentView(TemplateView):
             return HttpResponse(json.dumps(context)) # if everything is OK
         # nothing went well
         return HttpResponse('Getwatershed failed!')
+
+class TaskassignmentFullView(TaskassignmentExperimentView):
+    template_name='app3/Taskgeneration_full.html'

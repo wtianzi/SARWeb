@@ -123,6 +123,7 @@
       "esri/layers/OpenStreetMapLayer",
       "esri/widgets/Track",
       "esri/widgets/Search",
+      "esri/layers/GeoJSONLayer",
       "esri/geometry/Multipoint",
       "esri/layers/ElevationLayer",
       "esri/geometry/Polyline",
@@ -134,7 +135,8 @@
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
       Draw,CoordinateConversion,
       DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
-      OpenStreetMapLayer,Track,Search,Multipoint,
+      OpenStreetMapLayer,Track,Search,
+      GeoJSONLayer,Multipoint,
       ElevationLayer,Polyline,Circle,promiseUtils
     ) {
       let view, sketchViewModel, draw,
@@ -223,7 +225,6 @@
       var m_lpdata_json={};
       var m_lpdata=[];
       var m_lpdata_con=[];
-      var m_lpdata_trial=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_editing=false;
@@ -232,7 +233,6 @@
 
       //let m_searchedarea=[];//all polygon marked gray
       let m_teamassign=[null,null,null,null,null];//
-      let m_lptrail_pts=[];//the target person location at hour index
       let m_targetpolygon;
       let m_taskstarttime=null;
 
@@ -320,6 +320,14 @@
         //minPixelIntensity: 0
       };
 
+
+      const geojsonLayer = new GeoJSONLayer({
+        url: "{% static 'data/geojsonheatmap.geojson' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
+        copyright: "USGS Earthquakes",
+        renderer: heatmaprenderer,
+        opacity: 0.9
+      });
+
       var elevLyr = new ElevationLayer({
         // Custom elevation service
         url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
@@ -331,6 +339,60 @@
         layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicContourLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer,trialgraphicsLayer]
 
       });
+
+
+    //geometry {coordinate}
+    function deletePointsToGeolayer(){
+      //console.log(geojsonLayer);
+      const query = geojsonLayer.createQuery();
+      var editFeature;
+      var t_res=geojsonLayer.queryFeatures(query).then( function(results){
+        editFeature=results.features;
+        //console.log(editFeature);
+        //console.log(editFeature);
+        const promise = geojsonLayer.applyEdits({
+          deleteFeatures: editFeature
+        });
+
+      });
+
+
+    }
+
+    function addPointsToGeolayer(arr_points){
+      arr_featureset=[];
+      var attributes = {};
+
+      //attributes["Magnitude"] = 8;
+      attributes["Report_Date"] = Date.now();
+      //console.log(arr_points);
+      for (var i=0;i<arr_points.length;i++){
+        let in_point=new Point({
+          x:arr_points[i][0],
+          y:arr_points[i][1],
+          spatialReference:view.spatialReference
+        });
+
+        attributes["Magnitude"] = arr_points[i][2];
+        attributes["OBJECTID"] = i;
+
+        var t_graphic =  new Graphic({
+          geometry: in_point,
+          attributes: attributes
+        });
+
+        arr_featureset.push(t_graphic);
+      }
+      //console.log(arr_featureset);
+
+      const deleteFeature = {
+       objectId: [0]
+      };
+
+      const promise = geojsonLayer.applyEdits({
+        addFeatures: arr_featureset//[addFeature]//[arr_featureset[0],arr_featureset[1]]//
+      });
+    }
 
       setUpView();
 
@@ -815,6 +877,7 @@
           // This property can be used to uniquely identify the layer
         });
         //map.add(riverLayer);
+        map.add(geojsonLayer);
         //console.log(riverLayer.gdbVersion);
         view = new MapView({
           container: "viewDiv",
@@ -884,9 +947,6 @@
           }
 
         }
-
-        //After five times, the experiment stops.
-
         let t_stoptime=Date.now();
         m_experimentres["step_details"].push({
           "step_index":m_experimentres["step_details"].length+1,
@@ -969,8 +1029,6 @@
 
 
       document.getElementById("btndisplaytarget").onclick=function() {
-        //m_lpdata_trial["data"];
-        AddTrialDataToTriallayer();
         DrawPolygonToInitLayer(m_targetpolygon,[255,0,0,0.8]);
         m_experimentres["actions"].push({"id":"btndisplaytarget","timestamp": Date.now(), "description":"click dislpay"});
 
@@ -1021,46 +1079,12 @@
 
         m_experimentres["allpolygons"]=allpolygons;
         m_experimentres["polygonnumbers"]=allpolygons.length;
-        //load target and calculate their regions.
-        //m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
-        SetTargetpolygon();
+        m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
 
         m_experimentres["targetcellindex"]=m_targetpolygon.attributes.cellindex;
 
       };
 
-      function SetTargetpolygon(t_time=0){
-        let rank=parseInt(document.getElementById("sel_rank").value);
-        let arr_trial=m_lpdata_trial.filter(obj=>{ return obj.rank === rank;});
-        let arr_data=arr_trial[0]['data'];
-        m_lptrail_pts=[];
-        for (let i = 0; i < arr_data.length;i+=600){
-          m_lptrail_pts.push([arr_trial[0]['data'][i][0],arr_trial[0]['data'][i][1]]);
-        }
-
-        let i_hr=document.getElementById("myRange").value;
-
-        if (m_lptrail_pts.length<1){
-          m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
-        }
-        else{
-          let t_pt=new Point({
-            latitude: m_lptrail_pts[i_hr][1],
-            longitude: m_lptrail_pts[i_hr][0],
-            spatialReference: view.spatialReference
-          });
-          //console.log(t_pt);
-          //console.log(allpolygons);
-          for(let i=0;i<allpolygons.length;i++){
-
-            if(geometryEngine.contains(allpolygons[i].geometry,t_pt)){
-              m_targetpolygon=allpolygons[i];
-              break;
-            }
-          }
-          //console.log(m_targetpolygon);
-        }
-      }
       // this function is called from the polygon draw action events
       // to provide a visual feedback to users as they are drawing a polygon
       function drawPolygon(event) {
@@ -1280,7 +1304,7 @@
 
               if(geometryEngine.contains(allpolygons[i].geometry,mover)){
                 //document.getElementById(graphic.attributes.htmlid).text("S"+allpolygons[i].attributes.cellindex.toString());
-                //console.log(mover);
+
                 $(graphic.attributes.htmlid).text("S"+allpolygons[i].attributes.cellindex.toString());
                 m_teamassign[graphic.attributes.Teamindex-1]=allpolygons[i];
                 break;
@@ -1481,7 +1505,7 @@
        function ClearAll(){
          //console.log(activeWidget);
          //console.log(activeWidget.viewModel.measurementLabel.area);
-         //deletePointsToGeolayer();
+         deletePointsToGeolayer();
          allpolygons=[];
          allpolygons_text=[];
          activepolygonset=[];
@@ -1500,7 +1524,6 @@
          graphicInitLayer.removeAll();
          teamgraphicsLayer.removeAll();
          graphicContourLayer.removeAll();
-         trialgraphicsLayer.removeAll();
 
          setActiveWidget(null);
          sketchViewModel.complete();
@@ -1568,26 +1591,6 @@
              });
            }
          });
-
-         function LoadLPFromCSV_trial(t_url,t_rank=0){
-           var t_data;
-            $.ajax({
-              type: "GET",
-              url:t_url,
-              dataType: "text",
-              success: function(response)
-              {
-                 t_data = $.csv.toArrays(response).map(function(item){
-                   return item.map(Number);
-                 });
-                 m_lpdata_trial.push({'rank':t_rank,'data':t_data});
-                 //console.log(m_lpdata_trial);
-              }
-            });
-            return true;
-         }
-
-         //LoadLPFromCSV_con is for loading contour map
          function LoadLPFromCSV_con(t_url,t_arr_count,t_hour=0,t_rank=0){
            var t_data;
             $.ajax({
@@ -1604,6 +1607,7 @@
             });
             return true;
          }
+
          function LoadLPFromCSV(t_url,t_arr_count,t_hour=0,t_rank=0){
            var t_data;
             $.ajax({
@@ -2156,75 +2160,6 @@
 
          }
 
-
-         function AddTrialDataToTriallayer(){
-           let i_hr=document.getElementById("myRange").value;
-
-           //make the i_hr a larger circle
-           trialgraphicsLayer.removeAll();
-           //convert area_extent to [long,lat]
-           let arr_visual=[];
-
-          let t_color=[getRandomInt(255), getRandomInt(255), getRandomInt(255)];
-
-
-          var t_mpts={
-            type:'multipoint',
-            points:m_lptrail_pts
-          }
-          let t_graphic =  new Graphic({
-            geometry: t_mpts,
-            symbol:  {
-                 type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-                 style:"circle",
-                 color: t_color,//[t_mag, 0,0],
-                 size:5
-               }
-          });
-          arr_visual.push(t_graphic);
-          //console.log(arr_visual);
-
-         let polyline = {
-             type:'polyline',
-            paths: m_lptrail_pts,
-            spatialReference: { wkid: 4326 }
-          };
-          let polylineGraphic=new Graphic({
-            geometry: polyline,
-            symbol:{
-                    type: "simple-line", // autocasts as new SimpleLineSymbol()
-                    color: t_color, // RGB color values as an array
-                    width: 1
-                  }
-          });
-          //console.log(polylineGraphic);
-          arr_visual.push(polylineGraphic);
-
-            if(m_lptrail_pts.length>i_hr){
-              var t_pt={
-                type:'point',
-                latitude: m_lptrail_pts[i_hr][1],
-                longitude: m_lptrail_pts[i_hr][0]
-              }
-              let t_ptgraphic =  new Graphic({
-                geometry: t_pt,
-                symbol:  {
-                     type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-                     style:"circle",
-                     color: t_color,//[t_mag, 0,0],
-                     size: 20
-                   }
-              });
-              arr_visual.push(t_ptgraphic);
-            }
-
-           //console.log(arr_featureset);
-           trialgraphicsLayer.addMany(arr_visual);
-           trialgraphicsLayer.visible=true;
-
-         }
-
-
          document.getElementById("lpinfo").onclick=function() {
            DisplayLostPersonInfo();
            m_experimentres["actions"].push({"id":"lpinfo","timestamp": Date.now(), "description":"display lost person information"});
@@ -2380,25 +2315,16 @@
           let t_start = 1;//1
           let t_stop = 12;//12;
           let totalfiles=3*(t_stop-t_start+1);
-          //console.log(m_scenario_index);
+          console.log(m_scenario_index);
           let lpmfolder="LPMdata4/"+m_scenarios[m_scenario_index]["scenario_name"]+"/";//"LPMdata3"
           //data->LPMdata3
           for(let i=t_start;i<=t_stop;i++){
             for(let t_rank=1;t_rank<=3;t_rank++){
                 LoadLPFromCSV("/static/"+lpmfolder+persontype+"/point data csv/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
                 LoadLPFromCSV_con("/static/"+lpmfolder+persontype+"/contour data csv/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
+
             }
           }
-          //load trial data
-          //path: \static\LPMdata4\trial\xy_child10to12_ic1_bf1.csv
-          for(let t_rank=1;t_rank<=3;t_rank++){
-              let tempdir="/static/LPMdata4/trial/xy_"+persontype+"_"+m_scenarios[m_scenario_index]["scenario_name"]+"_bf"+t_rank.toString()+".csv";
-              //console.log(tempdir);
-
-              LoadLPFromCSV_trial(tempdir,t_rank);
-              //LoadLPFromCSV_con("/static/"+lpmfolder+persontype+"/contour data csv/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
-          }
-
           //console.log(m_lpdata_json);
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
@@ -2407,8 +2333,6 @@
            m_lpdata=[];
            m_lpdata_con=[];
            m_lpdata_json=[];
-           m_lpdata_trial=[];
-           m_lpdata_trial=[];
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
            DisplayLostPersonInfo();
@@ -2461,7 +2385,8 @@
            m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+document.getElementById("myRange").value.toString()});
            let t_hour=parseInt(document.getElementById("myRange").value)+1;
             $("#lmyRange").text("Hour(1-12): "+t_hour);
-            SetTargetpolygon();
+
+
            UpdateVisualization();
          }
          document.getElementById("sel_ic").onchange=function(){
@@ -2472,7 +2397,6 @@
            m_lpdata=[];
            m_lpdata_con=[];
            m_lpdata_json=[];
-           m_lpdata_trial=[];
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
 
@@ -2490,7 +2414,7 @@
          //--------------------------------------------------
            document.getElementById("lpmmodeldisplay").onclick=function() {
              m_experimentres["actions"].push({"id":"lpmmodeldisplay","timestamp": Date.now(), "description":"diplay model"});
-
+             geojsonLayer.visible=false;
              graphicPointsLayer.visible=false;
              graphicTrajectoryLayer.visible=false;
              graphicHeatmapsLayer.visible=false;
@@ -2531,7 +2455,6 @@
                AddLPDataToControllayer();
                AddLPDataToContourlayer();
              }
-             AddTrialDataToTriallayer();
            }
 
           function getRandomInt(max) {
@@ -2743,7 +2666,7 @@
 
       <div class="slidecontainer">
         <label for="myRange" id="lmyRange">Hour(1-12): 5</label>
-        <input type="range" min="0" max="11" value="0" class="slider" id="myRange">
+        <input type="range" min="0" max="11" value="4" class="slider" id="myRange">
 
       </div>
       <div class="slidecontainer" style="display:none">
@@ -2766,8 +2689,8 @@
     </div>
   </div>
 
+    <hr/>
     <div>
-      <hr/>
       <h3>Task Assignment</h3>
       <div>
         <table>
@@ -2802,14 +2725,14 @@
       <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
       <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
     </div>
-    <div>
+    <div style="display:none">
       <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
       <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
     </div>
     <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
     <hr/>
-    <div style="display:none">
+    <div>
         <div>
           <select id="sel_gpsdevice">
             <option value="">Select a device</option>

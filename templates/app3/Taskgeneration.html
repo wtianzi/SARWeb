@@ -167,10 +167,11 @@
         "polygonnumbers":0,
         "stophour":0,
         "visualization_type":"probability",
-        "step_number":5,
+        "step_number":0,
         "step_details":[],//visualresponsetime: time between (the heatmap is loaded) and (active the first team icon)
         "actions":[],//#id and timestamp, {"id":"btn...","timestamp": Date.now(), "description":"click button generate task"}
-        "allpolygons":null
+        "allpolygons":null,
+        "mapscale":16
       };
 
       var scale=16;//15
@@ -1085,7 +1086,7 @@
         AddTeams(true);
         DisplayLostPersonInfo();
 
-        m_experimentres["allpolygons"]=allpolygons;
+        //m_experimentres["allpolygons"]=allpolygons;
         m_experimentres["polygonnumbers"]=allpolygons.length;
         //load target and calculate their regions.
         //m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];

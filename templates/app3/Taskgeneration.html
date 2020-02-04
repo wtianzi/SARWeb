@@ -872,10 +872,27 @@
         //console.log(m_experimentres);
         //save to the database
         AddTeams();
-        //draw the polygon
-        //m_searchedarea.concat(m_teamassign);
+
+        let t_stoptime=Date.now();
         //console.log(m_teamassign);
-        //console.log(m_teamassign);
+        let team_detail=[];
+        for (let i =0; i<m_teamassign.length;i++){
+          if (m_teamassign[i]){
+            team_detail.push({"team_index":i,"cellindex":m_teamassign[i].attributes.cellindex,"polygonindex":m_teamassign[i].attributes.polygonindex});
+          }
+          else{
+            team_detail.push({"team_index":i,"cellindex":null,"polygonindex":null});
+          }
+        }
+
+        m_experimentres["step_details"].push({
+          "step_index":m_experimentres["step_details"].length+1,
+          "team_cell":team_detail,//m_teamassign,
+          "starttime":m_taskstarttime,
+          "stoptime":t_stoptime,
+          "duration":t_stoptime-m_taskstarttime
+        });
+        
         for(let i=0;i<m_teamassign.length;i++){
 
           //console.log(m_teamassign[i]);
@@ -909,25 +926,7 @@
 
         //After five times, the experiment stops.
 
-        let t_stoptime=Date.now();
-        //console.log(m_teamassign);
-        let team_detail=[];
-        for (let i =0; i<m_teamassign.length;i++){
-          if (m_teamassign[i]){
-            team_detail.push({"team_index":i,"cellindex":m_teamassign[i].attributes.cellindex,"polygonindex":m_teamassign[i].attributes.polygonindex});
-          }
-          else{
-            team_detail.push({"team_index":i,"cellindex":null,"polygonindex":null});
-          }
-        }
 
-        m_experimentres["step_details"].push({
-          "step_index":m_experimentres["step_details"].length+1,
-          "team_cell":team_detail,//m_teamassign,
-          "starttime":m_taskstarttime,
-          "stoptime":t_stoptime,
-          "duration":t_stoptime-m_taskstarttime
-        });
 
         m_teamassign=[null,null,null,null,null];
         m_taskstarttime=null;

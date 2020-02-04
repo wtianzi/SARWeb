@@ -154,6 +154,8 @@
       let m_d=new Date();
       let m_experimentres={
         "scenario":null,
+        "lostpersontype":null,
+        "traildatacenter":null,
         "participantid":null,
         "participant_index":(m_d.getMonth()+1).toString()+m_d.getDate().toString()+m_d.getHours().toString(),
         "teamnumber":5,
@@ -163,6 +165,7 @@
         "taskduration":100,
         "targetcellindex":0,
         "polygonnumbers":0,
+        "stophour":0,
         "visualization_type":"probability",
         "step_number":5,
         "step_details":[],//visualresponsetime: time between (the heatmap is loaded) and (active the first team icon)
@@ -176,10 +179,16 @@
       //{" wkid":4326 }: latetude
       //
       let m_scenario_index=0;
+      let m_lostpersontype_index=0;
       let m_scenarios=[
         {"scenario_index":0,"scenario_name":"ic1","center":[-80.5460, 37.2041]},
         {"scenario_index":1,"scenario_name":"ic2","center":[-80.4757, 37.2041]},
         {"scenario_index":2,"scenario_name":"ic3","center":[-80.5451, 37.1978]}
+      ];
+      let m_lostpersontype=[
+        {"lostperson_index":0,"lostperson_type":"child"},
+        {"lostperson_index":1,"lostperson_type":"dementia"},
+        {"lostperson_index":2,"lostperson_type":"hiker"}
       ];
 
       let m_scenarios_rings={'child10to12':[800,1600,3200,9000],
@@ -235,6 +244,7 @@
       let m_lptrail_pts=[];//the target person location at hour index
       let m_targetpolygon;
       let m_taskstarttime=null;
+      let m_tasktrials=0;//how many time the operator tried to assign teams
 
       /*
       [
@@ -434,7 +444,7 @@
           layer: teamgraphicsLayer,
           updatePointSymbol:{
             type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
-             url: "{% static 'img/user_glow.png' %}",
+             url: "{% static 'img/user_blue_yellow.png' %}",//user_glow.png
              width: "64px",
              height: "64px"
                          /*
@@ -472,12 +482,6 @@
         // Listen to sketchViewModel's update event to do
         // graphic reshape or move validation
         sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
-
-
-
-
-
-
       });
 
 
@@ -823,6 +827,8 @@
           center: m_scenarios[m_scenario_index].center//[gcx,gcy],//,35.4
         });
         m_experimentres["scenario"]=m_scenarios[m_scenario_index];
+        m_experimentres["lostpersontype"]=m_lostpersontype[m_lostpersontype_index];
+
         var toggle = new BasemapToggle({
           // 2 - Set properties
           view: view, // view that provides access to the map's 'topo' basemap
@@ -855,12 +861,19 @@
       }
 
       document.getElementById("btntaskassignment").onclick=function() {
-        m_experimentres["actions"].push({"id":"btntaskassignment","timestamp": Date.now(), "description":"click task assign"});
+        m_tasktrials=m_tasktrials+1;
+        m_experimentres["step_number"]=m_tasktrials;
+        let i_hr=document.getElementById("myRange").value;
+        //console.log(m_tasktrials);
+
+        m_experimentres["actions"].push({"id":"btntaskassignment","timestamp": Date.now(), "description":"click task assign", 'trial':m_tasktrials,'hourslide':i_hr});
+
         //console.log(m_experimentres);
         //save to the database
         AddTeams();
         //draw the polygon
         //m_searchedarea.concat(m_teamassign);
+        //console.log(m_teamassign);
         //console.log(m_teamassign);
         for(let i=0;i<m_teamassign.length;i++){
 
@@ -879,18 +892,37 @@
               m_experimentres["taskstop"]=Date.now();
               m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
               download(filename+".txt",JSON.stringify(m_experimentres));
-
+              m_tasktrials=0;
             }
           }
-
+        }
+        if(m_tasktrials==5){
+          //
+          DrawCompletTaskToInitLayer();
+          let filename=m_experimentres["participant_index"]+"_"+Date.now().toString();
+          m_experimentres["taskstop"]=Date.now();
+          m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
+          download(filename+".txt",JSON.stringify(m_experimentres));
+          m_tasktrials=0;
         }
 
         //After five times, the experiment stops.
 
         let t_stoptime=Date.now();
+        //console.log(m_teamassign);
+        let team_detail=[];
+        for (let i =0; i<m_teamassign.length;i++){
+          if (m_teamassign[i]){
+            team_detail.push({"team_index":i,"cellindex":m_teamassign[i].attributes.cellindex,"polygonindex":m_teamassign[i].attributes.polygonindex});
+          }
+          else{
+            team_detail.push({"team_index":i,"cellindex":null,"polygonindex":null});
+          }
+        }
+
         m_experimentres["step_details"].push({
           "step_index":m_experimentres["step_details"].length+1,
-          "team_cell":m_teamassign,
+          "team_cell":team_detail,//m_teamassign,
           "starttime":m_taskstarttime,
           "stoptime":t_stoptime,
           "duration":t_stoptime-m_taskstarttime
@@ -953,6 +985,42 @@
         graphicInitLayer.add(graphic);
 
       }
+      function DrawCompletTaskToInitLayer(){
+        graphic = new Graphic({
+          geometry: area_extent.center,//view.extent.center,
+          symbol: {
+            type: "text",
+            color: [255,125,0],
+            haloColor: "black",
+            haloSize: "2px",
+            text: "This round is finished,",
+            xoffset: 0,
+            yoffset: 60,
+            font: { // autocast as Font
+              size: 50,
+              family: "sans-serif"
+            }
+          }
+        });
+        graphicInitLayer.add(graphic);
+        graphic = new Graphic({
+          geometry: area_extent.center,//view.extent.center,
+          symbol: {
+            type: "text",
+            color: [255,125,0],
+            haloColor: "black",
+            haloSize: "2px",
+            text: "please start a new search.",
+            xoffset: 0,
+            yoffset: 0,
+            font: { // autocast as Font
+              size: 50,
+              family: "sans-serif"
+            }
+          }
+        });
+        graphicInitLayer.add(graphic);
+      }
       function DrawPolygonToInitLayer(t_obj,t_color=[0, 102, 255, 0.8]){
         //draw the polygon into graphicInitLayer
         var graphic = new Graphic({
@@ -996,9 +1064,7 @@
         graphicsLayer.removeAll();
         view.graphics.removeAll();
         gpsgraphicsLayer.removeAll();
-
-        //draw teams
-
+        m_tasktrials=0;
 
         //wholetask=activeWidget.viewModel.measurement;
         allpolygons=[];
@@ -1026,22 +1092,43 @@
         SetTargetpolygon();
 
         m_experimentres["targetcellindex"]=m_targetpolygon.attributes.cellindex;
+        m_experimentres["scenario"]=m_scenarios[m_scenario_index];
+        m_experimentres["lostpersontype"]=m_lostpersontype[m_lostpersontype_index];
 
       };
 
-      function SetTargetpolygon(t_time=0){
+      function SetTargetpolygon(){
         let rank=parseInt(document.getElementById("sel_rank").value);
         let arr_trial=m_lpdata_trial.filter(obj=>{ return obj.rank === rank;});
         let arr_data=arr_trial[0]['data'];
         m_lptrail_pts=[];
-        for (let i = 0; i < arr_data.length;i+=600){
+        let t_start=0;
+        if (arr_data.length>300){
+          t_start=300;
+        }
+        for (let i = t_start; i < arr_data.length;i+=600){
           m_lptrail_pts.push([arr_trial[0]['data'][i][0],arr_trial[0]['data'][i][1]]);
         }
-
+        m_experimentres["traildatacenter"]=m_lptrail_pts;
         let i_hr=document.getElementById("myRange").value;
 
-        if (m_lptrail_pts.length<1){
-          m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
+        if (m_lptrail_pts.length<i_hr+1){
+          //m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
+          i_hr=m_lptrail_pts.length-1;
+          let t_pt=new Point({
+            latitude: m_lptrail_pts[i_hr][1],
+            longitude: m_lptrail_pts[i_hr][0],
+            spatialReference: view.spatialReference
+          });
+          //console.log(t_pt);
+          //console.log(allpolygons);
+          for(let i=0;i<allpolygons.length;i++){
+
+            if(geometryEngine.contains(allpolygons[i].geometry,t_pt)){
+              m_targetpolygon=allpolygons[i];
+              break;
+            }
+          }
         }
         else{
           let t_pt=new Point({
@@ -1060,6 +1147,8 @@
           }
           //console.log(m_targetpolygon);
         }
+
+
       }
       // this function is called from the polygon draw action events
       // to provide a visual feedback to users as they are drawing a polygon
@@ -1675,7 +1764,7 @@
                  geometry: in_point,
                  symbol:  {
                    type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
-                    url: "{% static 'img/user.png' %}",
+                    url: "{% static 'img/user_blue_gray.png' %}",//user.png
                     width: "64px",
                     height: "64px"
                   },
@@ -1826,7 +1915,7 @@
                       type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
                       style:"circle",
                       color: t_rgb,//[t_mag, 0,0],
-                      size:10*(4-rank)
+                      size:5*(4-rank)
                     },
                   attributes:{
                     Name:"Lost person model",
@@ -2351,7 +2440,7 @@
             //console.log(m_searchedarea);
 
            graphicInitLayer.addMany(t_feature);
-
+           //AddTrialDataToTriallayer();
          }
 
           document.getElementById("gotoGPSLocation").onclick=function(){
@@ -2409,9 +2498,11 @@
            m_lpdata_json=[];
            m_lpdata_trial=[];
            m_lpdata_trial=[];
+           ClearAll();
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
-           DisplayLostPersonInfo();
+           m_lostpersontype_index=document.getElementById("sel_lpm").selectedIndex;
+           //DisplayLostPersonInfo();
 
          }
          document.getElementById("sel_rank").onchange=function(){
@@ -2465,6 +2556,7 @@
            UpdateVisualization();
          }
          document.getElementById("sel_ic").onchange=function(){
+           ClearAll();
            m_scenario_index=document.getElementById("sel_ic").selectedIndex;
 
            view.goTo([ m_scenarios[m_scenario_index]['center'] ]);
@@ -2531,7 +2623,7 @@
                AddLPDataToControllayer();
                AddLPDataToContourlayer();
              }
-             AddTrialDataToTriallayer();
+             //AddTrialDataToTriallayer();
            }
 
           function getRandomInt(max) {
@@ -2802,10 +2894,12 @@
       <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
       <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
     </div>
-    <div>
+    <div style="display:none">
       <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
-      <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
+
     </div>
+    <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
+
     <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
     <hr/>

@@ -184,20 +184,17 @@
       let m_scenarios=[
         {"scenario_index":0,"scenario_name":"ic1","center":[-80.5460, 37.2041]},
         {"scenario_index":1,"scenario_name":"ic2","center":[-80.4757, 37.2041]},
-        {"scenario_index":2,"scenario_name":"ic3","center":[-80.5451, 37.1978]},
-        {"scenario_index":4,"scenario_name":"clue","center":[-80.5460, 37.2041]}//Test scene hiker
+        {"scenario_index":2,"scenario_name":"ic3","center":[-80.5451, 37.1978]}
       ];
       let m_lostpersontype=[
         {"lostperson_index":0,"lostperson_type":"child"},
         {"lostperson_index":1,"lostperson_type":"dementia"},
-        {"lostperson_index":2,"lostperson_type":"hiker"},
-        {"lostperson_index":3,"lostperson_type":"hikertest"}
+        {"lostperson_index":2,"lostperson_type":"hiker"}
       ];
 
       let m_scenarios_rings={'child10to12':[800,1600,3200,9000],
       'dementia':[300,800,1900,8300],
-      'hiker':[1100,3100,5800,18300],
-      'hikertest':[1100,3100,5800,18300]};
+      'hiker':[1100,3100,5800,18300]};
 
       var gcx=-80.556451;
       var gcy=37.2;
@@ -1039,7 +1036,7 @@
 
       document.getElementById("btndisplaytarget").onclick=function() {
         //m_lpdata_trial["data"];
-        //AddTrialDataToTriallayer();
+        AddTrialDataToTriallayer();
         DrawPolygonToInitLayer(m_targetpolygon,[255,0,0,0.8]);
         m_experimentres["actions"].push({"id":"btndisplaytarget","timestamp": Date.now(), "description":"click dislpay"});
 
@@ -2607,7 +2604,7 @@
                AddLPDataToControllayer();
                AddLPDataToContourlayer();
              }
-             //AddTrialDataToTriallayer();
+             AddTrialDataToTriallayer();
            }
 
           function getRandomInt(max) {
@@ -2758,7 +2755,6 @@
           <option value="0">Scene 1</option>
           <option value="1">Scene 2</option>
           <option value="2">Scene 3</option>
-          <option value="4">Scene Test</option>
         </select>
         <input type="button" id="label_ic" value="Load" style="display:none"></input>
       </div>
@@ -2769,8 +2765,6 @@
           <option value="child10to12">Child</option>
           <option value="dementia">Dementia</option>
           <option value="hiker">Hiker</option>
-          <option value="hikertest">Hiker Test</option>
-
         </select>
         <input type="button" id="label_lpt" value="Switch" style="display:none"></input>
       </div>

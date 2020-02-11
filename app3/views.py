@@ -185,7 +185,8 @@ class GPSDataViewSet(viewsets.ModelViewSet):
 
 
 class TaskassignmentExperimentView(TemplateView):
-    template_name='app3/Taskgeneration_exp.html'
+    #template_name='app3/Taskgeneration_exp.html'
+    template_name='app3/Taskgeneration_exp_v1.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)

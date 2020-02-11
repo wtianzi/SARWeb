@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
-from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView
+from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView
 from django.conf.urls import url
 from rest_framework import routers
 from django.conf.urls import include
@@ -11,6 +11,8 @@ router.register(r'gpsdatas', views.GPSDataViewSet)
 
 urlpatterns = [
     path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
+    path('experiment', TaskassignmentExperimentView.as_view(),name='experiment'),
+    path('full', TaskassignmentFullView.as_view(),name='full'),
     path('members', IndexView.as_view()),
     path('edit',TemplateView.as_view(template_name="app3/edit.html"),name='edit'),
     path('sketch',TemplateView.as_view(template_name="app3/sketch.html")),
@@ -30,6 +32,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),
     path('watershed',TemplateView.as_view(template_name="app3/watershed.html")),
+    path('heatmapringdownload',TemplateView.as_view(template_name="app3/Taskgeneration_download.html")),
 ]
 
 urlpatterns += router.urls

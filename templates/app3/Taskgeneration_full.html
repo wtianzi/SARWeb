@@ -123,6 +123,7 @@
       "esri/layers/OpenStreetMapLayer",
       "esri/widgets/Track",
       "esri/widgets/Search",
+      "esri/layers/GeoJSONLayer",
       "esri/geometry/Multipoint",
       "esri/layers/ElevationLayer",
       "esri/geometry/Polyline",
@@ -134,7 +135,8 @@
       GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
       Draw,CoordinateConversion,
       DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
-      OpenStreetMapLayer,Track,Search,Multipoint,
+      OpenStreetMapLayer,Track,Search,
+      GeoJSONLayer,Multipoint,
       ElevationLayer,Polyline,Circle,promiseUtils
     ) {
       let view, sketchViewModel, draw,
@@ -154,8 +156,6 @@
       let m_d=new Date();
       let m_experimentres={
         "scenario":null,
-        "lostpersontype":null,
-        "traildatacenter":null,
         "participantid":null,
         "participant_index":(m_d.getMonth()+1).toString()+m_d.getDate().toString()+m_d.getHours().toString(),
         "teamnumber":5,
@@ -165,13 +165,11 @@
         "taskduration":100,
         "targetcellindex":0,
         "polygonnumbers":0,
-        "stophour":0,
         "visualization_type":"probability",
-        "step_number":0,
+        "step_number":5,
         "step_details":[],//visualresponsetime: time between (the heatmap is loaded) and (active the first team icon)
         "actions":[],//#id and timestamp, {"id":"btn...","timestamp": Date.now(), "description":"click button generate task"}
-        "allpolygons":null,
-        "mapscale":16
+        "allpolygons":null
       };
 
       var scale=16;//15
@@ -180,24 +178,15 @@
       //{" wkid":4326 }: latetude
       //
       let m_scenario_index=0;
-      let m_lostpersontype_index=0;
       let m_scenarios=[
         {"scenario_index":0,"scenario_name":"ic1","center":[-80.5460, 37.2041]},
         {"scenario_index":1,"scenario_name":"ic2","center":[-80.4757, 37.2041]},
-        {"scenario_index":2,"scenario_name":"ic3","center":[-80.5451, 37.1978]},
-        {"scenario_index":4,"scenario_name":"clue","center":[-80.5460, 37.2041]}//Test scene hiker
-      ];
-      let m_lostpersontype=[
-        {"lostperson_index":0,"lostperson_type":"child"},
-        {"lostperson_index":1,"lostperson_type":"dementia"},
-        {"lostperson_index":2,"lostperson_type":"hiker"},
-        {"lostperson_index":3,"lostperson_type":"hikertest"}
+        {"scenario_index":2,"scenario_name":"ic3","center":[-80.5451, 37.1978]}
       ];
 
       let m_scenarios_rings={'child10to12':[800,1600,3200,9000],
       'dementia':[300,800,1900,8300],
-      'hiker':[1100,3100,5800,18300],
-      'hikertest':[1100,3100,5800,18300]};
+      'hiker':[1100,3100,5800,18300]};
 
       var gcx=-80.556451;
       var gcy=37.2;
@@ -236,7 +225,6 @@
       var m_lpdata_json={};
       var m_lpdata=[];
       var m_lpdata_con=[];
-      var m_lpdata_trial=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_editing=false;
@@ -245,10 +233,8 @@
 
       //let m_searchedarea=[];//all polygon marked gray
       let m_teamassign=[null,null,null,null,null];//
-      let m_lptrail_pts=[];//the target person location at hour index
       let m_targetpolygon;
       let m_taskstarttime=null;
-      let m_tasktrials=0;//how many time the operator tried to assign teams
 
       /*
       [
@@ -281,9 +267,8 @@
         opacity:0.5
       });
       const teamgraphicsLayer=new GraphicsLayer({
-        opacity:1.0
+        opacity:0.8
       });
-      const trialgraphicsLayer=new GraphicsLayer();
 
       function hslToRgb(h, s, l) {
           var r, g, b;
@@ -334,6 +319,14 @@
         //minPixelIntensity: 0
       };
 
+
+      const geojsonLayer = new GeoJSONLayer({
+        url: "{% static 'data/geojsonheatmap.geojson' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
+        copyright: "USGS Earthquakes",
+        renderer: heatmaprenderer,
+        opacity: 0.9
+      });
+
       var elevLyr = new ElevationLayer({
         // Custom elevation service
         url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
@@ -342,9 +335,63 @@
       const map = new Map({
         basemap: "hybrid",//"hybrid",//"satellite",
         //ground: "world-elevation",
-        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicContourLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer,trialgraphicsLayer]
+        layers: [  graphicPointsLayer,graphicTrajectoryLayer,graphicHeatmapsLayer,graphicContourLayer,graphicsLayer,gpsgraphicsLayer,graphicControlLayer,graphicInitLayer,teamgraphicsLayer]
 
       });
+
+
+    //geometry {coordinate}
+    function deletePointsToGeolayer(){
+      //console.log(geojsonLayer);
+      const query = geojsonLayer.createQuery();
+      var editFeature;
+      var t_res=geojsonLayer.queryFeatures(query).then( function(results){
+        editFeature=results.features;
+        //console.log(editFeature);
+        //console.log(editFeature);
+        const promise = geojsonLayer.applyEdits({
+          deleteFeatures: editFeature
+        });
+
+      });
+
+
+    }
+
+    function addPointsToGeolayer(arr_points){
+      arr_featureset=[];
+      var attributes = {};
+
+      //attributes["Magnitude"] = 8;
+      attributes["Report_Date"] = Date.now();
+      //console.log(arr_points);
+      for (var i=0;i<arr_points.length;i++){
+        let in_point=new Point({
+          x:arr_points[i][0],
+          y:arr_points[i][1],
+          spatialReference:view.spatialReference
+        });
+
+        attributes["Magnitude"] = arr_points[i][2];
+        attributes["OBJECTID"] = i;
+
+        var t_graphic =  new Graphic({
+          geometry: in_point,
+          attributes: attributes
+        });
+
+        arr_featureset.push(t_graphic);
+      }
+      //console.log(arr_featureset);
+
+      const deleteFeature = {
+       objectId: [0]
+      };
+
+      const promise = geojsonLayer.applyEdits({
+        addFeatures: arr_featureset//[addFeature]//[arr_featureset[0],arr_featureset[1]]//
+      });
+    }
 
       setUpView();
 
@@ -448,7 +495,7 @@
           layer: teamgraphicsLayer,
           updatePointSymbol:{
             type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
-             url: "{% static 'img/user_o_glow.png' %}",//user_glow.png
+             url: "{% static 'img/user_glow.png' %}",
              width: "64px",
              height: "64px"
                          /*
@@ -486,6 +533,12 @@
         // Listen to sketchViewModel's update event to do
         // graphic reshape or move validation
         sketchViewModel.on(["update", "undo", "redo"], onGraphicUpdate);
+
+
+
+
+
+
       });
 
 
@@ -823,6 +876,7 @@
           // This property can be used to uniquely identify the layer
         });
         //map.add(riverLayer);
+        map.add(geojsonLayer);
         //console.log(riverLayer.gdbVersion);
         view = new MapView({
           container: "viewDiv",
@@ -831,8 +885,6 @@
           center: m_scenarios[m_scenario_index].center//[gcx,gcy],//,35.4
         });
         m_experimentres["scenario"]=m_scenarios[m_scenario_index];
-        m_experimentres["lostpersontype"]=m_lostpersontype[m_lostpersontype_index];
-
         var toggle = new BasemapToggle({
           // 2 - Set properties
           view: view, // view that provides access to the map's 'topo' basemap
@@ -865,37 +917,13 @@
       }
 
       document.getElementById("btntaskassignment").onclick=function() {
-        m_tasktrials=m_tasktrials+1;
-        m_experimentres["step_number"]=m_tasktrials;
-        let i_hr=document.getElementById("myRange").value;
-        //console.log(m_tasktrials);
-
-        m_experimentres["actions"].push({"id":"btntaskassignment","timestamp": Date.now(), "description":"click task assign", 'trial':m_tasktrials,'hourslide':i_hr});
-
+        m_experimentres["actions"].push({"id":"btntaskassignment","timestamp": Date.now(), "description":"click task assign"});
         //console.log(m_experimentres);
         //save to the database
         AddTeams();
-
-        let t_stoptime=Date.now();
+        //draw the polygon
+        //m_searchedarea.concat(m_teamassign);
         //console.log(m_teamassign);
-        let team_detail=[];
-        for (let i =0; i<m_teamassign.length;i++){
-          if (m_teamassign[i]){
-            team_detail.push({"team_index":i,"cellindex":m_teamassign[i].attributes.cellindex,"polygonindex":m_teamassign[i].attributes.polygonindex});
-          }
-          else{
-            team_detail.push({"team_index":i,"cellindex":null,"polygonindex":null});
-          }
-        }
-
-        m_experimentres["step_details"].push({
-          "step_index":m_experimentres["step_details"].length+1,
-          "team_cell":team_detail,//m_teamassign,
-          "starttime":m_taskstarttime,
-          "stoptime":t_stoptime,
-          "duration":t_stoptime-m_taskstarttime
-        });
-
         for(let i=0;i<m_teamassign.length;i++){
 
           //console.log(m_teamassign[i]);
@@ -913,21 +941,19 @@
               m_experimentres["taskstop"]=Date.now();
               m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
               download(filename+".txt",JSON.stringify(m_experimentres));
-              m_tasktrials=0;
+
             }
           }
-        }
-        if(m_tasktrials==5){
-          //
-          DrawCompletTaskToInitLayer();
-          let filename=m_experimentres["participant_index"]+"_"+Date.now().toString();
-          m_experimentres["taskstop"]=Date.now();
-          m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
-          download(filename+".txt",JSON.stringify(m_experimentres));
-          m_tasktrials=0;
-        }
 
-        //After five times, the experiment stops.
+        }
+        let t_stoptime=Date.now();
+        m_experimentres["step_details"].push({
+          "step_index":m_experimentres["step_details"].length+1,
+          "team_cell":m_teamassign,
+          "starttime":m_taskstarttime,
+          "stoptime":t_stoptime,
+          "duration":t_stoptime-m_taskstarttime
+        });
 
         m_teamassign=[null,null,null,null,null];
         m_taskstarttime=null;
@@ -986,42 +1012,6 @@
         graphicInitLayer.add(graphic);
 
       }
-      function DrawCompletTaskToInitLayer(){
-        graphic = new Graphic({
-          geometry: area_extent.center,//view.extent.center,
-          symbol: {
-            type: "text",
-            color: [255,125,0],
-            haloColor: "black",
-            haloSize: "2px",
-            text: "This round is finished,",
-            xoffset: 0,
-            yoffset: 60,
-            font: { // autocast as Font
-              size: 50,
-              family: "sans-serif"
-            }
-          }
-        });
-        graphicInitLayer.add(graphic);
-        graphic = new Graphic({
-          geometry: area_extent.center,//view.extent.center,
-          symbol: {
-            type: "text",
-            color: [255,125,0],
-            haloColor: "black",
-            haloSize: "2px",
-            text: "please start a new search.",
-            xoffset: 0,
-            yoffset: 0,
-            font: { // autocast as Font
-              size: 50,
-              family: "sans-serif"
-            }
-          }
-        });
-        graphicInitLayer.add(graphic);
-      }
       function DrawPolygonToInitLayer(t_obj,t_color=[0, 102, 255, 0.8]){
         //draw the polygon into graphicInitLayer
         var graphic = new Graphic({
@@ -1038,8 +1028,6 @@
 
 
       document.getElementById("btndisplaytarget").onclick=function() {
-        //m_lpdata_trial["data"];
-        //AddTrialDataToTriallayer();
         DrawPolygonToInitLayer(m_targetpolygon,[255,0,0,0.8]);
         m_experimentres["actions"].push({"id":"btndisplaytarget","timestamp": Date.now(), "description":"click dislpay"});
 
@@ -1065,7 +1053,9 @@
         graphicsLayer.removeAll();
         view.graphics.removeAll();
         gpsgraphicsLayer.removeAll();
-        m_tasktrials=0;
+
+        //draw teams
+
 
         //wholetask=activeWidget.viewModel.measurement;
         allpolygons=[];
@@ -1086,52 +1076,14 @@
         AddTeams(true);
         DisplayLostPersonInfo();
 
-        //m_experimentres["allpolygons"]=allpolygons;
+        m_experimentres["allpolygons"]=allpolygons;
         m_experimentres["polygonnumbers"]=allpolygons.length;
-        //load target and calculate their regions.
-        //m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
-        SetTargetpolygon();
+        m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
 
         m_experimentres["targetcellindex"]=m_targetpolygon.attributes.cellindex;
-        m_experimentres["scenario"]=m_scenarios[m_scenario_index];
-        m_experimentres["lostpersontype"]=m_lostpersontype[m_lostpersontype_index];
 
       };
 
-      function SetTargetpolygon(){
-        let rank=parseInt(document.getElementById("sel_rank").value);
-        let arr_trial=m_lpdata_trial.filter(obj=>{ return obj.rank === rank;});
-        let arr_data=arr_trial[0]['data'];
-        m_lptrail_pts=[];
-        let t_start=0;
-        let m_interval=600; // 600: 1 hour, 10: 1 mins,
-        if (arr_data.length>300){
-          t_start=600;
-        }
-        for (let i = t_start; i < arr_data.length;i+=600){
-          m_lptrail_pts.push([arr_trial[0]['data'][i][0],arr_trial[0]['data'][i][1]]);
-        }
-        m_experimentres["traildatacenter"]=m_lptrail_pts;
-        let i_hr=document.getElementById("myRange").value;
-
-        if (i_hr>=m_lptrail_pts.length){
-          //m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
-          i_hr=m_lptrail_pts.length-1;
-        }
-        let t_pt=new Point({
-          latitude: m_lptrail_pts[i_hr][1],
-          longitude: m_lptrail_pts[i_hr][0],
-          spatialReference: view.spatialReference
-        });
-        //console.log(t_pt);
-        //console.log(allpolygons);
-        for(let i=0;i<allpolygons.length;i++){
-          if(geometryEngine.contains(allpolygons[i].geometry,t_pt)){
-            m_targetpolygon=allpolygons[i];
-            break;
-          }
-        }
-      }
       // this function is called from the polygon draw action events
       // to provide a visual feedback to users as they are drawing a polygon
       function drawPolygon(event) {
@@ -1351,7 +1303,7 @@
 
               if(geometryEngine.contains(allpolygons[i].geometry,mover)){
                 //document.getElementById(graphic.attributes.htmlid).text("S"+allpolygons[i].attributes.cellindex.toString());
-                //console.log(mover);
+
                 $(graphic.attributes.htmlid).text("S"+allpolygons[i].attributes.cellindex.toString());
                 m_teamassign[graphic.attributes.Teamindex-1]=allpolygons[i];
                 break;
@@ -1552,7 +1504,7 @@
        function ClearAll(){
          //console.log(activeWidget);
          //console.log(activeWidget.viewModel.measurementLabel.area);
-         //deletePointsToGeolayer();
+         deletePointsToGeolayer();
          allpolygons=[];
          allpolygons_text=[];
          activepolygonset=[];
@@ -1571,7 +1523,6 @@
          graphicInitLayer.removeAll();
          teamgraphicsLayer.removeAll();
          graphicContourLayer.removeAll();
-         trialgraphicsLayer.removeAll();
 
          setActiveWidget(null);
          sketchViewModel.complete();
@@ -1639,26 +1590,6 @@
              });
            }
          });
-
-         function LoadLPFromCSV_trial(t_url,t_rank=0){
-           var t_data;
-            $.ajax({
-              type: "GET",
-              url:t_url,
-              dataType: "text",
-              success: function(response)
-              {
-                 t_data = $.csv.toArrays(response).map(function(item){
-                   return item.map(Number);
-                 });
-                 m_lpdata_trial.push({'rank':t_rank,'data':t_data});
-                 //console.log(m_lpdata_trial);
-              }
-            });
-            return true;
-         }
-
-         //LoadLPFromCSV_con is for loading contour map
          function LoadLPFromCSV_con(t_url,t_arr_count,t_hour=0,t_rank=0){
            var t_data;
             $.ajax({
@@ -1675,6 +1606,7 @@
             });
             return true;
          }
+
          function LoadLPFromCSV(t_url,t_arr_count,t_hour=0,t_rank=0){
            var t_data;
             $.ajax({
@@ -1746,7 +1678,7 @@
                  geometry: in_point,
                  symbol:  {
                    type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
-                    url: "{% static 'img/user_o.png' %}",//user.png
+                    url: "{% static 'img/user.png' %}",
                     width: "64px",
                     height: "64px"
                   },
@@ -1897,7 +1829,7 @@
                       type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
                       style:"circle",
                       color: t_rgb,//[t_mag, 0,0],
-                      size:5*(4-rank)
+                      size:10*(4-rank)
                     },
                   attributes:{
                     Name:"Lost person model",
@@ -2227,77 +2159,6 @@
 
          }
 
-
-         function AddTrialDataToTriallayer(){
-           let i_hr=document.getElementById("myRange").value;
-
-           //make the i_hr a larger circle
-           trialgraphicsLayer.removeAll();
-           //convert area_extent to [long,lat]
-           let arr_visual=[];
-
-          let t_color=[getRandomInt(255), getRandomInt(255), getRandomInt(255)];
-
-
-          var t_mpts={
-            type:'multipoint',
-            points:m_lptrail_pts
-          }
-          let t_graphic =  new Graphic({
-            geometry: t_mpts,
-            symbol:  {
-                 type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-                 style:"circle",
-                 color: t_color,//[t_mag, 0,0],
-                 size:5
-               }
-          });
-          arr_visual.push(t_graphic);
-          //console.log(arr_visual);
-
-         let polyline = {
-             type:'polyline',
-            paths: m_lptrail_pts,
-            spatialReference: { wkid: 4326 }
-          };
-          let polylineGraphic=new Graphic({
-            geometry: polyline,
-            symbol:{
-                    type: "simple-line", // autocasts as new SimpleLineSymbol()
-                    color: t_color, // RGB color values as an array
-                    width: 1
-                  }
-          });
-          //console.log(polylineGraphic);
-          arr_visual.push(polylineGraphic);
-          if (i_hr>=m_lptrail_pts.length){
-            //m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
-            i_hr=m_lptrail_pts.length-1;
-          }
-          var t_pt={
-            type:'point',
-            latitude: m_lptrail_pts[i_hr][1],
-            longitude: m_lptrail_pts[i_hr][0]
-          }
-          let t_ptgraphic =  new Graphic({
-            geometry: t_pt,
-            symbol:  {
-                 type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-                 style:"circle",
-                 color: t_color,//[t_mag, 0,0],
-                 size: 20
-               }
-          });
-          arr_visual.push(t_ptgraphic);
-
-
-           //console.log(arr_featureset);
-           trialgraphicsLayer.addMany(arr_visual);
-           trialgraphicsLayer.visible=true;
-
-         }
-
-
          document.getElementById("lpinfo").onclick=function() {
            DisplayLostPersonInfo();
            m_experimentres["actions"].push({"id":"lpinfo","timestamp": Date.now(), "description":"display lost person information"});
@@ -2424,7 +2285,7 @@
             //console.log(m_searchedarea);
 
            graphicInitLayer.addMany(t_feature);
-           //AddTrialDataToTriallayer();
+
          }
 
           document.getElementById("gotoGPSLocation").onclick=function(){
@@ -2451,24 +2312,18 @@
 
           let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
           let t_start = 1;//1
-          let t_stop = 3;//12;
+          let t_stop = 12;//12;
           let totalfiles=3*(t_stop-t_start+1);
-          //console.log(m_scenario_index);
-          let lpmfolder="data/LPMdata4/"+m_scenarios[m_scenario_index]["scenario_name"]+"/";//"LPMdata3"
+          console.log(m_scenario_index);
+          let lpmfolder="LPMdata4/"+m_scenarios[m_scenario_index]["scenario_name"]+"/";//"LPMdata3"
           //data->LPMdata3
           for(let i=t_start;i<=t_stop;i++){
             for(let t_rank=1;t_rank<=3;t_rank++){
                 LoadLPFromCSV("/static/"+lpmfolder+persontype+"/point data csv/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
                 LoadLPFromCSV_con("/static/"+lpmfolder+persontype+"/contour data csv/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
+
             }
           }
-          //load trial data
-          //path: \static\LPMdata4\trial\xy_child10to12_ic1_bf1.csv
-          for(let t_rank=1;t_rank<=3;t_rank++){
-              let tempdir="/static/LPMdata4/trial/xy_"+persontype+"_"+m_scenarios[m_scenario_index]["scenario_name"]+"_bf"+t_rank.toString()+".csv";
-              LoadLPFromCSV_trial(tempdir,t_rank);              
-          }
-
           //console.log(m_lpdata_json);
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
@@ -2477,13 +2332,9 @@
            m_lpdata=[];
            m_lpdata_con=[];
            m_lpdata_json=[];
-           m_lpdata_trial=[];
-           m_lpdata_trial=[];
-           ClearAll();
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
-           m_lostpersontype_index=document.getElementById("sel_lpm").selectedIndex;
-           //DisplayLostPersonInfo();
+           DisplayLostPersonInfo();
 
          }
          document.getElementById("sel_rank").onchange=function(){
@@ -2533,11 +2384,11 @@
            m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+document.getElementById("myRange").value.toString()});
            let t_hour=parseInt(document.getElementById("myRange").value)+1;
             $("#lmyRange").text("Hour(1-12): "+t_hour);
-            SetTargetpolygon();
+
+
            UpdateVisualization();
          }
          document.getElementById("sel_ic").onchange=function(){
-           ClearAll();
            m_scenario_index=document.getElementById("sel_ic").selectedIndex;
 
            view.goTo([ m_scenarios[m_scenario_index]['center'] ]);
@@ -2545,7 +2396,6 @@
            m_lpdata=[];
            m_lpdata_con=[];
            m_lpdata_json=[];
-           m_lpdata_trial=[];
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
 
@@ -2563,7 +2413,7 @@
          //--------------------------------------------------
            document.getElementById("lpmmodeldisplay").onclick=function() {
              m_experimentres["actions"].push({"id":"lpmmodeldisplay","timestamp": Date.now(), "description":"diplay model"});
-
+             geojsonLayer.visible=false;
              graphicPointsLayer.visible=false;
              graphicTrajectoryLayer.visible=false;
              graphicHeatmapsLayer.visible=false;
@@ -2604,7 +2454,6 @@
                AddLPDataToControllayer();
                AddLPDataToContourlayer();
              }
-             //AddTrialDataToTriallayer();
            }
 
           function getRandomInt(max) {
@@ -2755,7 +2604,6 @@
           <option value="0">Scene 1</option>
           <option value="1">Scene 2</option>
           <option value="2">Scene 3</option>
-          <option value="4">Scene Test</option>
         </select>
         <input type="button" id="label_ic" value="Load" style="display:none"></input>
       </div>
@@ -2766,8 +2614,6 @@
           <option value="child10to12">Child</option>
           <option value="dementia">Dementia</option>
           <option value="hiker">Hiker</option>
-          <option value="hikertest">Hiker Test</option>
-
         </select>
         <input type="button" id="label_lpt" value="Switch" style="display:none"></input>
       </div>
@@ -2781,9 +2627,9 @@
       <!--div><input type="checkbox" name="voronoi" class="check" value="clear"> Freehand Polygon</input></div-->
 
       <input type="button" class="edit-button" value="Generate task" id="btngeneratearea"/>
-      <input type="button" class="edit-button" value="Edit cells" id="btneditcells" style="display:none"/>
+      <input type="button" class="edit-button" value="Edit cells" id="btneditcells"/>
 
-      <div  style="display:none">
+      <div>
         <input type="text" class="bt_save_edit" id="tasknotes" value="Task_name"></input>
         <input type="button" class="bt_save" value="Save Task" id="savetasks"></input>
       </div>
@@ -2819,18 +2665,12 @@
 
       <div class="slidecontainer">
         <label for="myRange" id="lmyRange">Hour(1-12): 5</label>
-        <input type="range" min="0" max="11" value="0" class="slider" id="myRange">
+        <input type="range" min="0" max="11" value="4" class="slider" id="myRange">
 
       </div>
       <div class="slidecontainer" style="display:none">
         <label for="myfilter" id="lmyfilter">Heatmapsize(10-1): 3</label>
         <input type="range" min="0" max="10" value="7" class="slider" id="myfilter">
-
-      </div>
-
-      <div class="slidecontainer">
-        <label for="myclue" id="lmyclue">Cluee(0,1,2,3): 0</label>
-        <input type="range" min="0" max="3" value="0" class="slider" id="myclue">
 
       </div>
 
@@ -2848,8 +2688,8 @@
     </div>
   </div>
 
+    <hr/>
     <div>
-      <hr/>
       <h3>Task Assignment</h3>
       <div>
         <table>
@@ -2884,16 +2724,14 @@
       <div><input type="button" class="edit-button" value="Measure distance" id="distanceButton"></input></div>
       <div><input type="button" class="edit-button" value="Measure area" id="areaButton"></input></div>
     </div>
-    <div style="display:none">
+    <div >
       <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
-
+      <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
     </div>
-    <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
-
     <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
     <hr/>
-    <div style="display:none">
+    <div>
         <div>
           <select id="sel_gpsdevice">
             <option value="">Select a device</option>
@@ -2918,7 +2756,7 @@
 
     </div>
 
-<div style="display:none">
+<div>
       <div><label id="elevation">Elevation</label></div>
           <hr/>
           <h3 >Task Assist</h3>

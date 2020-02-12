@@ -2451,7 +2451,7 @@
 
           let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
           let t_start = 1;//1
-          let t_stop = 3;//12;
+          let t_stop = 12;//12;
           let totalfiles=3*(t_stop-t_start+1);
           //console.log(m_scenario_index);
           let lpmfolder="data/LPMdata4/"+m_scenarios[m_scenario_index]["scenario_name"]+"/";//"LPMdata3"
@@ -2466,7 +2466,10 @@
           //path: \static\LPMdata4\trial\xy_child10to12_ic1_bf1.csv
           for(let t_rank=1;t_rank<=3;t_rank++){
               let tempdir="/static/LPMdata4/trial/xy_"+persontype+"_"+m_scenarios[m_scenario_index]["scenario_name"]+"_bf"+t_rank.toString()+".csv";
-              LoadLPFromCSV_trial(tempdir,t_rank);              
+              //console.log(tempdir);
+
+              LoadLPFromCSV_trial(tempdir,t_rank);
+              //LoadLPFromCSV_con("/static/"+lpmfolder+persontype+"/contour data csv/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
           }
 
           //console.log(m_lpdata_json);
@@ -2825,12 +2828,6 @@
       <div class="slidecontainer" style="display:none">
         <label for="myfilter" id="lmyfilter">Heatmapsize(10-1): 3</label>
         <input type="range" min="0" max="10" value="7" class="slider" id="myfilter">
-
-      </div>
-
-      <div class="slidecontainer">
-        <label for="myclue" id="lmyclue">Cluee(0,1,2,3): 0</label>
-        <input type="range" min="0" max="3" value="0" class="slider" id="myclue">
 
       </div>
 

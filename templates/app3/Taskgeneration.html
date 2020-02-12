@@ -184,20 +184,17 @@
       let m_scenarios=[
         {"scenario_index":0,"scenario_name":"ic1","center":[-80.5460, 37.2041]},
         {"scenario_index":1,"scenario_name":"ic2","center":[-80.4757, 37.2041]},
-        {"scenario_index":2,"scenario_name":"ic3","center":[-80.5451, 37.1978]},
-        {"scenario_index":4,"scenario_name":"clue","center":[-80.5460, 37.2041]}//Test scene hiker
+        {"scenario_index":2,"scenario_name":"ic3","center":[-80.5451, 37.1978]}
       ];
       let m_lostpersontype=[
         {"lostperson_index":0,"lostperson_type":"child"},
         {"lostperson_index":1,"lostperson_type":"dementia"},
-        {"lostperson_index":2,"lostperson_type":"hiker"},
-        {"lostperson_index":3,"lostperson_type":"hikertest"}
+        {"lostperson_index":2,"lostperson_type":"hiker"}
       ];
 
       let m_scenarios_rings={'child10to12':[800,1600,3200,9000],
       'dementia':[300,800,1900,8300],
-      'hiker':[1100,3100,5800,18300],
-      'hikertest':[1100,3100,5800,18300]};
+      'hiker':[1100,3100,5800,18300]};
 
       var gcx=-80.556451;
       var gcy=37.2;
@@ -267,7 +264,7 @@
 
       const graphicInitLayer= new GraphicsLayer();
       const graphicsLayer = new GraphicsLayer({
-        opacity:0.6
+        opacity:0.2//0.6
       });
       const gpsgraphicsLayer = new GraphicsLayer();
       const graphicPointsLayer = new GraphicsLayer();
@@ -2057,12 +2054,15 @@
            let t_hour=document.getElementById("myRange").value;
            let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
            arr_heatpoints=[];
-           //console.log(m_lpdata_con);
+
            let t_break=m_lpdata_con.length;
            let i=0;
            while(i<t_break){
              if(m_lpdata_con[i]['hour']==t_hour && m_lpdata_con[i]['rank']==t_rank){
-               arr_heatpoints=m_lpdata_con[t_hour]['data'];
+               console.log(m_lpdata_con);
+
+               arr_heatpoints=m_lpdata_con[i]['data'];
+               //console.log(arr_heatpoints);
                break;
              }
              i++;
@@ -2097,14 +2097,46 @@
               style:"none"
             }
           };
+          let t_distance=0.0001;//define as a circle
+          let t_len=0;
           m_colormap=document.getElementById("sel_colormap").selectedIndex;
            arr_heatpoints.map(function(item){
+             t_len=t_rings.length-1;
              if(item[0]==t_startprobability){
-               t_rings.push(item.slice(1));
+               if(t_len>3){
+                 if(t_distance<((item[1]-t_rings[t_len][0])*(item[1]-t_rings[t_len][0])+ (item[2]-t_rings[t_len][1])*(item[2]-t_rings[t_len][1]))){
+                   //console.log((item[1]-t_rings[0][0])*(item[1]-t_rings[0][0])+ (item[2]-t_rings[0][1])*(item[2]-t_rings[0][1]));
+                   // if two points are two far away, define them as different circles
+                   t_rings.push(t_rings[0]);
+                   var tmulpt=new Polygon({
+                      rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
+                      spatialReference: { wkid: 4326 }
+                    });
+                    if (m_colormap==0){
+                      t_rgb=hslToRgb(1-t_mag, 1, 1-0.6*t_mag);//rainbow
+                    }
+                    else if (m_colormap==1){
+                      t_rgb=hslToRgb(0.2*(1-t_mag), 1, 1-0.5*t_mag);//red:0, yellow:0.2
+                    }
+                    else{
+                      t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//blue:0.6
+                    }
+                    t_rgb.push(0.8*t_mag);//oppacity
+
+                    fillSymbol.color=t_rgb;
+                    var polylineGraphic = new Graphic({
+                      geometry: tmulpt, // Add the geometry created in step 4
+                      symbol: fillSymbol
+                    });
+                     arr_featureset.push(polylineGraphic);//t_graphic
+                   t_rings=[];
+                 }
+               }
              }
              else{
-               //all_paths.push(t_rings);
-               t_rings.push(t_rings[t_rings.length-1]);
+               //ori:t_rings.push(t_rings[t_rings.length-1]);
+               t_rings.push(t_rings[0]);
+               //console.log(t_rings);
 
                var tmulpt=new Polygon({
                   rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
@@ -2131,7 +2163,39 @@
                t_startprobability=item[0];
                t_mag=(t_startprobability-t_min)/t_range;
              }
+             t_rings.push(item.slice(1));
            });
+           if(t_rings.length>0){
+
+             //ori:t_rings.push(t_rings[t_rings.length-1]);
+             t_rings.push(t_rings[0]);
+             //console.log(t_rings);
+
+             var tmulpt=new Polygon({
+                rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
+                spatialReference: { wkid: 4326 }
+              });
+              if (m_colormap==0){
+                t_rgb=hslToRgb(1-t_mag, 1, 1-0.6*t_mag);//rainbow
+              }
+              else if (m_colormap==1){
+                t_rgb=hslToRgb(0.2*(1-t_mag), 1, 1-0.5*t_mag);//red:0, yellow:0.2
+              }
+              else{
+                t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//blue:0.6
+              }
+              t_rgb.push(0.8*t_mag);//oppacity
+
+              fillSymbol.color=t_rgb;
+              var polylineGraphic = new Graphic({
+                geometry: tmulpt, // Add the geometry created in step 4
+                symbol: fillSymbol
+              });
+               arr_featureset.push(polylineGraphic);//t_graphic
+             t_rings=[];
+           }
+
+
            //console.log(arr_featureset);
            graphicContourLayer.addMany(arr_featureset);
            graphicContourLayer.visible=true;
@@ -2470,20 +2534,21 @@
           let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
           let t_start = 1;//1
           let t_stop = 4;//12;
-          let totalfiles=3*(t_stop-t_start+1);
+          let totalfiles=1*(t_stop-t_start+1);
           //console.log(m_scenario_index);
           let lpmfolder="data/LPMdata4/"+m_scenarios[m_scenario_index]["scenario_name"]+"/";//"LPMdata3"
           //data->LPMdata3
           for(let i=t_start;i<=t_stop;i++){
-            for(let t_rank=1;t_rank<=3;t_rank++){
+            for(let t_rank=1;t_rank<=1;t_rank++){
                 LoadLPFromCSV("/static/"+lpmfolder+persontype+"/point data csv/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
                 LoadLPFromCSV_con("/static/"+lpmfolder+persontype+"/contour data csv/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
             }
           }
+          //console.log(m_lpdata_con);
           //load trial data
           //path: \static\LPMdata4\trial\xy_child10to12_ic1_bf1.csv
           for(let t_rank=1;t_rank<=3;t_rank++){
-              let tempdir="/static/LPMdata4/trial/xy_"+persontype+"_"+m_scenarios[m_scenario_index]["scenario_name"]+"_bf"+t_rank.toString()+".csv";
+              let tempdir="/static/data/LPMdata4/trial/xy_"+persontype+"_"+m_scenarios[m_scenario_index]["scenario_name"]+"_bf"+t_rank.toString()+".csv";
               LoadLPFromCSV_trial(tempdir,t_rank);
           }
           //console.log(m_lpdata_json);
@@ -2548,8 +2613,8 @@
          document.getElementById("myRange").onchange=function(){
            //console.log("change");
            m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+document.getElementById("myRange").value.toString()});
-           let t_hour=parseInt(document.getElementById("myRange").value)+1;
-            $("#lmyRange").text("Hour(1-12): "+t_hour);
+           let t_hour=parseInt(document.getElementById("myRange").value);
+            $("#lmyRange").text("Hour(0-11): "+t_hour);
             SetTargetpolygon();
            UpdateVisualization();
          }
@@ -2773,7 +2838,6 @@
           <option value="0">Scene 1</option>
           <option value="1">Scene 2</option>
           <option value="2">Scene 3</option>
-          <option value="4">Scene Test</option>
         </select>
         <input type="button" id="label_ic" value="Load" style="display:none"></input>
       </div>
@@ -2783,8 +2847,7 @@
         <select id="sel_lpm">
           <option value="child10to12">Child</option>
           <option value="dementia">Dementia</option>
-          <option value="hiker">Hiker</option>
-          <option value="hikertest">Hiker Test</option>
+          <option value="hiker" selected>Hiker</option>
 
         </select>
         <input type="button" id="label_lpt" value="Switch" style="display:none"></input>
@@ -2836,8 +2899,8 @@
       </div>
 
       <div class="slidecontainer">
-        <label for="myRange" id="lmyRange">Hour(1-12): 5</label>
-        <input type="range" min="0" max="11" value="0" class="slider" id="myRange">
+        <label for="myRange" id="lmyRange">Hour(0-11): 2</label>
+        <input type="range" min="0" max="11" value="2" class="slider" id="myRange">
 
       </div>
       <div class="slidecontainer" style="display:none">
@@ -2846,11 +2909,6 @@
 
       </div>
 
-      <div class="slidecontainer">
-        <label for="myclue" id="lmyclue">Cluee(0,1,2,3): 0</label>
-        <input type="range" min="0" max="3" value="0" class="slider" id="myclue">
-
-      </div>
 
       <div>
         <select id="sel_lpmodel">

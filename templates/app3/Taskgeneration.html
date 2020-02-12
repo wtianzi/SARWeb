@@ -237,6 +237,7 @@
       var m_lpdata=[];
       var m_lpdata_con=[];
       var m_lpdata_trial=[];
+      var m_lpdata_con_clue=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_editing=false;
@@ -1675,6 +1676,23 @@
             });
             return true;
          }
+         function LoadLPFromCSV_con_clue(t_url,t_index){
+           var t_data;
+            $.ajax({
+              type: "GET",
+              url:t_url,
+              dataType: "text",
+              success: function(response)
+              {
+                 t_data = $.csv.toArrays(response).map(function(item){
+                   return item.map(Number);
+                 });
+                 m_lpdata_con_clue.push({'index':t_index,'data':t_data});
+              }
+            });
+            return true;
+         }
+
          function LoadLPFromCSV(t_url,t_arr_count,t_hour=0,t_rank=0){
            var t_data;
             $.ajax({
@@ -2451,7 +2469,7 @@
 
           let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
           let t_start = 1;//1
-          let t_stop = 3;//12;
+          let t_stop = 4;//12;
           let totalfiles=3*(t_stop-t_start+1);
           //console.log(m_scenario_index);
           let lpmfolder="data/LPMdata4/"+m_scenarios[m_scenario_index]["scenario_name"]+"/";//"LPMdata3"
@@ -2466,9 +2484,8 @@
           //path: \static\LPMdata4\trial\xy_child10to12_ic1_bf1.csv
           for(let t_rank=1;t_rank<=3;t_rank++){
               let tempdir="/static/LPMdata4/trial/xy_"+persontype+"_"+m_scenarios[m_scenario_index]["scenario_name"]+"_bf"+t_rank.toString()+".csv";
-              LoadLPFromCSV_trial(tempdir,t_rank);              
+              LoadLPFromCSV_trial(tempdir,t_rank);
           }
-
           //console.log(m_lpdata_json);
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
@@ -2478,7 +2495,7 @@
            m_lpdata_con=[];
            m_lpdata_json=[];
            m_lpdata_trial=[];
-           m_lpdata_trial=[];
+           m_lpdata_con_clue=[];
            ClearAll();
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
@@ -2546,6 +2563,7 @@
            m_lpdata_con=[];
            m_lpdata_json=[];
            m_lpdata_trial=[];
+           m_lpdata_con_clue=[];
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
 

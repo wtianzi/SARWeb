@@ -192,8 +192,7 @@
         {"lostperson_index":2,"lostperson_type":"hiker"}
       ];
       let m_clues=[
-        {'index':0,"clue":[[-80.543407,37.196209],[-80.558109,37.1951]]},
-        {'index':1,"clue":[[-80.560462,37.196209],[-80.558109,37.1951]]}
+        {'index':0,"clue":[[-80.543407,37.196209],[-80.558109,37.1951]]}
       ];
 
       let m_scenarios_rings={'child10to12':[800,1600,3200,9000],
@@ -232,13 +231,13 @@
 
       let validSymbol;// = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//solid
 
-
+      var m_lpmodeldata=[];
       var m_filterprob=0.0000001;
       var m_lpdata_json={};
       var m_lpdata=[];
       var m_lpdata_con=[];
       var m_lpdata_trial=[];
-      var m_lpdata_densitypt=[];
+      var m_lpdata_con_clue=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_editing=false;
@@ -252,11 +251,23 @@
       let m_taskstarttime=null;
       let m_tasktrials=0;//how many time the operator tried to assign teams
 
+      /*
+      [
+         {'round':1,
+         'cell'=[{'sname':0,'polygon':rings},{'sname':1,'polygon':rings}...],
+         'teams':[0,0,1,1,2], //'team1':0,'team2':0,'team3':1,'team4':1,'team5':2
+         'responsetime':120,
+         'assigntime':200,
+         'displaytype':'point'},
+         {'round':2,'cell'=[{'sname':5,'polygon':rings},{'sname':6,'polygon':rings}...], 'team1':0,'team2':0,'team3':1,'team4':1,'team5':2, 'responsetime':100,'assigntime':200,'displaytype':'heatmap'},
+
+      ];
+      */
       let m_taskpolygon={};
 
       const graphicInitLayer= new GraphicsLayer();
       const graphicsLayer = new GraphicsLayer({
-        opacity:0.6//0.6
+        opacity:0.2//0.6
       });
       const gpsgraphicsLayer = new GraphicsLayer();
       const graphicPointsLayer = new GraphicsLayer();
@@ -298,6 +309,31 @@
            }
            return [r * 255, g * 255, b * 255];
        }
+
+      const colorStops_2= [
+            { color: "rgba(63, 40, 102, 0)", ratio: 0 },
+            { color: "#472b77", ratio: 0.083 },
+            { color: "#4e2d87", ratio: 0.166 },
+            { color: "#563098", ratio: 0.249 },
+            { color: "#5d32a8", ratio: 0.332 },
+            { color: "#6735be", ratio: 0.415 },
+            { color: "#7139d4", ratio: 0.498 },
+            { color: "#7b3ce9", ratio: 0.581 },
+            { color: "#853fff", ratio: 0.664 },
+            { color: "#a46fbf", ratio: 0.747 },
+            { color: "#c29f80", ratio: 0.83 },
+            { color: "#e0cf40", ratio: 0.913 },
+            { color: "#ffff00", ratio: 1 }
+          ];
+
+      const heatmaprenderer = {
+        type: "heatmap",
+        blurRadius:20,
+        colorStops: colorStops_2,
+        field: "Magnitude"//,
+        //maxPixelIntensity: 100,
+        //minPixelIntensity: 0
+      };
 
       var elevLyr = new ElevationLayer({
         // Custom elevation service
@@ -1640,9 +1676,7 @@
             });
             return true;
          }
-
-         //m_lpdata_densitypt
-         function LoadDensityptFromCSV(t_url,t_arr_count,t_hour=0,t_rank=0){
+         function LoadLPFromCSV_con_clue(t_url,t_index){
            var t_data;
             $.ajax({
               type: "GET",
@@ -1653,29 +1687,11 @@
                  t_data = $.csv.toArrays(response).map(function(item){
                    return item.map(Number);
                  });
-                 //console.log(t_data);
-                 let t_max=0;
-                 let t_index=0;
-                 let t_arr=[];
-
-                t_data.map(function(value,index) {
-                  if (value[2]>0){
-                    t_arr.push(value);
-
-                    if(t_max<value[2]){
-                      t_max=value[2];
-                      t_index=index;
-                    }
-                  }
-                });
-                m_lpdata_densitypt.push({'hour':t_hour,'rank':t_rank,"max":t_max,'data':t_data});
-                //m_lpdata_densitypt={"max":t_max,"data":t_arr};
+                 m_lpdata_con_clue.push({'index':t_index,'data':t_data});
               }
             });
-
             return true;
          }
-
 
          function LoadLPFromCSV(t_url,t_arr_count,t_hour=0,t_rank=0){
            var t_data;
@@ -1781,15 +1797,13 @@
            let t_clueindex=0;
 
            let data=m_clues.find(function(element){
-             return element.index==t_index;
+             return element['index']==t_index;
            });
-           //console.log(data);
-           let pt=data.clue[t_clueindex];
+           let pt=data[t_clueindex];
 
            let in_point=new Point({
-
-             longitude:pt[0],
-             latitude:pt[1],
+             latitude:pt[0],
+             longitude:pt[1],
              //latitude:parseFloat(arr_hours[i]['data'][rank]['loc'][1]),
              //longitude:parseFloat(arr_hours[i]['data'][rank]['loc'][0]),
              spatialReference:view.spatialReference
@@ -1812,89 +1826,6 @@
            graphicPointsLayer.addMany(arr_featureset);
            graphicPointsLayer.visible=true;
          }
-
-         function AddLPDataToDensitypointlayer(){
-           graphicTrajectoryLayer.removeAll();
-
-           let t_hour=document.getElementById("myRange").value;
-           let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
-
-           let arr_dpt=[];
-           let t_max=0;
-           let i_f=0;
-           while(i_f<m_lpdata_densitypt.length){
-             if(m_lpdata_densitypt[i_f]['hour']==t_hour && m_lpdata_densitypt[i_f]['rank']==t_rank){
-               arr_dpt=m_lpdata_densitypt[i_f]['data'];
-               t_max=m_lpdata_densitypt[i_f]['max'];
-               break;
-             }
-             i_f++;
-           }
-           m_colormap=document.getElementById("sel_colormap").selectedIndex;
-
-           arr_featureset=[];
-           //seperate the zone into 10 parts
-           let gradiance=10;
-           let pt_arr=[];
-           let samplingrate=1;
-           let j=samplingrate;
-           for (let i = 0 ; i < gradiance; i++){
-             pt_arr.push([]);
-           }
-           let k=0;
-           for (let i = 0 ; i < arr_dpt.length; i++){
-             j-=1;
-             if (j==0){
-               j=samplingrate;
-               //add points to array
-               k=Math.floor(9.5*(arr_dpt[i][2]/t_max));
-               //console.log(k);
-               pt_arr[k].push([arr_dpt[i][0],arr_dpt[i][1]]);
-             }
-           }
-
-           //console.log(pt_arr);
-           let ptfilterstart=1;
-           let ptfilterend=pt_arr.length;
-           //console.log(ptfilterend);
-           for (let i = ptfilterstart ; i < pt_arr.length; i++){
-             if (m_colormap==0){
-               t_rgb=hslToRgb(1-0.1*i, 1, 1-0.05*i);//rainbow
-             }
-             else if (m_colormap==1){
-               t_rgb=hslToRgb(0,0.5,1-0.1*i);//red:0, yellow:0.2
-             }
-             else{
-               t_rgb=hslToRgb(0.6,0.5,1-0.1*i);//blue:0.6
-             }
-             //t_rgb=hslToRgb(0.6,0.5,1-0.1*i);
-             t_rgb.push(0.1*i);
-             //console.log(t_rgb);
-
-             var t_mpts={
-               type:'multipoint',
-               points:pt_arr[i]
-             }
-             let t_graphic =  new Graphic({
-               geometry: t_mpts,
-               symbol:  {
-                    type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-                    style:"square",
-                    color:t_rgb,
-                    size:20,
-                    outline: {
-                      color:t_rgb
-                    },
-                  }
-             });
-             arr_featureset.push(t_graphic);
-           }
-           //console.log(arr_featureset);
-           graphicTrajectoryLayer.addMany(arr_featureset);
-           graphicTrajectoryLayer.visible=true;
-         }
-
-
           function AddLPDataToPointslayer(){
             graphicPointsLayer.removeAll();
             arr_featureset=[];
@@ -1949,6 +1880,25 @@
                      Name:"Lost person model",
                      Hour:i_hr,
                      Rank:rank+1
+                   },
+                   popupTemplate:{
+                       title: "{Name}",
+                       content: [
+                         {
+                           type: "fields",
+                           fieldInfos: [
+                             {
+                               fieldName: "Name"
+                             },
+                             {
+                               fieldName: "Hour"
+                             },
+                             {
+                               fieldName: "Rank"
+                             }
+                           ]
+                         }
+                       ]
                    }
                 });
                 arr_featureset.push(t_graphic);
@@ -2134,79 +2084,11 @@
            graphicControlLayer.addMany(arr_featureset);
            graphicControlLayer.visible=true;
          }
-         function GetConePoints(center,clue,diameter,angle=0.1) {
-           let y=clue[1]-center[1];
-           let x=clue[0]-center[0];
-           //console.log(Math.sqrt(x*x+y*y));
-           let i_angle=angle*Math.PI;
-           let t_angle=0;
-           if(x==0){
-             if(y>0){
-                t_angle=0.5*Math.PI;
-             }
-             else{
-               t_angle=-0.5*Math.PI;
-             }
-
-           }
-           else{
-             t_angle=Math.atan(y/x);
-           }
-           //console.log(t_angle);
-           let left=t_angle+i_angle;
-           let right=t_angle-i_angle;
-           let lpt=[diameter*Math.cos(left)+center[0] , diameter*Math.sin(left)+center[1]];
-           let rpt=[diameter*Math.cos(right)+center[0] , diameter*Math.sin(right)+center[1]];
-           return [lpt,center,rpt];
-         }
 
          function AddLPDataToConelayer(){
            graphicContourLayer.removeAll();
-           let angle=0.1; // 0~180, 0~1
-
            arr_featureset=[];
-           let t_index=0;
-           let t_clueindex=0;
-
-           let data=m_clues.find(function(element){
-             return element.index==t_index;
-           });
-
-           let pt=data.clue[t_clueindex];
-           let initpt = m_scenarios[m_scenario_index].center;//[lat,log]
-
-           // calculate a Cone
-           // start -> ipp -> end
-           let persontype=document.getElementById("sel_lpm").value;
-           //1100  0.0083 : 100  0.000755
-           let arr_start_init_end=GetConePoints(initpt,pt,0.0000076*m_scenarios_rings[persontype][1],angle);
-           console.log(arr_start_init_end);
-           let paths=[];
-           //paths.push(pt);
-           //paths.push(initpt);
-           paths.push(arr_start_init_end[0]);
-           paths.push(arr_start_init_end[1]);
-           paths.push(arr_start_init_end[2]);
-
-           // draw the Cone
-
-           let polyline = new Polyline({
-            hasZ: false,
-            hasM: true,
-            paths: [paths],
-            spatialReference: { wkid: 4326 }
-          });
-            let polylineGraphic=new Graphic({
-            geometry: polyline,
-            symbol:{
-                    type: "simple-line", // autocasts as new SimpleLineSymbol()
-                    color: [255,255,0], // RGB color values as an array
-                    width: 1
-                  }
-          });
-          //console.log(polylineGraphic);
-            arr_featureset.push(polylineGraphic);
-
+           
            graphicContourLayer.addMany(arr_featureset);
            graphicContourLayer.visible=true;
          }
@@ -2469,6 +2351,8 @@
              arr_featureset.push(t_graphic);
            }
            //console.log(arr_featureset);
+
+
          graphicHeatmapsLayer.addMany(arr_featureset);
          graphicHeatmapsLayer.visible=true;
 
@@ -2489,7 +2373,7 @@
           var t_mpts={
             type:'multipoint',
             points:m_lptrail_pts
-          };
+          }
           let t_graphic =  new Graphic({
             geometry: t_mpts,
             symbol:  {
@@ -2707,7 +2591,6 @@
             for(let t_rank=1;t_rank<=1;t_rank++){
                 LoadLPFromCSV("/static/"+lpmfolder+persontype+"/point data csv/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
                 LoadLPFromCSV_con("/static/"+lpmfolder+persontype+"/contour data csv/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
-                LoadDensityptFromCSV("/static/"+lpmfolder+persontype+"/point data csv/pt_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv",totalfiles,i-1,t_rank-1);
             }
           }
           //console.log(m_lpdata_con);
@@ -2726,12 +2609,12 @@
            m_lpdata_con=[];
            m_lpdata_json=[];
            m_lpdata_trial=[];
-          m_lpdata_densitypt=[];
+           m_lpdata_con_clue=[];
            ClearAll();
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
            m_lostpersontype_index=document.getElementById("sel_lpm").selectedIndex;
-
+           //DisplayLostPersonInfo();
 
          }
          document.getElementById("sel_rank").onchange=function(){
@@ -2794,8 +2677,7 @@
            m_lpdata_con=[];
            m_lpdata_json=[];
            m_lpdata_trial=[];
-           m_lpdata_densitypt=[];
-
+           m_lpdata_con_clue=[];
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
 
@@ -2851,17 +2733,16 @@
                AddLPDataToHeatmapslayerFilter(document.getElementById("myfilter").value/10-0.05);
              }
              else if (document.getElementById("sel_lpmodel").value=="contour"){
+               AddLPDataToControllayer();
                AddLPDataToContourlayer();
              }
              else if(document.getElementById("sel_lpmodel").value=="clueipp"){
+               AddLPDataToControllayer();
                AddLPDataToClueIPPlayer();
              }
              else if(document.getElementById("sel_lpmodel").value=="cone"){
-               AddLPDataToClueIPPlayer();
+               AddLPDataToControllayer();
                AddLPDataToConelayer();
-             }
-             else if (document.getElementById("sel_lpmodel").value=="densitypoint"){
-               AddLPDataToDensitypointlayer();
              }
              //AddTrialDataToTriallayer();
            }
@@ -3088,9 +2969,8 @@
 
       <div>
         <select id="sel_lpmodel">
-          <option value="densitypoint">Points</option>
           <option value="control" style="display:none">Probability</option>
-          <option value="points" style="display:none">Point</option>
+          <option value="points" style="display:none">Points</option>
           <option value="trajectory" style="display:none">Trajectory</option>
           <option value="contour">Contour map</option>
           <option value="heatmap" style="display:none">Heat map</option>

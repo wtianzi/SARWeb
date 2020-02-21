@@ -74,11 +74,11 @@ class AreaSegment:
         sure_fg_large = cv2.dilate(sure_fg,kernel,iterations=4)
         ret, sure_fg = cv2.threshold(sure_fg_large,0.5*sure_fg_large.max(),255,0)
 
-        plt.imshow(sure_fg)
-        plt.show()
+        #plt.imshow(sure_fg)
+        #plt.show()
 
 
-        sure_fg = cv2.cvtColor(sure_fg, cv2.COLOR_BGR2GRAY);
+        sure_fg = cv2.cvtColor(sure_fg, cv2.COLOR_BGR2GRAY)
         ret, markers = cv2.connectedComponents(sure_fg)
 
         markers = cv2.watershed(img,markers)
@@ -99,8 +99,9 @@ class AreaSegment:
             arr_contours.append(np.array(contours).tolist())
 
         im_color = cv2.applyColorMap(np.uint8(markers*255/9), cv2.COLORMAP_JET)
-        plt.imshow(im_color)
-        plt.show()
+        #cv2.imwrite('ws.jpg', im_color)
+        #plt.imshow(im_color)
+        #plt.show()
         return arr_contours# [  [[[1,2,3]],[[1,2,3]]],     ... ]
 
 

@@ -64,8 +64,13 @@
       var gcx=-80.556451;
       var gcy=37.2;
 
+      const graphicsSegmentLayer = new GraphicsLayer({
+        opacity:0.6
+      });
+
         var map = new Map({
-          basemap: "topo"//"osm"
+          basemap: "topo",//"osm"
+          layers: [graphicsSegmentLayer]
         });
         var elevLyr = new ElevationLayer({
           // Custom elevation service
@@ -83,7 +88,33 @@
         view.when(function() {
           view.on("click", Elevation);
         });
+        function getRandomInt(max) {
+          return Math.floor(Math.random() * Math.floor(max));
+        }
+        function AddPolygonToLayer(paths){
+          graphicsSegmentLayer.removeAll();
+          let arr_featureset=[];
+          for (let i = 0; i<paths.length;i++){
+            var tmulpt={
+              type:'polygon',
+               rings: paths[i].reverse(),
+               spatialReference: view.spatialReference
+             };
 
+             var polylineGraphic = new Graphic({
+               geometry: tmulpt, // Add the geometry created in step 4
+               symbol: {
+                 type: "simple-fill",
+                 color:[getRandomInt(255), getRandomInt(255), getRandomInt(255),0.8],
+                 style: "solid"
+               }
+             });
+              arr_featureset.push(polylineGraphic);//t_graphic
+          }
+          //console.log(arr_featureset);
+          graphicsSegmentLayer.addMany(arr_featureset);
+          graphicsSegmentLayer.visible=true;
+        }
         //pt_w: number of points in horizontal, pt_h: number of points in vertical
         function GetSampleMultipoints(in_extent,pt_w,pt_h){
           //view.extent.xmin,view.extent.ymax,view.extent.xmax,view.extent.ymax
@@ -133,15 +164,36 @@
                       'elevation_arr': JSON.stringify(col3)
                      };
                      //console.log(data);
+              var pt=[];
              $.post(URL, data, function(response){
                    var res=JSON.parse(response);
                    //console.log("elevation sent!");
 
                      if(res.flag == 'success'){
+                       //console.log(res.watershedpolygon);
                        console.log("elevation success!");
+
+                       let w_ratio=(view.extent.xmax-view.extent.xmin)/200;
+                       let h_ratio=(view.extent.ymax-view.extent.ymin)/200;
+                       console.log([w_ratio,h_ratio]);
+
+                       for (let i=0;i<res.watershedpolygon.length;i++){
+                         let a=[];
+
+                         res.watershedpolygon[i][0].map(function(item){
+                           a.push([view.extent.xmin+parseInt(item[0][0])*w_ratio,view.extent.ymin + (pt_h-parseInt(item[0][1]))*h_ratio]);
+                         });
+                         a.push(a[0]);
+                        //console.log(a);
+                         pt.push(a);
+                       }
+                       AddPolygonToLayer(pt);
+                       //console.log(pt);
                       }
                      else{ alert(response); }
                    });
+
+              //calculate long lat based on w,h,and res.watershedpolygon
 
             });
 

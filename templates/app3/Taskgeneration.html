@@ -3063,7 +3063,7 @@
 
          function getGPSDataUpdate(gpsdevice){
            var sel_gpsdevice = document.getElementById(gpsdevice);
-           //console.log(document.getElementById("sel_gpsdevice").value);
+           console.log(document.getElementById("sel_gpsdevice").value);
            var id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
              var URL = "{% url 'gpsupdate' %}";
              var data = {
@@ -3074,10 +3074,20 @@
              $.post(URL, data, function(response){
                var res=JSON.parse(response);
                  if(res.flag == 'success'){
-                    gps_json=JSON.parse(res.gpsdata);
+                   //console.log(res.gpsdata);
+                   t_obj=JSON.parse(res.gpsdata);
+                   let gps_json;
+                   if ("gps" in t_obj){
+                     gps_json=t_obj.gps[0];
+                   }
+                   else{
+                     gps_json=t_obj;
+                   }
+
+                    //console.log(t_obj);
                     gpspatharray[sel_gpsdevice.selectedIndex].push([gps_json.lat,gps_json.log]);
                     all_gpsdata[sel_gpsdevice.selectedIndex].push([gps_json.stamp,gps_json.lat,gps_json.log]);
-                    //console.log(gps_json.gps[0]);
+
                   }
                  else{ alert(response); }
              });
@@ -3257,7 +3267,7 @@
     <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>
 
     <hr/>
-    <div style="display:none">
+    <div>
         <div>
           <select id="sel_gpsdevice">
             <option value="">Select a device</option>

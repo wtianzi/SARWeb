@@ -7,7 +7,7 @@ from rest_framework import routers
 from django.conf.urls import include
 
 router = routers.DefaultRouter()
-router.register(r'gpsdatas', views.GPSDataViewSet)
+router.register(r'gpsdatas', views.GPSDataViewSet,basename="gpsdatas")
 
 urlpatterns = [
     path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
@@ -31,9 +31,11 @@ urlpatterns = [
     url(r'^readfile$',TemplateView.as_view(template_name="app3/readfile.html"), name="readfile"),
     path('api-auth/', include('rest_framework.urls')),
     path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),
-    path('watershed',TemplateView.as_view(template_name="app3/watershed.html")),
+    path('watershed',TemplateView.as_view(template_name="app3/watershed.html"),name='watershed'),
     path('heatmapringdownload',TemplateView.as_view(template_name="app3/Taskgeneration_download.html")),
     path('videostream',TemplateView.as_view(template_name="app3/UAVVideostream.html")),
+    path('index',TemplateView.as_view(template_name="app3/index.html")),
 ]
 
 urlpatterns += router.urls
+#print(urlpatterns)

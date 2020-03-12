@@ -1,13 +1,14 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
-from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView
+from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView
 from django.conf.urls import url
 from rest_framework import routers
 from django.conf.urls import include
 
 router = routers.DefaultRouter()
 router.register(r'gpsdatas', views.GPSDataViewSet,basename="gpsdatas")
+router.register(r'cluemedia', views.ClueMediaViewSet,basename="cluemedia")
 
 urlpatterns = [
     path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
@@ -34,8 +35,11 @@ urlpatterns = [
     path('watershed',TemplateView.as_view(template_name="app3/watershed.html"),name='watershed'),
     path('heatmapringdownload',TemplateView.as_view(template_name="app3/Taskgeneration_download.html")),
     path('videostream',TemplateView.as_view(template_name="app3/UAVVideostream.html")),
-    path('index',TemplateView.as_view(template_name="app3/index.html")),
+    path('index',TaskIndexView.as_view(),name='index'),
+    url(r'^getcluemedia$', TaskGenerationView.getClueMedia,name='getcluemedia'),
+    #path('index',TaskIndexView.asView()),
 ]
 
 urlpatterns += router.urls
+#urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 #print(urlpatterns)

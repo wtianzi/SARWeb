@@ -1,8 +1,17 @@
 from django.contrib.auth.models import User, Group
-from .models import GPSData
+from .models import GPSData,ClueMedia
 from rest_framework import serializers
 
 class GPSDataSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = GPSData
         fields = ('deviceid', 'taskid', 'gpsdata')
+
+
+class ClueMediaSerializer(serializers.HyperlinkedModelSerializer):
+    #photo = serializers.ImageField(max_length=None, allow_empty_file=True, use_url=True)
+    #doc = serializers.FileField(max_length=None, use_url=True)
+
+    class Meta:
+        model = ClueMedia
+        fields = ('id', 'name', 'longitude', 'latitude', 'photo', 'description')

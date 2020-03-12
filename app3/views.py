@@ -2,19 +2,20 @@ from django.shortcuts import render
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 from django.http import HttpResponse,HttpResponseRedirect
-from .models import Person,Task,GPSData,DataStorage
+from .models import Person,Task,GPSData,DataStorage,ClueMedia
 import json
 from .forms import DemoForm,TaskAssignmentForm
 from django.urls import reverse
 from django.template import loader
 from django.core import serializers
 from rest_framework import viewsets
-from .serializers import GPSDataSerializer
+from .serializers import GPSDataSerializer,ClueMediaSerializer
 
 from rest_framework import permissions
 
 from .py.watershed import AreaSegment
 # Create your views here.
+
 
 class IndexView(ListView):
     template_name='app3/MemberManagement.html'
@@ -30,24 +31,9 @@ class TaskGenerationView(TemplateView):
         #tasks_all=Task.objects.only('taskid').distinct('taskid')
         tasks_all=list(Task.objects.exclude(taskid=None).values_list('taskid', flat=True).distinct())
         #print(tasks_all)
-        context['task_all']=tasks_all#["SAR0001"]#tasks_all
-
-        #json_serializer = serializers.get_serializer("json")()
-        #gpsdata = json_serializer.serialize(GPSData.objects.all().order_by('id')[:5], ensure_ascii=False)
-        #tempstr=GPSData.objects.values_list('gpsdata', flat=True).get(pk=1)
-
-        #list the last 5 device and let the user to select which one to mark gps
-        #last_n_deviceid=GPSData.objects.values_list('deviceid').order_by('-id')[:5]
+        context['task_all']=tasks_all
         last_n_deviceid=GPSData.objects.values().order_by('-updated_at')[:5]
-        #print(last_n_deviceid)
         context['gpsdevice']=last_n_deviceid
-        #gpsdata_all=list(GPSData.objects.all().values_list('deviceid', flat=True).distinct())
-
-        #for testing, get gps data from id=3
-        #test = GPSData.objects.get(id=3)
-        #test.refresh_from_db()
-        #context['gpsdata']=getattr(test, 'gpsdata')
-
         return context
 
     def get_values(request):
@@ -61,7 +47,7 @@ class TaskGenerationView(TemplateView):
                 # process the data in form.cleaned_data as required
                 # ...
                 # redirect to a new URL:
-                #form.save_to_db()
+                # form.save_to_db()
                 return render(request, 'app3/demo.html', {'form': form})#HttpResponseRedirect('sketch')
 
         # if a GET (or any other method) we'll create a blank form
@@ -130,6 +116,36 @@ class TaskGenerationView(TemplateView):
         # nothing went well
         return HttpResponse('Getwatershed failed!')
 
+    def getClueMedia(request):
+        if request.method == 'POST':
+            clue_id = request.POST['photoid']
+            clueitem = ClueMedia.objects.get(id=int(clue_id))
+
+            context={'cluephotoid':str(clueitem.id),
+                    'name':str(clueitem.name),
+                    'lon':str(clueitem.longitude),
+                    'lat':str(clueitem.latitude),
+                    'url':str(clueitem.photo.url),
+                    'detail':str(clueitem.description),
+                    'flag':'success'}
+            #print(context)
+            return HttpResponse(json.dumps(context)) # if everything is OK
+        # nothing went well
+        return HttpResponse('FAIL!!!!!')
+
+
+class TaskIndexView(TemplateView):
+    template_name="app3/index.html"
+    #def get_queryset(self):
+    def get(self, request, *args, **kwargs):
+        img=ClueMedia.objects.all()
+        context ={'message': img}
+        return render(request, 'app3/index.html',context=context)
+    def get_context_data(self, *args, **kwargs):
+        context = super(Home. self).get_context_data(*args, **kwargs)
+        context['message'] = 'Hello World!'
+        return context
+        #return  render_to_response("app3/index.html", {"img": img})
 
 class TaskGenerationFormView(TemplateView):
     template_name="app3/taskgenerationform.html"
@@ -183,6 +199,32 @@ class GPSDataViewSet(viewsets.ModelViewSet):
     queryset = GPSData.objects.all()
     serializer_class = GPSDataSerializer
 
+class ClueMediaViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+
+    import base64
+    import requests
+
+    url = "http://127.0.0.1:8000/cluemedia/"
+    filename="D:/Projects/SARWeb/static/img/cluesamples/thermal_sample.png"
+    files = {'photo': open(filename, 'rb')}
+    r = requests.get('http://127.0.0.1:8000/cluemedia/')
+    r = requests.post('http://127.0.0.1:8000/cluemedia/',
+        auth=(username,password),
+        data = {'id':'2', 'name':'Drone2','longitude':'-80.543407', 'latitude':'37.196209', 'description':'Thermal camera top view'},
+        files={'photo':open(filename, 'rb')}
+        )
+    r=requests.patch('http://127.0.0.1:8000/cluemedia/2/',
+        auth=(username,password),
+        data = {'id':'2', 'name':'Drone2','longitude':'-80.543407', 'latitude':'37.196209', 'description':'Thermal camera top view'},
+        files={'photo':open(filename, 'rb')}
+        )
+    print (r.text)
+    """
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    queryset = ClueMedia.objects.all()
+    serializer_class = ClueMediaSerializer
 
 class TaskassignmentExperimentView(TemplateView):
     #template_name='app3/Taskgeneration_exp.html'

@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.utils.text import slugify
 # Create your models here.
 class Person(models.Model):
     id = models.AutoField(primary_key=True)
@@ -115,3 +115,16 @@ class TaskAssignment(models.Model):
 
     def __str__(self):
         return self.resourcetype
+
+
+class ClueMedia(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, blank=True,null=True)
+    longitude = models.DecimalField(max_digits=12, decimal_places=9, blank=True,null=True)
+    latitude = models.DecimalField(max_digits=12, decimal_places=9, blank=True,null=True)
+    photo = models.ImageField(upload_to='uploads/', default='No-img.png', blank=True,null=True)
+    description = models.CharField(max_length=100, blank=True,null=True)
+
+
+    def __str__(self):
+        return str(self.id)

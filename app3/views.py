@@ -206,15 +206,25 @@ class ClueMediaViewSet(viewsets.ModelViewSet):
     import base64
     import requests
 
-    url = "http://127.0.0.1:8000/cluemedia/"
+    # filnename is the location of where the image are sent from
     filename="D:/Projects/SARWeb/static/img/cluesamples/thermal_sample.png"
-    files = {'photo': open(filename, 'rb')}
-    r = requests.get('http://127.0.0.1:8000/cluemedia/')
-    r = requests.post('http://127.0.0.1:8000/cluemedia/',
+
+    # url are the target IP address and port + "/cluemedia/", for example, http://172.29.20.199:8000/cluemedia/
+    url = "http://127.0.0.1:8000/cluemedia/"
+
+    # the format of uploading files
+    # files = {'photo': open(filename, 'rb')}
+
+    # requests.get is to view the existing data
+    r = requests.get(url)
+
+    # requests.post is to create a new item in the database
+    r = requests.post(url,
         auth=(username,password),
         data = {'id':'2', 'name':'Drone2','longitude':'-80.543407', 'latitude':'37.196209', 'description':'Thermal camera top view'},
         files={'photo':open(filename, 'rb')}
         )
+    # requests.patch is to update an existing item in the database, the url need to add a index
     r=requests.patch('http://127.0.0.1:8000/cluemedia/2/',
         auth=(username,password),
         data = {'id':'2', 'name':'Drone2','longitude':'-80.543407', 'latitude':'37.196209', 'description':'Thermal camera top view'},

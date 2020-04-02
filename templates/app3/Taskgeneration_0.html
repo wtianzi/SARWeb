@@ -127,7 +127,6 @@
       "esri/layers/ElevationLayer",
       "esri/geometry/Polyline",
       "esri/geometry/Circle",
-      "esri/layers/GeoJSONLayer",
       "esri/core/promiseUtils"
 
     ], function(
@@ -136,7 +135,7 @@
       Draw,CoordinateConversion,
       DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
       OpenStreetMapLayer,Track,Search,Multipoint,
-      ElevationLayer,Polyline,Circle,GeoJSONLayer,promiseUtils
+      ElevationLayer,Polyline,Circle,promiseUtils
     ) {
       let view, sketchViewModel, draw,
         newDevelopmentGraphic,taskassignment_sketchViewModel,
@@ -336,14 +335,7 @@
           visualization_Cone_Layer//
         ]
       });
-      /*
-      const geojsonLayer = new GeoJSONLayer({
-        url: "{% static 'data/map/data.json' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
-        copyright: "VDGIF_Wildlife_Management_Area_WMA_Boundaries",
-        opacity: 0.9
-      });
-      map.add(geojsonLayer);
-*/
+
       setUpView();
 
       function polygonClone(polygon) {

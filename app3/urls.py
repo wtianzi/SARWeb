@@ -37,6 +37,7 @@ urlpatterns = [
     path('videostream',TemplateView.as_view(template_name="app3/UAVVideostream.html")),
     path('index',TaskIndexView.as_view(),name='index'),
     url(r'^getcluemedia$', TaskGenerationView.getClueMedia,name='getcluemedia'),
+    path('translateshapefiletogeojson',TemplateView.as_view(template_name="app3/Translate_shapefile_to_geojson.html")),
     #path('index',TaskIndexView.asView()),
 ]
 

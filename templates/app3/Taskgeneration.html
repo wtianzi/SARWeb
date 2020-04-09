@@ -240,6 +240,9 @@
 
       var m_filterprob=0.0000001;
       var m_lpdata_con=[];
+      var m_lpdata_trajectory=[];
+      var m_lpdata_tra_colormap=[];
+
       var m_lpdata_trial=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
@@ -1721,6 +1724,62 @@
              });
            }
          });
+         function LoadLPFromCSV_Tra_Item(t_url,t_rank=0,t_index=0){
+           var t_data;
+            $.ajax({
+              type: "GET",
+              url:t_url,
+              dataType: "text",
+              success: function(response)
+              {
+                 t_data = $.csv.toArrays(response).map(function(item){
+                   return item.map(Number);
+                 });
+                 m_lpdata_trajectory.push({'index':t_index,'notes':'clue','clue':t_index,'data':t_data});
+
+              }
+            });
+            return true;
+         }
+
+         function LoadLPFromCSV_Tra_All(t_url,t_rank=0,t_index=0){
+           //m_lpdata_trajectory
+           var t_data;
+            $.ajax({
+              type: "GET",
+              url:t_url,
+              dataType: "text",
+              success: function(response)
+              {
+                 t_data = $.csv.toArrays(response).map(function(item){
+                   return item.map(Number);
+                 });
+
+                 // column: time by hour, lon,lat,index of trajectory
+                 // cut t_data into 2 dimentional array every 13 items [ [t_data[1],t_data[2]],[],..,[] ]
+                 let t_index=t_data[0][3];
+                 let t_arr=[];
+                 let all_arr=[];
+                 for(let i=0;i<t_data.length;i++){
+                   if (t_index != t_data[i][3]){
+                     all_arr.push(t_arr);
+                     t_arr=[];
+                     t_index = t_data[i][3];
+                   }
+                   t_arr.push([t_data[i][1],t_data[i][2]]);// hour 0-hour 12
+                 }
+                 all_arr.push(t_arr);
+
+                 m_lpdata_trajectory.push({'index':0,'notes':'all','data':all_arr});
+                 for (let j=0;j<all_arr.length;j++){
+                   m_lpdata_tra_colormap.push([getRandomInt(255), getRandomInt(255), getRandomInt(255)]);
+                 }
+                 //m_lpdata_trajectory.push({'index':t_index,'rank':t_rank,'data':t_data});
+                 //console.log(m_lpdata_trajectory);
+              }
+            });
+            return true;
+         }
 
          function LoadLPFromCSV_trial(t_url,t_rank=0,t_index=0){
            var t_data;
@@ -2001,6 +2060,107 @@
              rpt=[center[0]-diameter*Math.cos(right) , diameter*Math.sin(right)+center[1]];
            }
            return [lpt,center,rpt];
+         }
+
+
+         function AddLPDataToTrajectorylayer(t_type = "byhour"){
+           let i_hr=parseInt(document.getElementById("myRange").value);
+
+           let clueindex=0;
+           let t_arr=m_lpdata_trajectory.filter(obj=>{ return obj.index === 0;});
+           let t_data=t_arr[0].data;
+
+           if (t_type == "byclue"){
+             clueindex=parseInt(document.getElementById("myClues").value);
+             if(clueindex>0){
+               let t_reduced_arr=[];
+               let t_reduced_index_arr=m_lpdata_trajectory.filter(obj=>{ return obj.index === clueindex;});
+               console.log(t_reduced_index_arr[0].data);
+               for(let i=0;i<t_reduced_index_arr[0].data.length;i++){
+                 t_reduced_arr.push(t_arr[0].data[t_reduced_index_arr[0].data[i]]);
+               }
+               console.log(t_reduced_arr);
+               t_data=t_reduced_arr;
+             }
+           }
+           else if(t_type == "byhour"){
+             clueindex=0;
+           }
+           visualization_Trajectories_Layer.removeAll();
+
+           //console.log(t_arr);
+           // display all 100 trajectories
+           // filter m_lpdata_trial
+           let arr_visual=[];
+
+
+           let t_case ='bypath';//bypath, byhour
+           if(t_case==='byhour'){
+             let mid_data=[];//13 items
+             for (let j=0;j<12;j++){
+               mid_data.push([]);
+             }
+             for(let i=0;i<t_data.length;i++){
+               for (let j=1;j< t_data[i].length;j++){
+                 mid_data[j-1].push([ [t_data[i][j][0],t_data[i][j][1]],[t_data[i][j-1][0],t_data[i][j-1][1]] ]);
+               }
+             }
+             t_data=mid_data;
+           }
+           else{
+
+             for(let i=0;i<t_data.length;i++){
+               let t_color=m_lpdata_tra_colormap[i];
+               if (i_hr>=t_data.length){
+                 i_hr=t_data.length-1;
+                 t_color=[125,125,125];
+               }
+               else if( i_hr >0){
+                 if(t_data[i][i_hr][0]==t_data[i][i_hr-1][0] && t_data[i][i_hr][1]==t_data[i][i_hr-1][1]){
+                   t_color=[125,125,125];
+                 }
+               }
+               var t_pt={
+                 type:'point',
+                 latitude: t_data[i][i_hr][1],
+                 longitude: t_data[i][i_hr][0]
+               }
+               let t_ptgraphic =  new Graphic({
+                 geometry: t_pt,
+                 symbol:  {
+                      type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                      style:"circle",
+                      color: t_color,//[t_mag, 0,0],
+                      size: 10
+                    }
+               });
+               arr_visual.push(t_ptgraphic);
+             }
+           }
+
+           for(let i=0;i<t_data.length;i++){
+
+             let polyline = {
+                 type:'polyline',
+                paths: t_data[i],
+                spatialReference: { wkid: 4326 }
+              };
+              let polylineGraphic=new Graphic({
+                geometry: polyline,
+                symbol:{
+                        type: "simple-line", // autocasts as new SimpleLineSymbol()
+                        color: m_lpdata_tra_colormap[i], // RGB color values as an array
+                        width: 2
+                      }
+              });
+              //console.log(polylineGraphic);
+              arr_visual.push(polylineGraphic);
+
+           }
+
+
+           visualization_Trajectories_Layer.addMany(arr_visual);
+           visualization_Trajectories_Layer.visible=true;
          }
 
          function AddLPDataToConelayer(){
@@ -2473,13 +2633,28 @@
             }
           }
 
-          // m_lpdata_clue.push
+          // clue1:t1, clue2:t2, clue12:t3, final: t4
           for(let i=1;i<=count_clues;i++){
               for(let t_rank=1;t_rank<=1;t_rank++){
                 let csvfilename="/static/"+lpmfolder+persontype+"_clue/contour data csv/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv";
                 LoadLPFromCSV_con(csvfilename,totalfiles,i-1,t_rank-1,'byclue');
               }
           }
+
+
+          // load whole trajectory data, index=0: hiker
+          //m_lpdata_trajectory
+          LoadLPFromCSV_Tra_All("/static/"+lpmfolder+persontype+"_clue/trial/hikertraj_hiker_bf1.csv",0,0);
+
+          //index 1,2,3
+          for(let i=1;i<=count_clues-1;i++){
+            for(let t_rank=1;t_rank<=1;t_rank++){
+              let csvfilename="/static/"+lpmfolder+persontype+"_clue/trial/clue_"+persontype+"_bf"+t_rank.toString()+"_t"+i.toString()+".csv";
+              LoadLPFromCSV_Tra_Item(csvfilename,t_rank,i);
+            }
+          }
+
+
 
           /*
           trajectory files:
@@ -2490,7 +2665,7 @@
           	'data':[{'clueindex':1, 'fileindex':[1,5,8,9,10]},
           		{'clueindex':1, 'fileindex':[1,5,8,9,10]}]
           }
-          */
+
           for (let i=0;i<1;i++){
             for(let t_rank=1;t_rank<=1;t_rank++){
                 let tempdir="/static/data/LPMdata4/trial/xy_"+persontype+"_"+m_scenarios[m_scenario_index]["scenario_name"]+"_bf"+t_rank.toString()+".csv";
@@ -2503,7 +2678,7 @@
               m_lpdata_trajectory_clueindex_json=json;
            });
           }
-
+*/
 
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
@@ -2538,7 +2713,7 @@
            //console.log("change");
            m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+document.getElementById("myRange").value.toString()});
            let t_hour=parseInt(document.getElementById("myRange").value);
-            $("#lmyRange").text("Hour(0-11): "+t_hour);
+            $("#lmyRange").text("Hour(1-12): "+t_hour);
             SetTargetpolygon();
            UpdateVisualization();
          }
@@ -2600,6 +2775,10 @@
              else if(document.getElementById("sel_lpmodel").value=="cone"){
                //AddCluetoInteractionImagelayer();
                AddLPDataToConelayer();
+             }
+             else if(document.getElementById("sel_lpmodel").value=="trajectories"){
+               //AddCluetoInteractionImagelayer();
+               AddLPDataToTrajectorylayer(m_visualizationtype);
              }
            }
 
@@ -2822,7 +3001,7 @@
       </div>
 
       <div class="slidecontainer">
-        <label for="myRange" id="lmyRange">Hour(0-11): 3</label>
+        <label for="myRange" id="lmyRange">Hour(1-12): 3</label>
         <input type="range" min="0" max="11" value="3" class="slider" id="myRange">
 
       </div>

@@ -1,5 +1,7 @@
 # SAR Web User Interface Demo
 ![Web interface](screen/taskassign.png)
+![Trajectory](screen/trajectory.gif)
+![Heatmap](screen/trail_hiker1_heatmap.gif)
 [more examples](screen/)
 ## Built based on
 - DJango as sever

@@ -1771,9 +1771,32 @@
                  all_arr.push(t_arr);
 
                  m_lpdata_trajectory.push({'index':0,'notes':'all','data':all_arr});
+
+                 m_colormap=document.getElementById("sel_colormap").selectedIndex;
+                 let t_color_arr=[];
+                 let t_ratio=1.0/all_arr.length;
+
                  for (let j=0;j<all_arr.length;j++){
-                   m_lpdata_tra_colormap.push([getRandomInt(255), getRandomInt(255), getRandomInt(255)]);
+                   t_rgb=hslToRgb(1-t_ratio*j, 1, 1-0.6*t_ratio*j);//rainbow
+                   t_color_arr.push(t_rgb);
+                   //t_color_arr.push([getRandomInt(255), getRandomInt(255), getRandomInt(255)]);
                  }
+                 m_lpdata_tra_colormap.push(t_color_arr);
+
+                 t_color_arr=[];
+                 for (let j=0;j<all_arr.length;j++){
+                   let t_rgb=hslToRgb(0.2*(1-t_ratio*j), 1, 1-t_ratio*j);
+                   t_color_arr.push(t_rgb);
+                   //t_color_arr.push([255-255*t_ratio*j,0,0]);
+                 }
+                 m_lpdata_tra_colormap.push(t_color_arr);
+                 t_color_arr=[];
+                 for (let j=0;j<all_arr.length;j++){
+                  let t_rgb=hslToRgb(0.6, 1, 1-0.5*t_ratio*j);
+                  t_color_arr.push(t_rgb);
+                }
+                m_lpdata_tra_colormap.push(t_color_arr);
+
                  //m_lpdata_trajectory.push({'index':t_index,'rank':t_rank,'data':t_data});
                  //console.log(m_lpdata_trajectory);
               }
@@ -2065,22 +2088,28 @@
 
          function AddLPDataToTrajectorylayer(t_type = "byhour"){
            let i_hr=parseInt(document.getElementById("myRange").value);
-
+           m_colormap=document.getElementById("sel_colormap").selectedIndex;
            let clueindex=0;
            let t_arr=m_lpdata_trajectory.filter(obj=>{ return obj.index === 0;});
            let t_data=t_arr[0].data;
 
            if (t_type == "byclue"){
-             clueindex=parseInt(document.getElementById("myClues").value);
-             if(clueindex>0){
+             clueindex=parseInt(document.getElementById("myClues").value)+1;
+             console.log(clueindex);
+             if(clueindex<4){
                let t_reduced_arr=[];
+               // trajectory: 0: all, 1: clue 1, 2:clue2,3:clue1,2
+               // contourmap: 0: clue1, 1: clue2, 2: clue1,2, 3: all
                let t_reduced_index_arr=m_lpdata_trajectory.filter(obj=>{ return obj.index === clueindex;});
-               console.log(t_reduced_index_arr[0].data);
+               //console.log(t_reduced_index_arr[0].data);
                for(let i=0;i<t_reduced_index_arr[0].data.length;i++){
                  t_reduced_arr.push(t_arr[0].data[t_reduced_index_arr[0].data[i]]);
                }
-               console.log(t_reduced_arr);
+               //console.log(t_reduced_arr);
                t_data=t_reduced_arr;
+             }
+             else{
+               clueindex=0;
              }
            }
            else if(t_type == "byhour"){
@@ -2088,36 +2117,74 @@
            }
            visualization_Trajectories_Layer.removeAll();
 
-           //console.log(t_arr);
            // display all 100 trajectories
            // filter m_lpdata_trial
            let arr_visual=[];
 
+           let t_case = document.getElementById("displaytype").checked;  // default unchecked: bypath, checked: byhour
 
-           let t_case ='bypath';//bypath, byhour
-           if(t_case==='byhour'){
+           if(t_case){ //byhour
              let mid_data=[];//13 items
+
              for (let j=0;j<12;j++){
                mid_data.push([]);
              }
              for(let i=0;i<t_data.length;i++){
                for (let j=1;j< t_data[i].length;j++){
                  mid_data[j-1].push([ [t_data[i][j][0],t_data[i][j][1]],[t_data[i][j-1][0],t_data[i][j-1][1]] ]);
+                 // color map
+
                }
              }
              t_data=mid_data;
-           }
-           else{
 
              for(let i=0;i<t_data.length;i++){
-               let t_color=m_lpdata_tra_colormap[i];
+               let polyline = {
+                   type:'polyline',
+                  paths: t_data[i],
+                  spatialReference: { wkid: 4326 }
+                };
+                let polylineGraphic=new Graphic({
+                  geometry: polyline,
+                  symbol:{
+                          type: "simple-line", // autocasts as new SimpleLineSymbol()
+                          color: m_lpdata_tra_colormap[m_colormap][i*9], // RGB color values as an array
+                          width: 2
+                        }
+                });
+                //console.log(polylineGraphic);
+                arr_visual.push(polylineGraphic);
+             }
+           }
+           else{
+             for(let i=0;i<t_data.length;i++){
+
+               let polyline = {
+                   type:'polyline',
+                  paths: t_data[i],
+                  spatialReference: { wkid: 4326 }
+                };
+                let polylineGraphic=new Graphic({
+                  geometry: polyline,
+                  symbol:{
+                          type: "simple-line", // autocasts as new SimpleLineSymbol()
+                          color: m_lpdata_tra_colormap[m_colormap][i], // RGB color values as an array
+                          width: 2
+                        }
+                });
+                //console.log(polylineGraphic);
+                arr_visual.push(polylineGraphic);
+             }
+
+             for(let i=0;i<t_data.length;i++){
+               let t_color=m_lpdata_tra_colormap[m_colormap][i];
                if (i_hr>=t_data.length){
                  i_hr=t_data.length-1;
-                 t_color=[125,125,125];
+                 t_color=[125,125,125,0.1];
                }
                else if( i_hr >0){
                  if(t_data[i][i_hr][0]==t_data[i][i_hr-1][0] && t_data[i][i_hr][1]==t_data[i][i_hr-1][1]){
-                   t_color=[125,125,125];
+                   t_color=[125,125,125,0.1];
                  }
                }
                var t_pt={
@@ -2137,28 +2204,6 @@
                arr_visual.push(t_ptgraphic);
              }
            }
-
-           for(let i=0;i<t_data.length;i++){
-
-             let polyline = {
-                 type:'polyline',
-                paths: t_data[i],
-                spatialReference: { wkid: 4326 }
-              };
-              let polylineGraphic=new Graphic({
-                geometry: polyline,
-                symbol:{
-                        type: "simple-line", // autocasts as new SimpleLineSymbol()
-                        color: m_lpdata_tra_colormap[i], // RGB color values as an array
-                        width: 2
-                      }
-              });
-              //console.log(polylineGraphic);
-              arr_visual.push(polylineGraphic);
-
-           }
-
-
            visualization_Trajectories_Layer.addMany(arr_visual);
            visualization_Trajectories_Layer.visible=true;
          }
@@ -2686,6 +2731,8 @@
          document.getElementById("sel_lpm").onchange=function(){
            m_lpdata_con=[];
            m_lpdata_trial=[];
+           m_lpdata_trajectory=[];
+           m_lpdata_tra_colormap=[];
            ClearAll();
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
@@ -2778,6 +2825,7 @@
              }
              else if(document.getElementById("sel_lpmodel").value=="trajectories"){
                //AddCluetoInteractionImagelayer();
+
                AddLPDataToTrajectorylayer(m_visualizationtype);
              }
            }
@@ -2908,6 +2956,15 @@
          document.getElementById('GPSStart2').addEventListener('click',function(){
            readDB2("sel_gpsdevice2","GPSStart2");
          });
+
+         document.getElementById('visualizationtype').addEventListener('click',function(){
+           if(document.getElementById("visualizationtype").checked){
+                 m_visualizationtype='byclue';
+               }
+               else{
+                 m_visualizationtype='byhour';
+               }
+         });
          /*
          document.getElementById("GPSStart").onclick=function() {
 
@@ -3018,7 +3075,7 @@
           <option value="cone">Cone</option>
         </select>
         <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
-        <label id="lpsum">ippm</label>
+        <input type="checkbox" id="displaytype" name="displaytype" value="byhour">
       </div>
     </div>
   </div>
@@ -3063,6 +3120,9 @@
       <input type="button" class="edit-button" value="Display Lost Person Info" id="lpinfo">
 
     </div>
+    <input type="checkbox" id="visualizationtype" name="visualizationtype" value="byhour">
+    <label for="visualizationtype">Filter data by clue(none,1,2,12)</label>
+
     <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"></input>
 
     <div><input type="button" class="edit-button" value="Clear All" id="clearall"></input></div>

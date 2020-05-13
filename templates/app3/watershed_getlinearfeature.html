@@ -75,7 +75,7 @@
 
 
       var map = new Map({
-        basemap: "topo",//"osm"
+        basemap: "gray",//"topo",//"osm"
         layers: [graphicsSegmentLayer]
       });
       var elevLyr = new ElevationLayer({
@@ -83,8 +83,11 @@
         url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
       });
       var linearfeatureLyr = new FeatureLayer({
+
         url:"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6"
         // riverLayer flow line, Spatial Reference: 102100  (3857)
+
+        //url:"https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/0"
       });
       map.add(linearfeatureLyr);
 
@@ -103,24 +106,67 @@
 
       });
 
+
       view.whenLayerView(linearfeatureLyr).then(function(layerView){
         layerView.watch("updating", function(val){
           if(!val){  // wait for the layer view to finish updating
+
             layerView.queryFeatures().then(function(results){
               //console.log(results.features);
 
               var outSpatialReference = new SpatialReference({
                 wkid: 4326
               });
+
+
               projection.load().then(function() {
                 //var tgeo = projection.project(graphic.geometry, outSpatialReference);
-
-                 results.features.forEach(function(graphic) {
-                   graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
-                 });
-                });
+                let jsonContent = "[";
+                var t_obj={};
+                let arr_paths=[];
                 console.log(results.features);
-              //view.goTo(results.extent);  // go to the extent of all the graphics in the layer view
+                 results.features.forEach(function(graphic) {
+                   //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
+                   t_obj.type=graphic.geometry.type;
+                   t_obj.paths=graphic.geometry.paths;
+                   t_obj.spatialReference=graphic.geometry.spatialReference;
+                   //console.log(t_obj.paths);
+                   arr_paths=arr_paths.concat(t_obj.paths);
+                   jsonContent+=JSON.stringify(t_obj)+",\r\n";
+                 });
+                 jsonContent=jsonContent.substring(0,jsonContent.length-3)+"]\r\n";
+                 let tstr=GetUpdatedViewExtentString();
+                 let filename=tstr+"_"+Date.now().toString()+"_nhd6_ori.txt";
+                 download(filename,jsonContent);
+                 //console.log(arr_paths);
+                 let t_poly={
+                   type:"polyline",
+                   paths:arr_paths,
+                   spatialReference:results.features[0].geometry.spatialReference
+                 };
+                 let t_poly_g=new Graphic({
+                   geometry:t_poly
+                 });
+                 //console.log(t_poly_g);
+                 t_poly_g.geometry = projection.project(t_poly_g.geometry, outSpatialReference);
+                 t_obj.type=t_poly_g.geometry.type;
+                 t_obj.paths=t_poly_g.geometry.paths;
+                 t_obj.spatialReference=t_poly_g.geometry.spatialReference;
+                 jsonContent=JSON.stringify(t_obj);
+
+                 filename=tstr+"_"+Date.now().toString()+"_nhd6.txt";
+                 download(filename,jsonContent);
+                });
+
+
+                //jsonContent=jsonContent.substring(0,jsonContent.length-3)+"]\r\n";
+                //console.log(jsonContent);
+                //let str_coordinate=GetUpdatedViewExtentString();
+                //console.log(str_coordinate);
+
+                //GetUpdatedViewExtentString();
+
+                //
             });
           }
         });
@@ -130,24 +176,17 @@
       function LinearFeature(event){
         linearfeatureLyr.queryFeatures().then(function(results){
           // prints an array of all the features in the service to the console
-          console.log(results.features);
+          //console.log(results.features);
 
           var outSpatialReference = new SpatialReference({
             wkid: 4326
           });
           projection.load().then(function() {
             var graphic=results.features[0];
-            console.log(graphic.geometry);
+            //console.log(graphic.geometry);
             var tgeo = projection.project(graphic.geometry, outSpatialReference);
             console.log(tgeo);
-
-             //results.forEach(function(graphic) {
-               //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
-             //});
             });
-
-
-
         });
 
 
@@ -162,6 +201,35 @@
           console.log(results.features);  // prints the array of features to the console
         });
         */
+      }
+
+      function GetUpdatedViewExtentString(){
+        var pt1_leftop={
+                      type:'point',
+                      x:view.extent.xmin,
+                      y:view.extent.ymax,
+                      spatialReference:view.spatialReference
+                    };
+        var pt1=new Graphic({
+          geometry:pt1_leftop
+        });
+        //console.log(pt1.geometry);
+
+
+        var pt2_rightbuttom={
+                      type:'point',
+                      x:view.extent.xmax,
+                      y:view.extent.ymin,
+                      spatialReference:view.spatialReference
+                    };
+        var pt2=new Graphic({
+          geometry:pt2_rightbuttom
+        });
+        //console.log(pt2.geometry);
+
+        var arr=[[pt1.geometry.longitude,pt1.geometry.latitude],[pt2.geometry.longitude,pt2.geometry.latitude]];
+        console.log(arr);
+        return arr.toString();//"["+arr[0].toString()+"],["+arr[0].toString()+"]";
       }
 
       function getRandomInt(max) {
@@ -207,6 +275,7 @@
       }
 
       function download(filename, text) {
+        //console.log(text);
         var element = document.createElement('a');
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
         element.setAttribute('download', filename);

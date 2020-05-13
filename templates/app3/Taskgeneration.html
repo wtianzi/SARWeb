@@ -343,7 +343,7 @@
           visualization_Cone_Layer//
         ]
       });
-      /*
+/*
       const geojsonLayer = new GeoJSONLayer({
         url: "{% static 'data/map/data.json' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
         copyright: "VDGIF_Wildlife_Management_Area_WMA_Boundaries",
@@ -390,6 +390,7 @@
 
           //elevation=============
           var position = event.mapPoint;
+          //console.log(position);
           var queryBeforeLandslide = elevLyr.queryElevation(
             position
           );

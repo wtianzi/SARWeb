@@ -66,10 +66,6 @@
       var righbottom=[-80.528222,37.1912];//[-80.528222,37.1912];
       var gcx=0.5*(leftop[0]+righbottom[0]);
       var gcy=0.5*(leftop[1]+righbottom[1]);
-      var samplewidth=200;
-      var sampleheight=200;
-
-      var enabledownload=true;
       //var gcx=-80.556451;
       //var gcy=37.2;
 
@@ -93,19 +89,7 @@
 
         //url:"https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/0"
       });
-      //map.add(linearfeatureLyr);
-
-
-      var waterareaLyr = new FeatureLayer({
-
-        url:"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/8"
-      });
-      map.add(waterareaLyr);
-
-      const visualization_Multipoints = new GraphicsLayer({
-        opacity:0.9
-      });
-      map.add(visualization_Multipoints);
+      map.add(linearfeatureLyr);
 
       var view = new MapView({
         map: map,
@@ -114,7 +98,7 @@
         zoom: 14
       });
       //spatialReference:  { wkid: 4326 },
-
+      //InitElevation();
 
       view.when(function() {
         //view.on("click", Elevation);
@@ -122,59 +106,8 @@
 
       });
 
-      view.whenLayerView(waterareaLyr).then(function(layerView){
-        layerView.watch("updating", function(val){
-          if(!val){  // wait for the layer view to finish updating
-            layerView.queryFeatures().then(function(results){
-              var outSpatialReference = new SpatialReference({
-                wkid: 4326
-              });
-
-              projection.load().then(function() {
-                //var tgeo = projection.project(graphic.geometry, outSpatialReference);
-                let t_obj={};
-                let arr_rings=[];
-                console.log(results.features);
-
-                 results.features.forEach(function(graphic) {
-                   arr_rings=arr_rings.concat(graphic.geometry.rings);
-                 });
-                 //console.log(arr_rings);
-
-                 let tstr=GetUpdatedViewExtentString();
-                 let t_poly={
-                   type:"polygon",
-                   rings:arr_rings,
-                   spatialReference:results.features[0].geometry.spatialReference
-                 };
-                 let t_poly_g=new Graphic({
-                   geometry:t_poly
-                 });
-
-                 t_poly_g.geometry = projection.project(t_poly_g.geometry, outSpatialReference);
-                 //console.log(t_poly_g);
-                 t_obj.type=t_poly_g.geometry.type;
-                 t_obj.rings=t_poly_g.geometry.rings;
-                 t_obj.spatialReference=t_poly_g.geometry.spatialReference;
-                 let jsonContent=JSON.stringify(t_obj);
-                 //console.log(jsonContent);
-
-                 let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd8.txt";
-                 if(enabledownload){
-                   download(filename,jsonContent);
-                 }
-                });
-
-            });
-          }
-        });
-      });
 
       view.whenLayerView(linearfeatureLyr).then(function(layerView){
-        if(enabledownload){
-          InitElevation();
-        }
-
         layerView.watch("updating", function(val){
           if(!val){  // wait for the layer view to finish updating
 
@@ -192,7 +125,6 @@
                 var t_obj={};
                 let arr_paths=[];
                 console.log(results.features);
-
                  results.features.forEach(function(graphic) {
                    //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
                    t_obj.type=graphic.geometry.type;
@@ -202,20 +134,10 @@
                    arr_paths=arr_paths.concat(t_obj.paths);
                    jsonContent+=JSON.stringify(t_obj)+",\r\n";
                  });
-
-                 let multipoints_linear=[];
-                 for (let i=0;i<arr_paths.length;i++){
-                   multipoints_linear=multipoints_linear.concat(arr_paths[i]);
-                 }
-                 //console.log(multipoints_linear);
-                 var tmulpt=new Multipoint({
-                    points: multipoints_linear,
-                    spatialReference:results.features[0].geometry.spatialReference
-                  });
-                 DrawMultipoints(tmulpt,[0,255,0],3);
-
+                 jsonContent=jsonContent.substring(0,jsonContent.length-3)+"]\r\n";
                  let tstr=GetUpdatedViewExtentString();
-
+                 let filename=tstr+"_"+Date.now().toString()+"_nhd6_ori.txt";
+                 download(filename,jsonContent);
                  //console.log(arr_paths);
                  let t_poly={
                    type:"polyline",
@@ -232,13 +154,19 @@
                  t_obj.spatialReference=t_poly_g.geometry.spatialReference;
                  jsonContent=JSON.stringify(t_obj);
 
-                 let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd6.txt";
-                 if(enabledownload){
-                   download(filename,jsonContent);
-                 }
-
+                 filename=tstr+"_"+Date.now().toString()+"_nhd6.txt";
+                 download(filename,jsonContent);
                 });
 
+
+                //jsonContent=jsonContent.substring(0,jsonContent.length-3)+"]\r\n";
+                //console.log(jsonContent);
+                //let str_coordinate=GetUpdatedViewExtentString();
+                //console.log(str_coordinate);
+
+                //GetUpdatedViewExtentString();
+
+                //
             });
           }
         });
@@ -300,8 +228,8 @@
         //console.log(pt2.geometry);
 
         var arr=[[pt1.geometry.longitude,pt1.geometry.latitude],[pt2.geometry.longitude,pt2.geometry.latitude]];
-        //console.log(arr);
-        return arr;//.toString();//"["+arr[0].toString()+"],["+arr[0].toString()+"]";
+        console.log(arr);
+        return arr.toString();//"["+arr[0].toString()+"],["+arr[0].toString()+"]";
       }
 
       function getRandomInt(max) {
@@ -360,14 +288,14 @@
         document.body.removeChild(element);
       }
 
-      function GetSampleMultipoints_4326(pt_lt,pt_rb,pt_w,pt_h){
+      function GetSampleMultipoints_4326(pt_w,pt_h){
         //view.extent.xmin,view.extent.ymax,view.extent.xmax,view.extent.ymax
-        var cell_w=(pt_rb[0]-pt_lt[0])/pt_w;
-        var cell_h=(pt_lt[1]-pt_rb[1])/pt_h;
+        var cell_w=(righbottom[0]-leftop[0])/pt_w;
+        var cell_h=(leftop[1]-righbottom[1])/pt_h;
         var res_array=[];
         for (var i=0;i<pt_w;i++)  {
           for (var j=0;j<pt_h;j++){
-            res_array.push([pt_lt[0]+cell_w*i, pt_rb[1]+cell_h*j]);
+            res_array.push([leftop[0]+cell_w*i, righbottom[1]+cell_h*j]);
           }
         }
         return res_array;
@@ -376,12 +304,7 @@
       function InitElevation(){
         var pt_w=200;
         var pt_h=200;
-
-        // pt1: view.lefttop, pt2: view.rightbuttom
-        // [[pt1.geometry.longitude,pt1.geometry.latitude],[pt2.geometry.longitude,pt2.geometry.latitude]];
-        let t_pts=GetUpdatedViewExtentString();
-        let t_path=[[t_pts[0][0],t_pts[0][1]], [t_pts[1][0],t_pts[0][1]] , [t_pts[1][0],t_pts[1][1]] , [t_pts[0][0],t_pts[1][1]],[t_pts[0][0],t_pts[0][1]]];
-        //var t_path=[[leftop[0],leftop[1]],[righbottom[0],leftop[1]],[righbottom[0],righbottom[1]],[leftop[0],righbottom[1]],[leftop[0],leftop[1]]];
+        var t_path=[[leftop[0],leftop[1]],[righbottom[0],leftop[1]],[righbottom[0],righbottom[1]],[leftop[0],righbottom[1]],[leftop[0],leftop[1]]];
         var t_poly={
           type:'polygon',
            rings: t_path,//paths[i].reverse(),
@@ -400,14 +323,13 @@
         graphicsSegmentLayer.addMany([polylineGraphic]);
         graphicsSegmentLayer.visible=true;
 
-        var elepoints=GetSampleMultipoints_4326(t_pts[0],t_pts[1],pt_w,pt_h);
+        var elepoints=GetSampleMultipoints_4326(pt_w,pt_h);
 
         var tmulpt=new Multipoint({
            points: elepoints,
            spatialReference: { wkid: 4326  }
          });
          //console.log(elepoints);
-         DrawMultipoints(tmulpt,[255,0,0],1);
 
          var queryBeforeLandslide = elevLyr.queryElevation(tmulpt);
          //console.log(tmulpt);
@@ -433,27 +355,10 @@
 
       }
 
-      function DrawMultipoints(m_pts,t_color=[255,255,255],t_size=1){
-        console.log(m_pts);
-        let arr_visual=[];
-        let t_graphic =  new Graphic({
-          geometry: m_pts,
-          symbol:  {
-               type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
-               style:"circle",
-               color: t_color,//[t_mag, 0,0],
-               size:t_size
-             }
-        });
-        arr_visual.push(t_graphic);
-        visualization_Multipoints.addMany(arr_visual);
-      }
-
-
       function Elevation(event){
         var position = event.mapPoint;
-        var pt_w=samplewidth;
-        var pt_h=sampleheight;
+        var pt_w=200;
+        var pt_h=200;
 
         var elepoints=GetSampleMultipoints(view.extent,pt_w,pt_h);
 
@@ -462,7 +367,6 @@
            spatialReference:view.spatialReference
            //spatialReference: { wkid: 4326  }
          });
-
 
         var queryBeforeLandslide = elevLyr.queryElevation(tmulpt);
         //console.log(tmulpt);

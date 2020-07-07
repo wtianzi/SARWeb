@@ -63,11 +63,7 @@
         ElevationLayer,promiseUtils,Multipoint,
         SpatialReference,projection) {
       var leftop=[-80.576448,37.219548];
-      var righbottom=[-80.528222,37.1912];
-
-      //leftop=[-81.576448,37.219548];
-      //righbottom=[-81.528222,37.1912];
-
+      var righbottom=[-80.528222,37.1912];//[-80.528222,37.1912];
       var gcx=0.5*(leftop[0]+righbottom[0]);
       var gcy=0.5*(leftop[1]+righbottom[1]);
       var samplewidth=200;
@@ -97,7 +93,7 @@
 
         //url:"https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/0"
       });
-      map.add(linearfeatureLyr);
+      //map.add(linearfeatureLyr);
 
       var roadLyr = new FeatureLayer({
         url:"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/30"
@@ -124,11 +120,8 @@
 
 
       view.when(function() {
-        //display and download elevation data
         //view.on("click", Elevation);
-
-        //show and download linearfeature
-        //view.on("click", LinearFeature);
+        view.on("click", LinearFeature);
 
       });
 
@@ -169,7 +162,7 @@
                  let jsonContent=JSON.stringify(t_obj);
                  //console.log(jsonContent);
 
-                 let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd8_lake.txt";
+                 let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd8.txt";
                  if(enabledownload){
                    download(filename,jsonContent);
                  }
@@ -179,6 +172,7 @@
           }
         });
       });
+
       view.whenLayerView(linearfeatureLyr).then(function(layerView){
         if(enabledownload){
           InitElevation();
@@ -241,77 +235,7 @@
                  t_obj.spatialReference=t_poly_g.geometry.spatialReference;
                  jsonContent=JSON.stringify(t_obj);
 
-                 let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd6_river.txt";
-                 if(enabledownload){
-                   download(filename,jsonContent);
-                 }
-
-                });
-
-            });
-          }
-        });
-      });
-      view.whenLayerView(roadLyr).then(function(layerView){
-
-        layerView.watch("updating", function(val){
-          if(!val){  // wait for the layer view to finish updating
-
-            layerView.queryFeatures().then(function(results){
-              //console.log(results.features);
-
-              var outSpatialReference = new SpatialReference({
-                wkid: 4326
-              });
-
-
-              projection.load().then(function() {
-                //var tgeo = projection.project(graphic.geometry, outSpatialReference);
-                let jsonContent = "[";
-                var t_obj={};
-                let arr_paths=[];
-                console.log(results.features);
-
-                 results.features.forEach(function(graphic) {
-                   //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
-                   t_obj.type=graphic.geometry.type;
-                   t_obj.paths=graphic.geometry.paths;
-                   t_obj.spatialReference=graphic.geometry.spatialReference;
-                   //console.log(t_obj.paths);
-                   arr_paths=arr_paths.concat(t_obj.paths);
-                   jsonContent+=JSON.stringify(t_obj)+",\r\n";
-                 });
-
-                 let multipoints_linear=[];
-                 for (let i=0;i<arr_paths.length;i++){
-                   multipoints_linear=multipoints_linear.concat(arr_paths[i]);
-                 }
-                 //console.log(multipoints_linear);
-                 var tmulpt=new Multipoint({
-                    points: multipoints_linear,
-                    spatialReference:results.features[0].geometry.spatialReference
-                  });
-                 DrawMultipoints(tmulpt,[0,255,255],3);
-
-                 let tstr=GetUpdatedViewExtentString();
-
-                 //console.log(arr_paths);
-                 let t_poly={
-                   type:"polyline",
-                   paths:arr_paths,
-                   spatialReference:results.features[0].geometry.spatialReference
-                 };
-                 let t_poly_g=new Graphic({
-                   geometry:t_poly
-                 });
-                 //console.log(t_poly_g);
-                 t_poly_g.geometry = projection.project(t_poly_g.geometry, outSpatialReference);
-                 t_obj.type=t_poly_g.geometry.type;
-                 t_obj.paths=t_poly_g.geometry.paths;
-                 t_obj.spatialReference=t_poly_g.geometry.spatialReference;
-                 jsonContent=JSON.stringify(t_obj);
-
-                 let filename=tstr.toString()+"_"+Date.now().toString()+"_trans30_road.txt";
+                 let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd6.txt";
                  if(enabledownload){
                    download(filename,jsonContent);
                  }
@@ -366,6 +290,7 @@
         });
         //console.log(pt1.geometry);
 
+
         var pt2_rightbuttom={
                       type:'point',
                       x:view.extent.xmax,
@@ -387,7 +312,6 @@
       }
 
       function AddPolygonToLayer(paths){
-
         graphicsSegmentLayer.removeAll();
         let arr_featureset=[];
         for (let i = 0; i<paths.length;i++){
@@ -504,17 +428,15 @@
                   let row = rowArray.join(",");
                   csvContent += row + "\r\n";
               });
-              let tstr=GetUpdatedViewExtentString();
-              let filename=tstr.toString()+"_"+Date.now().toString()+"_elevation.csv";
-             //let filename=Date.now().toString();
-             download(filename,csvContent);
+
+             let filename=Date.now().toString();
+             download(filename+".csv",csvContent);
 
            });
 
       }
 
       function DrawMultipoints(m_pts,t_color=[255,255,255],t_size=1){
-        return;
         console.log(m_pts);
         let arr_visual=[];
         let t_graphic =  new Graphic({

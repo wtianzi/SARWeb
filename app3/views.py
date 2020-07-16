@@ -83,7 +83,7 @@ class TaskGenerationView(TemplateView):
         if request.method == 'POST':
             t_datastorage=DataStorage()
             t_datastorage.taskid = request.POST['task_notes']
-            t_datastorage.subtaskid = request.POST['id_device_id']+request.POST['rand_gpsdevicename']
+            t_datastorage.subtaskid = request.POST['id_device_id']+"_"+request.POST['rand_gpsdevicename']
 
             all_gpsdata=request.POST.get('all_gpsdata')
             #print(all_gpsdata)

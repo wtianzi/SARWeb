@@ -727,9 +727,10 @@
         for (const key in gpspatharray){
           //Testing
           //console.log(gpspatharray[key]);
+          let pt_arr=gpspatharray[key];
           let in_point=new Point({
-                  latitude:gpspatharray[key][0][1],//lat,
-                  longitude:gpspatharray[key][0][0],//long,
+                  latitude:pt_arr[pt_arr.length-1][1],//lat,
+                  longitude:pt_arr[pt_arr.length-1][0],//long,
                   spatialReference:view.spatialReference
                 });
           let t_graphic1=  new Graphic({
@@ -2912,7 +2913,8 @@
                        'rand_gpsdevicename':Date.now().toString(),
                        'id_device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text,
                        'device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text,
-                       'all_gpsdata' : all_gpsdata[sel_gpsdevice.selectedIndex].toString()
+                       'all_gpsdata' : JSON.stringify(all_gpsdata[sel_gpsdevice.selectedIndex])
+                       //'all_gpsdata' : all_gpsdata[sel_gpsdevice.selectedIndex].toString()
                       };
                $.post(URL, data, function(response){
                  var res=JSON.parse(response);
@@ -2940,17 +2942,19 @@
                    //console.log(res.gpsdata);
                    t_obj=JSON.parse(res.gpsdata);
                    let gps_json;
+
                    if ("gps" in t_obj){
                      gps_json=t_obj.gps[0];
                    }
                    else{
                      gps_json=t_obj;
                    }
-
+                   gps_json.time=Date.now();
                     //console.log(t_obj);
                     gpspatharray[sel_gpsdevice.selectedIndex].push([gps_json.lat,gps_json.log]);
-                    all_gpsdata[sel_gpsdevice.selectedIndex].push([gps_json.stamp,gps_json.lat,gps_json.log]);
+                    all_gpsdata[sel_gpsdevice.selectedIndex].push([gps_json.stamp,gps_json.time,gps_json.lat,gps_json.log]);
 
+                    //all_gpsdata_timestamp[sel_gpsdevice.selectedIndex].push();
                   }
                  else{ alert(response); }
              });

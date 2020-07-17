@@ -28,6 +28,8 @@ def main():
         gpsdata='{"gps":[{"stamp":'+ str(i) +',"timestamp":'+str(int(time.time())) +',"lat":'+str(tlat)+',"log":'+str(tlog)+'}]}'
         # post: create new item
         # r = requests.patch('http://127.0.0.1:8000/gpsdatas/', auth=(username,password), data = {'deviceid':'max_test_100', 'taskid':'sar_put','gpsdata':gpsdata})
+
+        # use post before patch
         # patch: always update
         r = requests.patch('http://127.0.0.1:8000/gpsdatas/max_test_100/', auth=(username,password), data = {'deviceid':'max_test_100', 'taskid':'sar_put','gpsdata':gpsdata})
         print(r)

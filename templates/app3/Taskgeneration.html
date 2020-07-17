@@ -2906,14 +2906,18 @@
            function savewholegpsdatatodb(sel_gpsdevice){
 
                var URL = "{% url 'gpsdatastorage' %}";
-
+               let rand_gpsdevicename = Date.now().toString();
+               let id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
+               // let device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
+               let taskid = document.getElementById("tasknotes").value;
+               let str_all_gpsdata= JSON.stringify(all_gpsdata[sel_gpsdevice.selectedIndex]);
                var data = {
                        csrfmiddlewaretoken: '{{ csrf_token }}',
-                       'task_notes': document.getElementById("tasknotes").value,
-                       'rand_gpsdevicename':Date.now().toString(),
-                       'id_device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text,
-                       'device_id': sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text,
-                       'all_gpsdata' : JSON.stringify(all_gpsdata[sel_gpsdevice.selectedIndex])
+                       'task_notes': taskid,
+                       'rand_gpsdevicename':rand_gpsdevicename,
+                       'id_device_id': id_device_id,
+                       'device_id': id_device_id,
+                       'all_gpsdata' : str_all_gpsdata
                        //'all_gpsdata' : all_gpsdata[sel_gpsdevice.selectedIndex].toString()
                       };
                $.post(URL, data, function(response){
@@ -2923,8 +2927,24 @@
                     }
                    else{ alert(response); }
                });
+
+               //download gps data as csv file
+               let filename=taskid+"_"+id_device_id+"_"+rand_gpsdevicename+".txt";
+               download(filename, str_all_gpsdata);
            }
 
+           function download(filename, text) {
+             var element = document.createElement('a');
+             element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+             element.setAttribute('download', filename);
+
+             element.style.display = 'none';
+             document.body.appendChild(element);
+
+             element.click();
+
+             document.body.removeChild(element);
+           }
 
          function getGPSDataUpdate(gpsdevice){
            var sel_gpsdevice = document.getElementById(gpsdevice);

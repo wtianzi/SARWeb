@@ -535,14 +535,10 @@
         var diagram = voronoi(sites),
             links = diagram.links(),
             vpolygons = diagram.polygons();
-
-
         if(activeWidget){
           //console.log(activeWidget);
           vpolygons=ClipPolygongsByPoints(vpolygons,activeWidget.viewModel.measurement.geometry.rings[0].slice(0,activeWidget.viewModel.measurement.geometry.rings[0].length-1));
         }
-        //console.log(vpolygons);
-        download("voronoiori.txt",JSON.stringify(vpolygons));
         ClearAll();
         addGraphics(vpolygons);
       }
@@ -2286,6 +2282,7 @@
              return;
            }
 
+           let t_index=0;
            let t_data_con,t_hour;
 
            if (t_type == "byclue"){
@@ -2344,7 +2341,6 @@
           };
           let t_distance=0.0001;//define as a circle
           let t_len=0;
-          let t_index=0;
           m_colormap=document.getElementById("sel_colormap").selectedIndex;
            arr_heatpoints.map(function(item){
              t_len=t_rings.length-1;
@@ -2375,10 +2371,6 @@
                       symbol: fillSymbol
                     });
                      arr_featureset.push(polylineGraphic);//t_graphic
-
-                     ContourRingdownload(t_rings,t_index);
-                     t_index=t_index+1;
-
                    t_rings=[];
                  }
                }
@@ -2409,13 +2401,9 @@
                   symbol: fillSymbol
                 });
                  arr_featureset.push(polylineGraphic);//t_graphic
-
-                 ContourRingdownload(t_rings,t_index);
-                 t_index=t_index+1;
-
-                 t_rings=[];
-                 t_startprobability=item[0];
-                 t_mag=(t_startprobability-t_min)/t_range;
+               t_rings=[];
+               t_startprobability=item[0];
+               t_mag=(t_startprobability-t_min)/t_range;
              }
              t_rings.push(item.slice(1));
            });
@@ -2446,11 +2434,7 @@
                 symbol: fillSymbol
               });
                arr_featureset.push(polylineGraphic);//t_graphic
-
-               ContourRingdownload(t_rings,t_index);
-               t_index=t_index+1;
-
-               t_rings=[];
+             t_rings=[];
            }
 
 
@@ -2458,16 +2442,6 @@
            visualization_Contourmap_Layer.addMany(arr_featureset);
            visualization_Contourmap_Layer.visible=true;
 
-         }
-
-         function ContourRingdownload(in_rings,index=0){
-           // 20200723 tian start test
-           // target: use python to generate contour map images
-           // download the rings to a document
-           console.log(in_rings);
-           str_ring=JSON.stringify(in_rings);
-           let filename="Ring"+"_"+index.toString()+".txt";
-           download(filename, str_ring);
          }
 
          function AddTrialDataToTriallayer(){

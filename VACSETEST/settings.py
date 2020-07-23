@@ -90,6 +90,10 @@ WSGI_APPLICATION = 'VACSETEST.wsgi.application'
 
 DATABASES = {
     'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    },
+    'sqlite3': {
         #'ENGINE':'django.db.backends.mysql',
         #'NAME':'saruser',
         #'USER': 'VACSE',
@@ -98,6 +102,12 @@ DATABASES = {
         #'PORT':'3306',
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    },
+    'drones': {
+        'NAME': 'drones_data',
+        'ENGINE': 'django.db.backends.mysql',
+        'USER': 'sar_user',
+        'PASSWORD': 'saradmin'
     }
 }
 

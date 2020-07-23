@@ -17,12 +17,31 @@ def GetRandomPath(start_log,start_lat,range=0.1):
     tlat=start_lat+0.1*(t2-0.4)
     return tlog,tlat
 
+def postforcreate():
+    start_log=40
+    start_lat=-80
+    username='tianzi'
+    password='tianzi'
+    for i in range(0,1):
+
+        tlog,tlat=GetRandomPath(start_log,start_lat,0.1)
+        gpsdata='{"gps":[{"stamp":'+ str(i) +',"timestamp":'+str(int(time.time())) +',"lat":'+str(tlat)+',"log":'+str(tlog)+'}]}'
+        # post: create new item
+        r = requests.post('http://127.0.0.1:8000/gpsdatas/', auth=(username,password), data = {'deviceid':'max_test_100', 'taskid':'sar_put','gpsdata':gpsdata})
+
+        # use post before patch
+        # patch: always update
+        #r = requests.patch('http://127.0.0.1:8000/gpsdatas/max_test_100/', auth=(username,password), data = {'deviceid':'max_test_100', 'taskid':'sar_put','gpsdata':gpsdata})
+        print(r)
+        input("Press Enter to continue...")
+    return
+
 def main():
     start_log=40
     start_lat=-80
     username='tianzi'
     password='tianzi'
-    for i in range(0,200):
+    for i in range(0,1):
 
         tlog,tlat=GetRandomPath(start_log,start_lat,0.1)
         gpsdata='{"gps":[{"stamp":'+ str(i) +',"timestamp":'+str(int(time.time())) +',"lat":'+str(tlat)+',"log":'+str(tlog)+'}]}'
@@ -36,4 +55,6 @@ def main():
         input("Press Enter to continue...")
 #r = requests.post('http://127.0.0.1:8000/gpsdatas/', data = {'deviceid':'test_2nd', 'taskid':'sar001','gpsdata':'{"gps":["stamp":004,"lat":-80,"log":37]}'})
 if __name__ == '__main__':
-    main()
+    #main()
+
+    postforcreate()

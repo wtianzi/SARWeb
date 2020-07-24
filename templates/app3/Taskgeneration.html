@@ -240,8 +240,6 @@
 
       let validSymbol;
 
-
-
       var m_filterprob=0.0000001;
       var m_lpdata_con=[];
       var m_lpdata_trajectory=[];
@@ -263,6 +261,8 @@
       let m_taskstarttime=null;
       let m_tasktrials=0;//how many time the operator tried to assign teams
       let m_taskpolygon={};
+
+      let epsg4326_voronoiarr=[];
 
       const graphicInitLayer= new GraphicsLayer();
       const graphicsLayer = new GraphicsLayer({
@@ -1151,7 +1151,7 @@
         view.graphics.removeAll();
         gpsgraphicsLayer.removeAll();
         m_tasktrials=0;
-
+        epsg4326_voronoiarr=[];
         //wholetask=activeWidget.viewModel.measurement;
         allpolygons=[];
         allpolygons_text=[];
@@ -2361,10 +2361,19 @@
            }
            // send contourring_arr to back for process
 
-           voronoiarr=[];
-           for(i=0;i<allpolygons.length;i++){
-             voronoiarr.push(allpolygons[i].geometry.rings[0]);
+           let voronoiarr=[];
+           let markspatialreference="epsg3857";
+           if(epsg4326_voronoiarr.length>1){
+             markspatialreference="epsg4326";
+             voronoiarr=epsg4326_voronoiarr;
            }
+           else{
+             markspatialreference="epsg3857";
+             for(i=0;i<allpolygons.length;i++){
+               voronoiarr.push(allpolygons[i].geometry.rings[0]);
+             }
+           }
+
            //console.log(voronoiarr);
            //console.log(contourring_arr);
 
@@ -2372,12 +2381,19 @@
            let data = {
              csrfmiddlewaretoken: '{{ csrf_token }}',
              'contourarr': JSON.stringify(contourring_arr),
-             'voronoiarr': JSON.stringify(voronoiarr)
+             'voronoiarr': JSON.stringify(voronoiarr),
+             'spatialReference': markspatialreference
            };
            $.post(URL, data, function(response){
              t_obj=JSON.parse(response);
              if(t_obj.flag == 'success'){
+               console.log(t_obj);
                let colorarr=t_obj.segmentval;
+               let updatevoronoiarr=t_obj.updatevoronoi;
+               if (updatevoronoiarr.length>0){
+                 epsg4326_voronoiarr=updatevoronoiarr;
+               }
+
                for(let j=0;j<allpolygons.length;j++){
                  let polygonGraphic = new Graphic({
                    geometry: allpolygons[j].geometry,

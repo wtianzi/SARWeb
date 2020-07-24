@@ -139,14 +139,14 @@ class TaskGenerationView(TemplateView):
             print("getSegmentVal")
             contourarr = request.POST.get('contourarr')
             voronoiarr = request.POST.get('voronoiarr')
-
+            spatialReference = request.POST.get('spatialReference')
             #image processing segment opencv pyhon
             contourjson=json.loads(contourarr)
             voronoijson=json.loads(voronoiarr)
             #print(tjson)
-            res=SegmentWeight(contourjson,voronoijson)
+            res,arr_vor=SegmentWeight(contourjson,voronoijson,spatialReference)
 
-            context={'segmentval':res,'flag':'success'}
+            context={'segmentval':res,'updatevoronoi':arr_vor,'flag':'success'}
             #print(context)
 
             return HttpResponse(json.dumps(context)) # if everything is OK

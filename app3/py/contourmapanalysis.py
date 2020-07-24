@@ -7,6 +7,9 @@ import json
 from pyproj import Proj, transform
 from pyproj import Transformer
 
+import datetime
+from datetime import datetime
+
 def loadArrayFromFile(inrange=10):
     #arr=[]
     all_arr=[]
@@ -91,7 +94,7 @@ def loadContour_1(inrange=10):
             all_arr.append(arr)
     all_arr=np.array(all_arr)
     #print(np.shape(all_arr))
-    print(maxxy,minxy)
+    #print(maxxy,minxy)
     maxInColumns = np.amax(maxxy,axis=0)
     minInColumns = np.amin(minxy,axis=0)
     #print(maxInColumns,minInColumns)
@@ -260,35 +263,62 @@ def Imageslice(imgcontour,imgvor,img_h=760,img_w=1024):
     #cv2.waitKey()
     return res
 
-def SegmentWeight(contourarr,vorarr):
+def SegmentWeight(contourarr,vorarr,vorarr_spref='epsg3857'):
     #contour_arr = loadContour(10)
     #vor_arr=LoadVoronoi()
     contour_arr=[]
     vor_arr=[]
+    t=[]
+
     for item in contourarr:
         contour_arr.append(np.array(item))
-    for item in vorarr:
-        a=project_array(np.array(item))
-        vor_arr.append(a)
-    maxInColumns,minInColumns,discol,disrow = CalculationMaxMin(contour_arr,vor_arr)
 
+    t.append(datetime.now())
+    # cost 6 seconds
+    for item in vorarr:
+        if vorarr_spref=='epsg3857':
+            vor_arr.append(project_array(np.array(item)))
+        else:
+            vor_arr.append(np.array(item))
+
+    t.append(datetime.now())
+
+    maxInColumns,minInColumns,discol,disrow = CalculationMaxMin(contour_arr,vor_arr)
     imgcontour=UniformtoImage(contour_arr,maxInColumns,minInColumns,discol,disrow,img_h=760,img_w=1024)
     imgvor=UniformtoImage(vor_arr,maxInColumns,minInColumns,discol,disrow,img_h=760,img_w=1024)
     #ContorImage(imgcontour,imgvor)
     ContorImageFill_multi(imgcontour,imgvor)
+    t.append(datetime.now())
+    # cost 0.3s
     res = Imageslice(imgcontour,imgvor)
-    print(res)
-    return res
+    t.append(datetime.now())
+    for i in range(len(t)-1):
+        print((t[i+1]-t[i]).total_seconds())
+
+
+    if vorarr_spref!='epsg3857':
+        vor_arr=[]
+    else:
+        t_arr=[]
+        for item in vor_arr:
+            t_arr.append(item.tolist())
+        vor_arr=t_arr
+    print(res,vor_arr)
+    return res, vor_arr
 
 
 if __name__ == '__main__':
     #imgarr=loadArrayFromFile(10)
+    t1=datetime.now()
     contour_arr = loadContour(10)
     vor_arr=LoadVoronoi()
     maxInColumns,minInColumns,discol,disrow = CalculationMaxMin(contour_arr,vor_arr)
-
+    t2=datetime.now()
     imgcontour=UniformtoImage(contour_arr,maxInColumns,minInColumns,discol,disrow,img_h=760,img_w=1024)
     imgvor=UniformtoImage(vor_arr,maxInColumns,minInColumns,discol,disrow,img_h=760,img_w=1024)
     #ContorImage(imgcontour,imgvor)
+    t3=datetime.now()
     ContorImageFill_multi(imgcontour,imgvor)
+    t4=datetime.now()
     res = Imageslice(imgcontour,imgvor)
+    t5=datetime.now()

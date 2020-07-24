@@ -14,6 +14,7 @@ from .serializers import GPSDataSerializer,ClueMediaSerializer
 from rest_framework import permissions
 
 from .py.watershed import AreaSegment
+from .py.contourmapanalysis import SegmentWeight
 # Create your views here.
 
 
@@ -132,6 +133,26 @@ class TaskGenerationView(TemplateView):
             return HttpResponse(json.dumps(context)) # if everything is OK
         # nothing went well
         return HttpResponse('FAIL!!!!!')
+
+    def getSegmentVal(request):
+        if request.method == 'POST':
+            print("getSegmentVal")
+            contourarr = request.POST.get('contourarr')
+            voronoiarr = request.POST.get('voronoiarr')
+
+            #image processing segment opencv pyhon
+            contourjson=json.loads(contourarr)
+            voronoijson=json.loads(voronoiarr)
+            #print(tjson)
+            res=SegmentWeight(contourjson,voronoijson)
+
+            context={'segmentval':res,'flag':'success'}
+            #print(context)
+
+            return HttpResponse(json.dumps(context)) # if everything is OK
+        # nothing went well
+        return HttpResponse('Getwatershed failed!')
+
 
 
 class TaskIndexView(TemplateView):

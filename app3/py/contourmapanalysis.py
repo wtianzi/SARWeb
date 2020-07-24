@@ -132,13 +132,13 @@ def CalculationMaxMin(arr1,arr2):
         minxy.append(minInColumns)
 
     #print(np.shape(all_arr))
-    print(maxxy,minxy)
+    #print(maxxy,minxy)
     maxInColumns = np.amax(maxxy,axis=0)
     minInColumns = np.amin(minxy,axis=0)
     #print(maxInColumns,minInColumns)
     discol = maxInColumns[0]-minInColumns[0]
     disrow = maxInColumns[1]-minInColumns[1]
-    print(maxInColumns,minInColumns,discol,disrow)
+    #print(maxInColumns,minInColumns,discol,disrow)
     return maxInColumns,minInColumns,discol,disrow
 
 def UniformtoImage(all_arr,maxInColumns,minInColumns,discol,disrow,img_h=760,img_w=1024):
@@ -204,8 +204,8 @@ def ContorImageFill_multi(contours,voronoiarr,img_h=760,img_w=1024):
         background=cv2.fillPoly(background, pts =[item], color=(0,colorweigth,0))
         colorindex+=1
     background=cv2.drawContours(background, voronoiarr, -1, (0,0,255), 1)
-    cv2.imshow("image", background)
-    cv2.waitKey()
+    #cv2.imshow("image", background)
+    #cv2.waitKey()
 
     return background
 def ContorImage(contours1,contours2,img_h=760,img_w=1024):
@@ -213,8 +213,8 @@ def ContorImage(contours1,contours2,img_h=760,img_w=1024):
     colorindex=1
     background=cv2.drawContours(background, contours1, -1, (0,255,0), 1)
     background=cv2.drawContours(background, contours2, -1, (0,0,255), 1)
-    cv2.imshow("image", background)
-    cv2.waitKey()
+    #cv2.imshow("image", background)
+    #cv2.waitKey()
 
     return
 
@@ -250,13 +250,15 @@ def Imageslice(imgcontour,imgvor,img_h=760,img_w=1024):
     index=0
     #print(resval)
     background=np.zeros(shape=[img_h,img_w,1],dtype=np.uint8)
+    res=[]
     for item in imgvor:
         color=int(resval[index][1]/resval[index][0])
         index=index+1
         background = cv2.fillPoly(background, pts =[item], color=(color))
-    cv2.imshow("image", background)
-    cv2.waitKey()
-    return resval
+        res.append(color)
+    #cv2.imshow("image", background)
+    #cv2.waitKey()
+    return res
 
 def SegmentWeight(contourarr,vorarr):
     #contour_arr = loadContour(10)
@@ -266,7 +268,8 @@ def SegmentWeight(contourarr,vorarr):
     for item in contourarr:
         contour_arr.append(np.array(item))
     for item in vorarr:
-        vor_arr.append(np.array(item))
+        a=project_array(np.array(item))
+        vor_arr.append(a)
     maxInColumns,minInColumns,discol,disrow = CalculationMaxMin(contour_arr,vor_arr)
 
     imgcontour=UniformtoImage(contour_arr,maxInColumns,minInColumns,discol,disrow,img_h=760,img_w=1024)

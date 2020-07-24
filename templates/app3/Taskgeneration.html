@@ -271,8 +271,13 @@
       const gpsgraphicsLayer = new GraphicsLayer();
 
       const visualization_Contourmap_Layer = new GraphicsLayer({
-        opacity:0.5
+        opacity:0.8
       });
+
+      const visualization_Segmentheat_Layer = new GraphicsLayer({
+        opacity:0.8
+      });
+
 
       const visualization_Trajectories_Layer = new GraphicsLayer({
         opacity:0.5
@@ -340,7 +345,8 @@
           visualization_Trajectories_Layer,//
           graphicInteractionLayer,//
           temperalgraphicLayer,// temperal layer include target
-          visualization_Cone_Layer//
+          visualization_Cone_Layer,//
+          visualization_Segmentheat_Layer
         ]
       });
 /*
@@ -542,7 +548,7 @@
           vpolygons=ClipPolygongsByPoints(vpolygons,activeWidget.viewModel.measurement.geometry.rings[0].slice(0,activeWidget.viewModel.measurement.geometry.rings[0].length-1));
         }
         //console.log(vpolygons);
-        download("voronoiori.txt",JSON.stringify(vpolygons));
+        //download("voronoiori.txt",JSON.stringify(vpolygons));
         ClearAll();
         addGraphics(vpolygons);
       }
@@ -1672,6 +1678,7 @@
          visualization_Trajectories_Layer.removeAll();
          visualization_Cone_Layer.removeAll();
          temperalgraphicLayer.removeAll();
+         visualization_Segmentheat_Layer.removeAll();
 
          setActiveWidget(null);
          sketchViewModel.complete();
@@ -2279,6 +2286,123 @@
            visualization_Cone_Layer.visible=true;
          }
 
+         function AddLPDataToSegmentheatlayer(t_type = "byhour"){
+           visualization_Segmentheat_Layer.removeAll();
+           contourring_arr=[]
+           arr_featureset=[];
+           if(m_lpdata_con == null){
+             return;
+           }
+
+           let t_data_con,t_hour;
+
+           if (t_type == "byclue"){
+             t_hour=document.getElementById("myClues").value;
+           }
+           else if(t_type == "byhour"){
+             t_hour=document.getElementById("myRange").value;
+           }
+
+           let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
+           arr_heatpoints=[];
+
+           let t_break=m_lpdata_con.length;
+           let i=0;
+           while(i<t_break){
+             if(m_lpdata_con[i]['type']==t_type){
+               if(m_lpdata_con[i]['hour']==t_hour && m_lpdata_con[i]['rank']==t_rank){
+                 arr_heatpoints=m_lpdata_con[i]['data'];
+                 break;
+               }
+             }
+             i++;
+           }
+
+           m_colormap=document.getElementById("sel_colormap").selectedIndex;
+           //loop to find rings
+           let t_rings=[];//
+           let all_paths=[];
+           let t_startprobability=arr_heatpoints[0][0];
+
+           let col3 = arr_heatpoints.map(function(value,index) { return value[0]; });
+           let t_min = Math.min(...col3);
+           let t_max=Math.max(...col3);
+           let t_range=t_max-t_min;
+
+           let t_mag=(t_startprobability-t_min)/t_range;
+
+           let t_distance=0.0001;//define as a circle
+           let t_len=0;
+           m_colormap=document.getElementById("sel_colormap").selectedIndex;
+           arr_heatpoints.map(function(item){
+             t_len=t_rings.length-1;
+             if(item[0]==t_startprobability){
+               if(t_len>3){
+                 if(t_distance<((item[1]-t_rings[t_len][0])*(item[1]-t_rings[t_len][0])+ (item[2]-t_rings[t_len][1])*(item[2]-t_rings[t_len][1]))){
+                   t_rings.push(t_rings[0]);
+                   contourring_arr.push(t_rings);
+                   t_rings=[];
+                 }
+               }
+             }
+             else{
+               t_rings.push(t_rings[0]);
+               contourring_arr.push(t_rings);
+               t_rings=[];
+               t_startprobability=item[0];
+               t_mag=(t_startprobability-t_min)/t_range;
+             }
+             t_rings.push(item.slice(1));
+           });
+           if(t_rings.length>0){
+             t_rings.push(t_rings[0]);
+             contourring_arr.push(t_rings);
+             t_rings=[];
+           }
+           // send contourring_arr to back for process
+
+           voronoiarr=[];
+           for(i=0;i<allpolygons.length;i++){
+             voronoiarr.push(allpolygons[i].geometry.rings[0]);
+           }
+           //console.log(voronoiarr);
+           //console.log(contourring_arr);
+
+           let URL = "{% url 'getsegmentVal' %}";
+           let data = {
+             csrfmiddlewaretoken: '{{ csrf_token }}',
+             'contourarr': JSON.stringify(contourring_arr),
+             'voronoiarr': JSON.stringify(voronoiarr)
+           };
+           $.post(URL, data, function(response){
+             t_obj=JSON.parse(response);
+             if(t_obj.flag == 'success'){
+               let colorarr=t_obj.segmentval;
+               for(let j=0;j<allpolygons.length;j++){
+                 let polygonGraphic = new Graphic({
+                   geometry: allpolygons[j].geometry,
+                   symbol: {
+                           type: "simple-fill",
+                           color: [0, 0, 255,colorarr[j]/150],//[0, 0, colorarr[j]*0.5+125,colorarr[j]/255],
+                           outline: {
+                             style:"none"
+                           }
+                         }
+                 });
+                 //console.log(colorarr[j]);
+                 arr_featureset.push(polygonGraphic);//t_graphic
+
+               }
+               //console.log(arr_featureset);
+               visualization_Segmentheat_Layer.addMany(arr_featureset);
+               visualization_Segmentheat_Layer.visible=true;
+              }
+             else{ alert(response); }
+           });
+
+
+         }
+
          function AddLPDataToContourlayer(t_type = "byhour"){
            visualization_Contourmap_Layer.removeAll();
            arr_featureset=[];
@@ -2345,6 +2469,7 @@
           let t_distance=0.0001;//define as a circle
           let t_len=0;
           let t_index=0;
+          let t_oppacity=3;//0.8
           m_colormap=document.getElementById("sel_colormap").selectedIndex;
            arr_heatpoints.map(function(item){
              t_len=t_rings.length-1;
@@ -2367,7 +2492,7 @@
                     else{
                       t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//blue:0.6
                     }
-                    t_rgb.push(0.8*t_mag);//oppacity
+                    t_rgb.push(t_oppacity*t_mag);//oppacity
 
                     fillSymbol.color=t_rgb;
                     var polylineGraphic = new Graphic({
@@ -2376,7 +2501,7 @@
                     });
                      arr_featureset.push(polylineGraphic);//t_graphic
 
-                     ContourRingdownload(t_rings,t_index);
+                     //ContourRingdownload(t_rings,t_index);
                      t_index=t_index+1;
 
                    t_rings=[];
@@ -2401,7 +2526,7 @@
                 else{
                   t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//blue:0.6
                 }
-                t_rgb.push(0.8*t_mag);//oppacity
+                t_rgb.push(t_oppacity*t_mag);//oppacity
 
                 fillSymbol.color=t_rgb;
                 var polylineGraphic = new Graphic({
@@ -2410,7 +2535,7 @@
                 });
                  arr_featureset.push(polylineGraphic);//t_graphic
 
-                 ContourRingdownload(t_rings,t_index);
+                 //ContourRingdownload(t_rings,t_index);
                  t_index=t_index+1;
 
                  t_rings=[];
@@ -2438,7 +2563,7 @@
               else{
                 t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//blue:0.6
               }
-              t_rgb.push(0.8*t_mag);//oppacity
+              t_rgb.push(t_oppacity*t_mag);//oppacity
 
               fillSymbol.color=t_rgb;
               var polylineGraphic = new Graphic({
@@ -2447,13 +2572,11 @@
               });
                arr_featureset.push(polylineGraphic);//t_graphic
 
-               ContourRingdownload(t_rings,t_index);
+               //ContourRingdownload(t_rings,t_index);
                t_index=t_index+1;
 
                t_rings=[];
            }
-
-
            //console.log(arr_featureset);
            visualization_Contourmap_Layer.addMany(arr_featureset);
            visualization_Contourmap_Layer.visible=true;
@@ -2842,6 +2965,7 @@
              visualization_Trajectories_Layer.visible=false;
              visualization_Cone_Layer.visible=false;
              temperalgraphicLayer.visible=false;
+             visualization_Segmentheat_Layer.visible=false;
            }
 
            function UpdateVisualization(){
@@ -2861,6 +2985,11 @@
                //AddCluetoInteractionImagelayer();
 
                AddLPDataToTrajectorylayer(m_visualizationtype);
+             }
+             else if(document.getElementById("sel_lpmodel").value=="segmentheat"){
+               //AddCluetoInteractionImagelayer();
+
+               AddLPDataToSegmentheatlayer(m_visualizationtype);
              }
            }
 
@@ -2955,8 +3084,8 @@
                });
 
                //download gps data as csv file
-               let filename=taskid+"_"+id_device_id+"_"+rand_gpsdevicename+".txt";
-               download(filename, str_all_gpsdata);
+               //let filename=taskid+"_"+id_device_id+"_"+rand_gpsdevicename+".txt";
+               //download(filename, str_all_gpsdata);
            }
 
            function download(filename, text) {
@@ -3130,6 +3259,7 @@
           <option value="contour">Contour map</option>
           <option value="trajectories">Trajectories</option>
           <option value="cone">Cone</option>
+          <option value="segmentheat">Segment heat</option>
         </select>
         <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
         <input type="checkbox" id="displaytype" name="displaytype" value="byhour">

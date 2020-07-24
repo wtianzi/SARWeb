@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'^tasksave$',TaskGenerationView.tasksave,name='tasksave'),
     url(r'^gpsupdate$',TaskGenerationView.gpsupdate,name='gpsupdate'),
     url(r'^getwatershed$',TaskGenerationView.getwatershed,name='getwatershed'),
+    url(r'^getsegmentVal$',TaskGenerationView.getSegmentVal,name='getsegmentVal'),
     url(r'^gpsdatastorage$',TaskGenerationView.gpsdatastorage,name='gpsdatastorage'),
     url(r'^demo$',TemplateView.as_view(template_name="app3/demo.html"), name="demo"),
     url(r'^openstreatmap$',TemplateView.as_view(template_name="app3/openstreatmap.html"), name="openstreatmap"),

@@ -153,7 +153,7 @@
       var width=1600*1.5;
       var height=900*1.5;
       let m_d=new Date();
-      var scale=15;//15
+      var scale=16;//15
       let m_experimentres={
         "scenario":null,
         "lostpersontype":null,
@@ -275,7 +275,7 @@
       });
 
       const visualization_Segmentheat_Layer = new GraphicsLayer({
-        opacity:0.8
+        opacity:0.5
       });
 
 
@@ -338,6 +338,7 @@
         //ground: "world-elevation",
         layers: [
           visualization_Contourmap_Layer,//
+          visualization_Segmentheat_Layer,
           graphicsLayer,//
           gpsgraphicsLayer,//
           graphicInitLayer,//
@@ -345,8 +346,7 @@
           visualization_Trajectories_Layer,//
           graphicInteractionLayer,//
           temperalgraphicLayer,// temperal layer include target
-          visualization_Cone_Layer,//
-          visualization_Segmentheat_Layer
+          visualization_Cone_Layer//
         ]
       });
 /*
@@ -2508,7 +2508,7 @@
                     else{
                       t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//blue:0.6
                     }
-                    t_rgb.push(t_oppacity*t_mag);//oppacity
+                    t_rgb.push(t_oppacity*t_mag+0.1);//oppacity
 
                     fillSymbol.color=t_rgb;
                     var polylineGraphic = new Graphic({
@@ -2542,7 +2542,7 @@
                 else{
                   t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//blue:0.6
                 }
-                t_rgb.push(t_oppacity*t_mag);//oppacity
+                t_rgb.push(t_oppacity*t_mag+0.1);//oppacity
 
                 fillSymbol.color=t_rgb;
                 var polylineGraphic = new Graphic({
@@ -2579,7 +2579,7 @@
               else{
                 t_rgb=hslToRgb(0.6, 1, 1-0.5*t_mag);//blue:0.6
               }
-              t_rgb.push(t_oppacity*t_mag);//oppacity
+              t_rgb.push(t_oppacity*t_mag+0.1);//oppacity
 
               fillSymbol.color=t_rgb;
               var polylineGraphic = new Graphic({

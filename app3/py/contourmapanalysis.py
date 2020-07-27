@@ -33,13 +33,13 @@ def loadArrayFromFile(inrange=10):
             all_arr.append(arr)
     all_arr=np.array(all_arr)
     #print(np.shape(all_arr))
-    print(maxxy,minxy)
+    #print(maxxy,minxy)
     maxInColumns = np.amax(maxxy,axis=0)
     minInColumns = np.amin(minxy,axis=0)
     #print(maxInColumns,minInColumns)
     discol = maxInColumns[0]-minInColumns[0]
     disrow = maxInColumns[1]-minInColumns[1]
-    print(maxInColumns,minInColumns,discol,disrow)
+    #print(maxInColumns,minInColumns,discol,disrow)
 
     imgarr=[]
     img_h,img_w=760,1024
@@ -100,7 +100,7 @@ def loadContour_1(inrange=10):
     #print(maxInColumns,minInColumns)
     discol = maxInColumns[0]-minInColumns[0]
     disrow = maxInColumns[1]-minInColumns[1]
-    print(maxInColumns,minInColumns,discol,disrow)
+    #print(maxInColumns,minInColumns,discol,disrow)
     return all_arr,maxInColumns,minInColumns,discol,disrow
 
 def loadContour(inrange=10):
@@ -292,8 +292,8 @@ def SegmentWeight(contourarr,vorarr,vorarr_spref='epsg3857'):
     # cost 0.3s
     res = Imageslice(imgcontour,imgvor)
     t.append(datetime.now())
-    for i in range(len(t)-1):
-        print((t[i+1]-t[i]).total_seconds())
+    #for i in range(len(t)-1):
+        #print((t[i+1]-t[i]).total_seconds())
 
 
     if vorarr_spref!='epsg3857':
@@ -303,7 +303,7 @@ def SegmentWeight(contourarr,vorarr,vorarr_spref='epsg3857'):
         for item in vor_arr:
             t_arr.append(item.tolist())
         vor_arr=t_arr
-    print(res,vor_arr)
+    #print(res,vor_arr)
     return res, vor_arr
 
 

@@ -9,6 +9,7 @@ from django.conf.urls import include
 router = routers.DefaultRouter()
 router.register(r'gpsdatas', views.GPSDataViewSet,basename="gpsdatas")
 router.register(r'cluemedia', views.ClueMediaViewSet,basename="cluemedia")
+router.register(r'waypointsdata', views.WaypointsDataViewSet,basename="waypointsdata")
 
 urlpatterns = [
     path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
@@ -23,6 +24,7 @@ urlpatterns = [
     path('offlinemapdemo',TemplateView.as_view(template_name="app3/offlinemapdemo.html")),
     url(r'^tasksave$',TaskGenerationView.tasksave,name='tasksave'),
     url(r'^gpsupdate$',TaskGenerationView.gpsupdate,name='gpsupdate'),
+    url(r'^pathplanningupdate$',TaskGenerationView.pathplanningupdate,name='pathplanningupdate'),
     url(r'^getwatershed$',TaskGenerationView.getwatershed,name='getwatershed'),
     url(r'^getsegmentVal$',TaskGenerationView.getSegmentVal,name='getsegmentVal'),
     url(r'^gpsdatastorage$',TaskGenerationView.gpsdatastorage,name='gpsdatastorage'),

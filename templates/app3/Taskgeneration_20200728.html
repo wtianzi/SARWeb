@@ -15,7 +15,7 @@
   <script src="https://js.arcgis.com/4.12/"></script>
   <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
   <script src="{% static 'js/jquery.csv.js' %}"></script>
-  <script src="{% static 'js/sarfunctions.js' %}"></script>
+  <script src="{% static 'js/randompolygon.js' %}"></script>
   <link rel="stylesheet" type="text/css" href="{% static 'taskgeneration.css' %}"  />
   <style>
   html,
@@ -237,7 +237,7 @@
       let all_gpsdata={};
       var arr_featureset=[];
 
-      let m_colorgroup={};// store color of symbols for gps and pathplaning
+
       let validSymbol;
 
       var m_filterprob=0.0000001;
@@ -269,7 +269,6 @@
         opacity:0.6//0.6
       });
       const gpsgraphicsLayer = new GraphicsLayer();
-      const pathplanninggraphicsLayer = new GraphicsLayer();
 
       const visualization_Contourmap_Layer = new GraphicsLayer({
         opacity:0.8
@@ -305,7 +304,30 @@
           ]
       };
 
-      m_colorgroup = ColorGroupInitialize();
+      function hslToRgb(h, s, l) {
+          var r, g, b;
+
+           if (s == 0) {
+               r = g = b = l; // achromatic
+           } else {
+               function hue2rgb(p, q, t) {
+                   if (t < 0) t += 1;
+                   if (t > 1) t -= 1;
+                   if (t < 1 / 6) return p + (q - p) * 6 * t;
+                   if (t < 1 / 2) return q;
+                   if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                   return p;
+               }
+
+               var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+               var p = 2 * l - q;
+               r = hue2rgb(p, q, h + 1 / 3);
+               g = hue2rgb(p, q, h);
+               b = hue2rgb(p, q, h - 1 / 3);
+           }
+           return [r * 255, g * 255, b * 255];
+       }
+
       var elevLyr = new ElevationLayer({
         // Custom elevation service
         url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
@@ -319,7 +341,6 @@
           visualization_Segmentheat_Layer,
           graphicsLayer,//
           gpsgraphicsLayer,//
-          pathplanninggraphicsLayer,
           graphicInitLayer,//
           teamgraphicsLayer,//
           visualization_Trajectories_Layer,//
@@ -328,8 +349,43 @@
           visualization_Cone_Layer//
         ]
       });
-
+/*
+      const geojsonLayer = new GeoJSONLayer({
+        url: "{% static 'data/map/data.json' %}",//"https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",//
+        copyright: "VDGIF_Wildlife_Management_Area_WMA_Boundaries",
+        opacity: 0.9
+      });
+      map.add(geojsonLayer);
+*/
       setUpView();
+
+      function polygonClone(polygon) {
+        var cloned = [],
+            i,
+            n;
+
+        for (i = 0, n = polygon.length; i < n; i++) {
+          cloned.push([polygon[i][0], polygon[i][1]]);
+        }
+
+        return cloned;
+      }
+
+      function FilterBoundary(x,y,maxx,maxy,minx,miny){
+        if (x>maxx) {
+          x=maxx;
+        }
+        else if (x<minx) {
+          x=minx;
+        }
+        if (y>maxy) {
+          y=maxy;
+        }
+        else if (y<miny) {
+          y=miny;
+        }
+        return [x,y];
+      }
 
       // creates new view and map, adds featurelayers and graphicslayer to the view
 
@@ -349,7 +405,11 @@
             .eachAlways([queryBeforeLandslide])
             .then(function(results) {
               $("#elevation").text("Elenvation: "+results[0].value.geometry.z);
+              //console.log(position);
+              //console.log( results[0].value.geometry.z);
             });
+          //====================
+          //console.log(view.allLayerViews);
 
           // check if the sketch's state active if it is then that means
           // the graphic is already being updated, no action required.
@@ -403,6 +463,14 @@
              url: "{% static 'img/user_o_glow.png' %}",//user_glow.png
              width: "64px",
              height: "64px"
+                         /*
+            type: "simple-marker",
+            color: [255, 0, 0, 0.2],
+            outline: {
+             color: [255, 0,0,1],
+              width: 2}
+
+            */
           },
           updateOnGraphicClick: false,
           defaultUpdateOptions: { // set the default options for the update operations
@@ -662,7 +730,7 @@
         graphicsLayer.addMany(allpolygons_text);
       }
 
-      function getGPSDisplayUpdate(pointcolor=[0,0,0],linecolor=[0,0,0]){
+      function getGPSDisplayUpdate(){
         gpsgraphicsLayer.removeAll();
         //random a color
         //draw all gpsdata
@@ -680,7 +748,7 @@
             symbol:  {
                  type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
                  style:"circle",
-                 color: pointcolor,//[getRandomInt(255), getRandomInt(255), getRandomInt(255)],//[t_mag, 0,0],
+                 color: [getRandomInt(255), getRandomInt(255), getRandomInt(255)],//[t_mag, 0,0],
                  size:20
                }
           });
@@ -694,7 +762,7 @@
           // Create a symbol for drawing the line
           var lineSymbol = {
             type: "simple-line", // autocasts as SimpleLineSymbol()
-            color: linecolor,//[getRandomInt(255), getRandomInt(255), getRandomInt(255)],
+            color: [getRandomInt(255), getRandomInt(255), getRandomInt(255)],
             width: 4
           };
           // Create an object for storing attributes related to the line
@@ -893,7 +961,7 @@
               let filename=m_experimentres["participant_index"]+"_"+Date.now().toString();
               m_experimentres["taskstop"]=Date.now();
               m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
-              //download(filename+".txt",JSON.stringify(m_experimentres));
+              download(filename+".txt",JSON.stringify(m_experimentres));
               m_tasktrials=0;
             }
             else{
@@ -907,7 +975,7 @@
           let filename=m_experimentres["participant_index"]+"_"+Date.now().toString();
           m_experimentres["taskstop"]=Date.now();
           m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
-          //download(filename+".txt",JSON.stringify(m_experimentres));
+          download(filename+".txt",JSON.stringify(m_experimentres));
           m_tasktrials=0;
         }
 
@@ -917,7 +985,18 @@
         m_taskstarttime=null;
       }
 
+      function download(filename, text) {
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        element.setAttribute('download', filename);
 
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+      }
 
       function DrawcongratulationsToInitLayer(){
         var graphic = new Graphic({
@@ -1071,8 +1150,6 @@
         graphicsLayer.removeAll();
         view.graphics.removeAll();
         gpsgraphicsLayer.removeAll();
-        pathplanninggraphicsLayer.removeAll();
-
         m_tasktrials=0;
         epsg4326_voronoiarr=[];
         //wholetask=activeWidget.viewModel.measurement;
@@ -1595,7 +1672,6 @@
          graphicsLayer.removeAll();
          view.graphics.removeAll();
          gpsgraphicsLayer.removeAll();
-         pathplanninggraphicsLayer.removeAll();
          graphicInitLayer.removeAll();
          teamgraphicsLayer.removeAll();
          visualization_Contourmap_Layer.removeAll();
@@ -2523,6 +2599,16 @@
 
          }
 
+         function ContourRingdownload(in_rings,index=0){
+           // 20200723 tian start test
+           // target: use python to generate contour map images
+           // download the rings to a document
+           console.log(in_rings);
+           str_ring=JSON.stringify(in_rings);
+           let filename="Ring"+"_"+index.toString()+".txt";
+           download(filename, str_ring);
+         }
+
          function AddTrialDataToTriallayer(){
            let i_hr=document.getElementById("myRange").value;
 
@@ -2728,9 +2814,6 @@
           document.getElementById("gotoGPSLocation2").onclick=function(){
             view.goTo(gpspatharray[document.getElementById("sel_gpsdevice2").selectedIndex]);
           }
-          document.getElementById("gotoGPSLocation3").onclick=function(){
-            view.goTo(gpspatharray[document.getElementById("sel_dronepath").selectedIndex]);
-          }
 
          document.getElementById("loadlpmcsv").onclick=function() {
            //draw initial condition centerpoints
@@ -2788,6 +2871,32 @@
               LoadLPFromCSV_Tra_Item(csvfilename,t_rank,i);
             }
           }
+
+
+
+          /*
+          trajectory files:
+          1) folders with all trajectories, sampled along hours
+          2) a json file includes all file index of a given clue. For example,
+          {
+          	'filetype': 'clueindex',
+          	'data':[{'clueindex':1, 'fileindex':[1,5,8,9,10]},
+          		{'clueindex':1, 'fileindex':[1,5,8,9,10]}]
+          }
+
+          for (let i=0;i<1;i++){
+            for(let t_rank=1;t_rank<=1;t_rank++){
+                let tempdir="/static/data/LPMdata4/trial/xy_"+persontype+"_"+m_scenarios[m_scenario_index]["scenario_name"]+"_bf"+t_rank.toString()+".csv";
+                // m_lpdata_trial.push
+                LoadLPFromCSV_trial(tempdir,t_rank,i);
+            }
+          }
+          for(let i=1;i<=count_clues;i++){
+            $.getJSON("{% static 'data/trajectoryclue.json' %}", function(json) {
+              m_lpdata_trajectory_clueindex_json=json;
+           });
+          }
+*/
 
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
@@ -2900,6 +3009,10 @@
              }
            }
 
+          function getRandomInt(max) {
+            return Math.floor(Math.random() * Math.floor(max));
+          }
+
           let timerid1,timerid2;
           function readDB(gpsdevice,Loadgpsid){
 
@@ -2920,7 +3033,7 @@
                }
                function myTimer(e){
                  getGPSDataUpdate(gpsdevice);
-                 getGPSDisplayUpdate(m_colorgroup['drone1'],m_colorgroup['line1']);
+                 getGPSDisplayUpdate();
                  //addGPSPath();
 
                  //display datetime
@@ -2950,122 +3063,16 @@
                   }
                   function myTimer(e){
                     getGPSDataUpdate(gpsdevice);
-                    getGPSDisplayUpdate(m_colorgroup['drone2'],m_colorgroup['line2']);
+                    getGPSDisplayUpdate();
                     //addGPSPath();
 
                     //display datetime
-                    let d = new Date();
-                    let t = d.toLocaleTimeString();
+                    var d = new Date();
+                    var t = d.toLocaleTimeString();
                     document.getElementById("daytime").innerHTML = t;
 
                   }
-            }
-          function UpdateDronePath(dronepathid,Loadgpsid){
-              let sel_gpsdevice = document.getElementById(dronepathid);
-              var id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
-              getDronepathfromDB(id_device_id,m_colorgroup['path1']);
-
-          }
-          function getDronepathfromDB_test(dronepathid){
-            let waypoints = [
-              {"stamp":0,"timestamp":-1,"long":-80.572459,"lat":37.197321},
-              {"stamp":1,"timestamp":-1,"long":-80.573550,"lat":37.200823},
-              {"stamp":2,"timestamp":-1,"long":-80.570782,"lat":37.202780},
-              {"stamp":3,"timestamp":-1,"long":-80.566372,"lat":37.202037},
-              {"stamp":4,"timestamp":-1,"long":-80.565052,"lat":37.199977}
-            ];
-            return waypoints;
-          }
-
-          function getDronepathfromDB(id_device_id,pathcolor){
-              let URL = "{% url 'pathplanningupdate' %}";
-              let data = {
-                      csrfmiddlewaretoken: '{{ csrf_token }}',
-                      'id_device_id': id_device_id
-                     };
-              $.post(URL, data, function(response){
-                let res=JSON.parse(response);
-                  if(res.flag == 'success'){
-
-                    let arrres=JSON.parse(res.waypointsdata);
-                    //let tstr='{"stamp":0,"timestamp":-1,"long":-80.572459,"lat":37.197321}';
-                    //let arrres=JSON.parse(tstr);
-
-                    UpdateDronePathDisplay(arrres,pathcolor);
-
-                    //return arrres;
-                   }
-                  else{ alert(response); }
-              });
-
-          }
-
-          function UpdateDronePathDisplay(arrinput,pathcolor){
-            //update the drone path on pathplanninglayer
-
-            pathplanninggraphicsLayer.removeAll();
-            let path_featureset=[];
-            let path_polyline=[];
-            //draw all gpsdata
-            console.log(arrinput);
-            let pt_arr=arrinput;
-            for(let i=0;i<pt_arr.length;i++){
-              let t_graphic= new Graphic({
-                geometry: {
-                  type:'point',
-                  latitude:pt_arr[i].lat,
-                  longitude:pt_arr[i].long,
-                  spatialReference:view.spatialReference
-                },
-                symbol:  {
-                  type: "simple-marker",
-                  style:"circle",
-                  color: pathcolor,
-                  size:12
-                  }
-              });
-              path_featureset.push(t_graphic);
-
-              let t_graphic_text=new Graphic ({
-                geometry:{
-                  type:'point',
-                  latitude:pt_arr[i].lat,
-                  longitude:pt_arr[i].long,
-                  spatialReference:view.spatialReference
-                },
-                symbol:{
-                  type: "text",  // autocasts as new TextSymbol()
-                  color: "white",
-                  haloColor: "black",
-                  haloSize: "1px",
-                  text: pt_arr[i].stamp,
-                  xoffset: 0,
-                  yoffset: 0,
-                  font: {  // autocast as new Font()
-                    size: 10,
-                    family: "sans-serif",
-                    weight: "bold"
-                  }
                 }
-              });
-              path_featureset.push(t_graphic_text);
-              path_polyline.push([pt_arr[i].long,pt_arr[i].lat]);
-            }
-            console.log(path_featureset);
-            var polylineGraphic = new Graphic({
-              geometry: {
-                type: "polyline",
-                paths: path_polyline
-              },
-              symbol: {
-                type: "simple-line",
-                color: pathcolor,
-                width: 4
-              }
-            });
-            pathplanninggraphicsLayer.add(polylineGraphic);
-            pathplanninggraphicsLayer.addMany(path_featureset);
-          }
 
            function savewholegpsdatatodb(sel_gpsdevice){
 
@@ -3097,6 +3104,19 @@
                //download(filename, str_all_gpsdata);
            }
 
+           function download(filename, text) {
+             var element = document.createElement('a');
+             element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+             element.setAttribute('download', filename);
+
+             element.style.display = 'none';
+             document.body.appendChild(element);
+
+             element.click();
+
+             document.body.removeChild(element);
+           }
+
          function getGPSDataUpdate(gpsdevice){
            var sel_gpsdevice = document.getElementById(gpsdevice);
            console.log(document.getElementById("sel_gpsdevice").value);
@@ -3104,6 +3124,7 @@
              var URL = "{% url 'gpsupdate' %}";
              var data = {
                      csrfmiddlewaretoken: '{{ csrf_token }}',
+                     'task_notes': document.getElementById("tasknotes").value,
                      'id_device_id': id_device_id
                     };
              $.post(URL, data, function(response){
@@ -3121,8 +3142,8 @@
                    }
                    gps_json.time=Date.now();
                     //console.log(t_obj);
-                    gpspatharray[sel_gpsdevice.selectedIndex].push([gps_json.long,gps_json.lat]);
-                    all_gpsdata[sel_gpsdevice.selectedIndex].push([gps_json.stamp,gps_json.time,gps_json.long,gps_json.lat]);
+                    gpspatharray[sel_gpsdevice.selectedIndex].push([gps_json.lat,gps_json.log]);
+                    all_gpsdata[sel_gpsdevice.selectedIndex].push([gps_json.stamp,gps_json.time,gps_json.lat,gps_json.log]);
 
                     //all_gpsdata_timestamp[sel_gpsdevice.selectedIndex].push();
                   }
@@ -3137,10 +3158,6 @@
          document.getElementById('GPSStart2').addEventListener('click',function(){
            readDB2("sel_gpsdevice2","GPSStart2");
          });
-         document.getElementById('loaddronepath').addEventListener('click',function(){
-           UpdateDronePath("sel_dronepath","loaddronepath");
-         });
-
 
          document.getElementById('visualizationtype').addEventListener('click',function(){
            if(document.getElementById("visualizationtype").checked){
@@ -3150,6 +3167,18 @@
                  m_visualizationtype='byhour';
                }
          });
+         /*
+         document.getElementById("GPSStart").onclick=function() {
+
+           readDB2("sel_gpsdevice","GPSStart");
+         }
+
+         document.getElementById("GPSStart2").onclick=function() {
+
+           readDB2("sel_gpsdevice2","GPSStart2");
+         }*/
+
+
       //--------------------------------------------------
     });
 
@@ -3304,22 +3333,6 @@
 
     <hr/>
     <div>
-      <h3>Path Planning</h3>
-      <div>
-        <select id="sel_dronepath">
-          <option value="">Select a device</option>
-          {% for device in dronepath %}
-          <option value="{{ device.id }}">{{ device.deviceid }}</option>
-          {% endfor %}
-        </select>
-        <input type="button" id="loaddronepath"  value="Load Path"></input>
-        <input type="button" id="gotoGPSLocation3"  value="Locate"></input>
-      </div>
-    </div>
-
-    <hr/>
-    <div>
-      <h3>Drone status</h3>
         <div>
           <select id="sel_gpsdevice">
             <option value="">Select a device</option>

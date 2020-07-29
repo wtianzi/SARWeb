@@ -2,14 +2,14 @@ from django.shortcuts import render
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 from django.http import HttpResponse,HttpResponseRedirect
-from .models import Person,Task,GPSData,DataStorage,ClueMedia
+from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData
 import json
 from .forms import DemoForm,TaskAssignmentForm
 from django.urls import reverse
 from django.template import loader
 from django.core import serializers
 from rest_framework import viewsets
-from .serializers import GPSDataSerializer,ClueMediaSerializer
+from .serializers import GPSDataSerializer,ClueMediaSerializer,WaypointsDataSerializer
 
 from rest_framework import permissions
 
@@ -35,6 +35,9 @@ class TaskGenerationView(TemplateView):
         context['task_all']=tasks_all
         last_n_deviceid=GPSData.objects.values().order_by('-updated_at')[:5]
         context['gpsdevice']=last_n_deviceid
+
+        pathid = WaypointsData.objects.values().order_by('-updated_at')[:5]
+        context['dronepath']=pathid
         return context
 
     def get_values(request):
@@ -78,6 +81,17 @@ class TaskGenerationView(TemplateView):
             #print(context)
             return HttpResponse(json.dumps(context)) # if everything is OK
         # nothing went well
+        return HttpResponse('FAIL!!!!!')
+
+    def pathplanningupdate(request):
+        if request.method == 'POST':
+            pathdata_id = request.POST['id_device_id']
+            pathitem = WaypointsData.objects.get(deviceid=pathdata_id)
+            #tobj={'data':getattr(pathitem, 'waypointsdata')}
+            #context={'waypointsdata':tobj,'flag':'success'}
+            context={'waypointsdata':getattr(pathitem, 'waypointsdata'),'flag':'success'}
+            #print(context)
+            return HttpResponse(json.dumps(context)) # if everything is OK
         return HttpResponse('FAIL!!!!!')
 
     def gpsdatastorage(request):
@@ -204,6 +218,10 @@ class TaskGenerationFormView(TemplateView):
         #print(form)
         return render(request,'app3/demo.html',context)
 
+class WaypointsDataViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    queryset = WaypointsData.objects.all()
+    serializer_class = WaypointsDataSerializer
 
 class GPSDataViewSet(viewsets.ModelViewSet):
     """

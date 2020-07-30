@@ -90,3 +90,14 @@ function FilterBoundary(x,y,maxx,maxy,minx,miny){
   }
   return [x,y];
 }
+
+
+var m_clue_template = {
+    title: "{Name}",
+    content: [
+      {
+        type: "fields",
+        fieldInfos: [{fieldName: "Name"},{fieldName: "LostHour"}]
+      }
+    ]
+};

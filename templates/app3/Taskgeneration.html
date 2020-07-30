@@ -150,10 +150,10 @@
 //Transportation service:
 //https://server.arcgisonline.com/arcgis/rest/services/Reference/World_Transportation/MapServer
 
-      var width=1600*1.5;
-      var height=900*1.5;
+      let width=1600*1.5;
+      let height=900*1.5;
       let m_d=new Date();
-      var scale=16;//15
+      let scale=16;//15
       let m_experimentres={
         "scenario":null,
         "lostpersontype":null,
@@ -208,20 +208,20 @@
       'dementia':[300,800,1900,8300],
       'hiker':[1100,3100,5800,18300]};
 
-      var gcx=-80.556451;
-      var gcy=37.2;
+      let gcx=-80.556451;
+      let gcy=37.2;
 
-      var gwidth=10;
-      var gheight=10;
-      var voronoistyle="random";
-      var glvertices;
-      var glverticeslist=[];
+      let gwidth=10;
+      let gheight=10;
+      let voronoistyle="random";
+      let glvertices;
+      let glverticeslist=[];
       let maxdistanceerror = 0.0001;
 
       //acer
 
       let eacharea=500000;//240000;//60 acer;
-      var activeWidget = null;
+      let activeWidget = null;
 //  wkid: 102100 vs wkid: 4326
 //wkid 102100/pix =1.5 (2444,1366/1600,900)
 //wkid 102100: left-top (-8970062.142, 4467672.843), right-bottom (-8967625.712	4466311.309)
@@ -235,17 +235,18 @@
 
       let gpspatharray={};
       let all_gpsdata={};
-      var arr_featureset=[];
+      let arr_featureset=[];
+      let waypointstartpointarray=[];
 
       let m_colorgroup={};// store color of symbols for gps and pathplaning
       let validSymbol;
 
-      var m_filterprob=0.0000001;
-      var m_lpdata_con=[];
-      var m_lpdata_trajectory=[];
-      var m_lpdata_tra_colormap=[];
+      let m_filterprob=0.0000001;
+      let m_lpdata_con=[];
+      let m_lpdata_trajectory=[];
+      let m_lpdata_tra_colormap=[];
 
-      var m_lpdata_trial=[];
+      let m_lpdata_trial=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_editing=false;
@@ -295,18 +296,7 @@
 
       const temperalgraphicLayer = new GraphicsLayer();
 
-      var m_clue_template = {
-          title: "{Name}",
-          content: [
-            {
-              type: "fields",
-              fieldInfos: [{fieldName: "Name"},{fieldName: "LostHour"}]
-            }
-          ]
-      };
-
-      m_colorgroup = ColorGroupInitialize();
-      var elevLyr = new ElevationLayer({
+      let elevLyr = new ElevationLayer({
         // Custom elevation service
         url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
       });
@@ -339,9 +329,9 @@
           //console.log("click");
 
           //elevation=============
-          var position = event.mapPoint;
+          let position = event.mapPoint;
           //console.log(position);
-          var queryBeforeLandslide = elevLyr.queryElevation(
+          let queryBeforeLandslide = elevLyr.queryElevation(
             position
           );
 
@@ -363,7 +353,7 @@
           }
 
           view.hitTest(event).then(function(response) {
-            var results = response.results;
+            let results = response.results;
             // Check if the new development graphic was clicked and pass
             // the graphic to sketchViewModel.update() with reshape tool.
             results.forEach(function(result) {
@@ -460,7 +450,7 @@
             gwidth=textent.width;
             gheight=textent.height;
 
-        var sites = d3.range(npoints)//15
+        let sites = d3.range(npoints)//15
                    .map(function(d) { return [Math.random() * gwidth+lbx, Math.random() * gheight+lby]; });
         let in_point=new Point({
           x:textent.center.x+ 0.1*(Math.random()-0.5)*textent.width,
@@ -469,8 +459,8 @@
         });
         //sites = GetSitesFromN(npoints,in_point,textent);
         sites = GetSites(npoints,textent);
-        var voronoi = d3.voronoi().extent([[lbx,lby], [rtx,rty]]);
-        var diagram = voronoi(sites),
+        let voronoi = d3.voronoi().extent([[lbx,lby], [rtx,rty]]);
+        let diagram = voronoi(sites),
             links = diagram.links(),
             vpolygons = diagram.polygons();
 
@@ -487,8 +477,8 @@
 
       function ClipPolygongsByPoints(vpolygons,points){
         let cpy=[];
-        for(var i=0;i<vpolygons.length;i++){
-          var temp=d3.polygonClip(vpolygons[i],polygonClone(points.reverse()));
+        for(let i=0;i<vpolygons.length;i++){
+          let temp=d3.polygonClip(vpolygons[i],polygonClone(points.reverse()));
           if(temp.length>0){ cpy.push(temp); }
         }
         return cpy;
@@ -605,7 +595,7 @@
       }
 
       function addFreedraw(){
-        var action = draw.create("polygon");
+        let action = draw.create("polygon");
         // focus the view to activate keyboard shortcuts for drawing polygons
         view.focus();
 
@@ -636,7 +626,7 @@
             weight: "bold"
           }
         };
-        for (var i=0;i<vtriangles.length;i++){
+        for (let i=0;i<vtriangles.length;i++){
           vtriangles[i].push(vtriangles[i][0]);
           let polygon = createGeometry(vtriangles[i]);
           let newDevelopmentGraphic = new Graphic({
@@ -687,23 +677,23 @@
           gpsgraphicsLayer.add(t_graphic1);
 
           // First create a line geometry (this is the Keystone pipeline)
-          var polyline = {
+          let polyline = {
             type: "polyline", // autocasts as new Polyline()
             paths: gpspatharray[key]//  [[-80.582342,37.199622],[-80.581031,37.204559],[-80.577359,37.207806]]//[[-111.3, 52.68], [-98, 49.5], [-93.94, 29.89]]
           };
           // Create a symbol for drawing the line
-          var lineSymbol = {
+          let lineSymbol = {
             type: "simple-line", // autocasts as SimpleLineSymbol()
             color: linecolor,//[getRandomInt(255), getRandomInt(255), getRandomInt(255)],
-            width: 4
+            width: 2
           };
           // Create an object for storing attributes related to the line
-          var lineAtt = {
+          let lineAtt = {
             Name: "GPS "+document.getElementById('sel_gpsdevice').options[key].text,
             Owner: "SAR",
             Length: "..."
           };
-          var polylineGraphic = new Graphic({
+          let polylineGraphic = new Graphic({
             geometry: polyline,
             symbol: lineSymbol,
             attributes: lineAtt
@@ -739,14 +729,14 @@
           //spatialReference: { wkid: 4326  }
           spatialReference: { wkid: 102100  }
         });
-        var transportationLayer = new TileLayer({
+        let transportationLayer = new TileLayer({
           url: "https://server.arcgisonline.com/arcgis/rest/services/Reference/World_Transportation/MapServer",
           // This property can be used to uniquely identify the layer
           id: "something",
           visible: true
         });
         //map.add(transportationLayer);
-        var riverLayer = new FeatureLayer({
+        let riverLayer = new FeatureLayer({
           url:
           "https://services8.arcgis.com/ZXMBUOxDBbivoAgJ/arcgis/rest/services/RiverMiles/FeatureServer"
           // This property can be used to uniquely identify the layer
@@ -762,7 +752,7 @@
         m_experimentres["scenario"]=m_scenarios[m_scenario_index];
         m_experimentres["lostpersontype"]=m_lostpersontype[m_lostpersontype_index];
 
-        var toggle = new BasemapToggle({
+        let toggle = new BasemapToggle({
           // 2 - Set properties
           view: view, // view that provides access to the map's 'topo' basemap
           nextBasemap: "topo" // allows for toggling to the 'hybrid' basemap
@@ -770,13 +760,13 @@
         // Add widget to the top right corner of the view
         view.ui.add(toggle, "bottom-left");
         //add track widget
-        var trackWidget = new Track({
+        let trackWidget = new Track({
           view: view
         });
         view.ui.add(trackWidget, "top-left");
         // Adds the search widget below other elements in
         // the top left corner of the view
-        var searchWidget = new Search({
+        let searchWidget = new Search({
           view: view
         });
         view.ui.add(searchWidget, {
@@ -791,6 +781,8 @@
         //validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//task generation
         validSymbol = createSymbol([212,221,222, 0.2], "solid", 2, [255,255, 255]);//task generation
 
+
+        m_colorgroup = ColorGroupInitialize();
       }
 
       document.getElementById("btntaskassignment").onclick=function() {
@@ -920,7 +912,7 @@
 
 
       function DrawcongratulationsToInitLayer(){
-        var graphic = new Graphic({
+        let graphic = new Graphic({
           geometry: area_extent.center,//view.extent.center,
           symbol: {
             type: "text",
@@ -958,7 +950,7 @@
 
       }
       function DrawCompletTaskToInitLayer(){
-        graphic = new Graphic({
+        let graphic = new Graphic({
           geometry: area_extent.center,//view.extent.center,
           symbol: {
             type: "text",
@@ -995,7 +987,7 @@
       }
       function DrawPolygonToInitLayer(t_obj,t_color=[0, 102, 255, 0.8]){
         //draw the polygon into graphicInitLayer
-        var graphic = new Graphic({
+        let graphic = new Graphic({
           geometry: t_obj.geometry,
           symbol: {
             type: "simple-fill", // autocasts as SimpleFillSymbol
@@ -1010,7 +1002,7 @@
 
       // DrawClueToInitLayer
       function DrawClueToInitLayer(t_pt,t_clueobj,t_color=[0, 102, 255, 0.8]){
-        var graphic = new Graphic({
+        let graphic = new Graphic({
           geometry: t_pt,
           symbol:  {
             type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
@@ -1162,18 +1154,18 @@
       // to provide a visual feedback to users as they are drawing a polygon
       function drawPolygon(event) {
         if(voronoistyle!="clear" && voronoistyle!="sidebar") return;
-        var glvertices = event.vertices;
+        let glvertices = event.vertices;
         //remove existing graphic
         view.graphics.removeAll();
         if(glverticeslist.length>0) addGraphics(glverticeslist);
         // create a new polygon
-        var polygon = new Polygon({
+        let polygon = new Polygon({
           rings: glvertices,
           spatialReference: view.spatialReference
         });
         // create a new graphic representing the polygon, add it to the view
         //taskgeneration
-        var graphic = new Graphic({
+        let graphic = new Graphic({
           geometry: polygon,
           symbol: {
             type: "simple-fill", // autocasts as SimpleFillSymbol
@@ -1187,10 +1179,10 @@
         });
         view.graphics.add(graphic);
         // calculate the area of the polygon
-        var area = geometryEngine.geodesicArea(polygon, "acres");
+        let area = geometryEngine.geodesicArea(polygon, "acres");
         if (area < 0) {
           // simplify the polygon if needed and calculate the area again
-          var simplifiedPolygon = geometryEngine.simplify(polygon);
+          let simplifiedPolygon = geometryEngine.simplify(polygon);
           if (simplifiedPolygon) {
             area = geometryEngine.geodesicArea(simplifiedPolygon, "acres");
           }
@@ -1208,7 +1200,7 @@
 
       //Label polyon with its area
       function labelAreas(geom, area) {
-        var graphic = new Graphic({
+        let graphic = new Graphic({
           geometry: geom.centroid,
           symbol: {
             type: "text",
@@ -1242,7 +1234,7 @@
         view.ui.add(editExpand, "top-right");
       }
 
-      var ccWidget = new CoordinateConversion({
+      let ccWidget = new CoordinateConversion({
         view: view
         //container: "coordinatesdiv"
       });
@@ -1559,8 +1551,8 @@
       function setActiveButton(selectedButton) {
          // focus the view to activate keyboard shortcuts for sketching
          view.focus();
-         var elements = document.getElementsByClassName("active");
-         for (var i = 0; i < elements.length; i++) {
+         let elements = document.getElementsByClassName("active");
+         for (let i = 0; i < elements.length; i++) {
            elements[i].classList.remove("active");
          }
          if (selectedButton) {
@@ -1637,9 +1629,9 @@
              //console.log(document.getElementById("tasknotes").value+" is already exist, please enter another one!");
            }
            else {
-             var URL = "{% url 'tasksave' %}";
+             let URL = "{% url 'tasksave' %}";
              let dbpolystr=PolyArrayToJson(updated_polygonring);
-             var data = {
+             let data = {
                      csrfmiddlewaretoken: '{{ csrf_token }}',
                      'task_notes': t_tasknotes,
                      'task_id': t_tasknotes,
@@ -1647,7 +1639,7 @@
                      'task_polygon': dbpolystr
                     };
              $.post(URL, data, function(response){
-               var res=JSON.parse(response);
+               let res=JSON.parse(response);
 
                  if(res.flag == 'success'){
                    //console.log(res.Taskarea);
@@ -1655,8 +1647,8 @@
                    //task name:
                    let task_url="{% url 'taskgenerationform' %}"+"/"+t_tasknotes+'_'+'0/';
                    //console.log(task_url);
-                   //var win = window.open("{% url 'taskgenerationform' %}", '_blank');
-                   var win = window.open(task_url, '_blank');
+                   //let win = window.open("{% url 'taskgenerationform' %}", '_blank');
+                   let win = window.open(task_url, '_blank');
                    win.focus();
                    //open a new tab for task TaskGeneration
 
@@ -1666,7 +1658,7 @@
            }
          });
          function LoadLPFromCSV_Tra_Item(t_url,t_rank=0,t_index=0){
-           var t_data;
+           let t_data;
             $.ajax({
               type: "GET",
               url:t_url,
@@ -1685,7 +1677,7 @@
 
          function LoadLPFromCSV_Tra_All(t_url,t_rank=0,t_index=0){
            //m_lpdata_trajectory
-           var t_data;
+           let t_data;
             $.ajax({
               type: "GET",
               url:t_url,
@@ -1746,7 +1738,7 @@
          }
 
          function LoadLPFromCSV_trial(t_url,t_rank=0,t_index=0){
-           var t_data;
+           let t_data;
             $.ajax({
               type: "GET",
               url:t_url,
@@ -1765,7 +1757,7 @@
 
          // Loading contour map
          function LoadLPFromCSV_con(t_url,t_arr_count,t_hour=0,t_rank=0,t_type='byhour'){
-           var t_data;
+           let t_data;
             $.ajax({
               type: "GET",
               url:t_url,
@@ -1887,7 +1879,7 @@
                    'photoid': photoid.toString()
                   };
            $.post(URL, data, function(response){
-             var res=JSON.parse(response);
+             let res=JSON.parse(response);
                if(res.flag == 'success'){
                  console.log(res);
                 }
@@ -2131,7 +2123,7 @@
                    t_color=[125,125,125,0.1];
                  }
                }
-               var t_pt={
+               let t_pt={
                  type:'point',
                  latitude: t_data[i][i_hr][1],
                  longitude: t_data[i][i_hr][0]
@@ -2391,14 +2383,14 @@
 
            let t_mag=(t_startprobability-t_min)/t_range;
 
-           var markerSymbol = {
+           let markerSymbol = {
              type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
              color: [226, 119, 40],
              outline: {
                style:"none"
              }
            };
-          var fillSymbol= {
+          let fillSymbol= {
             type: "simple-fill", // autocasts as SimpleFillSymbol
             color: [226, 119, 40],
             outline: { // autocasts as SimpleLineSymbol
@@ -2419,7 +2411,7 @@
                    //console.log((item[1]-t_rings[0][0])*(item[1]-t_rings[0][0])+ (item[2]-t_rings[0][1])*(item[2]-t_rings[0][1]));
                    // if two points are two far away, define them as different circles
                    t_rings.push(t_rings[0]);
-                   var tmulpt=new Polygon({
+                   let tmulpt=new Polygon({
                       rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
                       spatialReference: { wkid: 4326 }
                     });
@@ -2435,7 +2427,7 @@
                     t_rgb.push(t_oppacity*t_mag+0.3);//oppacity
 
                     fillSymbol.color=t_rgb;
-                    var polylineGraphic = new Graphic({
+                    let polylineGraphic = new Graphic({
                       geometry: tmulpt, // Add the geometry created in step 4
                       symbol: fillSymbol
                     });
@@ -2453,7 +2445,7 @@
                t_rings.push(t_rings[0]);
                //console.log(t_rings);
 
-               var tmulpt=new Polygon({
+               let tmulpt=new Polygon({
                   rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
                   spatialReference: { wkid: 4326 }
                 });
@@ -2469,7 +2461,7 @@
                 t_rgb.push(t_oppacity*t_mag+0.3);//oppacity
 
                 fillSymbol.color=t_rgb;
-                var polylineGraphic = new Graphic({
+                let polylineGraphic = new Graphic({
                   geometry: tmulpt, // Add the geometry created in step 4
                   symbol: fillSymbol
                 });
@@ -2490,7 +2482,7 @@
              t_rings.push(t_rings[0]);
              //console.log(t_rings);
 
-             var tmulpt=new Polygon({
+             let tmulpt=new Polygon({
                 rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
                 spatialReference: { wkid: 4326 }
               });
@@ -2506,7 +2498,7 @@
               t_rgb.push(t_oppacity*t_mag+0.3);//oppacity
 
               fillSymbol.color=t_rgb;
-              var polylineGraphic = new Graphic({
+              let polylineGraphic = new Graphic({
                 geometry: tmulpt, // Add the geometry created in step 4
                 symbol: fillSymbol
               });
@@ -2534,7 +2526,7 @@
           let t_color=[getRandomInt(255), getRandomInt(255), getRandomInt(255)];
 
 
-          var t_mpts={
+          let t_mpts={
             type:'multipoint',
             points:m_lptrail_pts
           };
@@ -2569,7 +2561,7 @@
             //m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
             i_hr=m_lptrail_pts.length-1;
           }
-          var t_pt={
+          let t_pt={
             type:'point',
             latitude: m_lptrail_pts[i_hr][1],
             longitude: m_lptrail_pts[i_hr][0]
@@ -2729,7 +2721,7 @@
             view.goTo(gpspatharray[document.getElementById("sel_gpsdevice2").selectedIndex]);
           }
           document.getElementById("gotoGPSLocation3").onclick=function(){
-            view.goTo(gpspatharray[document.getElementById("sel_dronepath").selectedIndex]);
+            view.goTo(waypointstartpointarray);
           }
 
          document.getElementById("loadlpmcsv").onclick=function() {
@@ -2903,7 +2895,7 @@
           let timerid1,timerid2;
           function readDB(gpsdevice,Loadgpsid){
 
-            var sel_gpsdevice = document.getElementById(gpsdevice);
+            let sel_gpsdevice = document.getElementById(gpsdevice);
 
               clearInterval(timerid1);
 
@@ -2924,8 +2916,8 @@
                  //addGPSPath();
 
                  //display datetime
-                 var d = new Date();
-                 var t = d.toLocaleTimeString();
+                 let d = new Date();
+                 let t = d.toLocaleTimeString();
                  document.getElementById("daytime").innerHTML = t;
 
                }
@@ -2933,7 +2925,7 @@
 
              function readDB2(gpsdevice,Loadgpsid){
 
-               var sel_gpsdevice = document.getElementById(gpsdevice);
+               let sel_gpsdevice = document.getElementById(gpsdevice);
 
                  clearInterval(timerid2);
 
@@ -2962,7 +2954,7 @@
             }
           function UpdateDronePath(dronepathid,Loadgpsid){
               let sel_gpsdevice = document.getElementById(dronepathid);
-              var id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
+              let id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
               getDronepathfromDB(id_device_id,m_colorgroup['path1']);
 
           }
@@ -3007,7 +2999,7 @@
             let path_featureset=[];
             let path_polyline=[];
             //draw all gpsdata
-            console.log(arrinput);
+            //console.log(arrinput);
             let pt_arr=arrinput;
             for(let i=0;i<pt_arr.length;i++){
               let t_graphic= new Graphic({
@@ -3051,8 +3043,9 @@
               path_featureset.push(t_graphic_text);
               path_polyline.push([pt_arr[i].long,pt_arr[i].lat]);
             }
-            console.log(path_featureset);
-            var polylineGraphic = new Graphic({
+            waypointstartpointarray=path_polyline[0];
+            //console.log(path_featureset);
+            let polylineGraphic = new Graphic({
               geometry: {
                 type: "polyline",
                 paths: path_polyline
@@ -3069,13 +3062,13 @@
 
            function savewholegpsdatatodb(sel_gpsdevice){
 
-               var URL = "{% url 'gpsdatastorage' %}";
+               let URL = "{% url 'gpsdatastorage' %}";
                let rand_gpsdevicename = Date.now().toString();
                let id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
                // let device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
                let taskid = document.getElementById("tasknotes").value;
                let str_all_gpsdata= JSON.stringify(all_gpsdata[sel_gpsdevice.selectedIndex]);
-               var data = {
+               let data = {
                        csrfmiddlewaretoken: '{{ csrf_token }}',
                        'task_notes': taskid,
                        'rand_gpsdevicename':rand_gpsdevicename,
@@ -3085,7 +3078,7 @@
                        //'all_gpsdata' : all_gpsdata[sel_gpsdevice.selectedIndex].toString()
                       };
                $.post(URL, data, function(response){
-                 var res=JSON.parse(response);
+                 let res=JSON.parse(response);
                    if(res.flag == 'success'){
                      //console.log(res.gpsdata);
                     }
@@ -3098,16 +3091,16 @@
            }
 
          function getGPSDataUpdate(gpsdevice){
-           var sel_gpsdevice = document.getElementById(gpsdevice);
+           let sel_gpsdevice = document.getElementById(gpsdevice);
            console.log(document.getElementById("sel_gpsdevice").value);
-           var id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
-             var URL = "{% url 'gpsupdate' %}";
-             var data = {
+           let id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
+             let URL = "{% url 'gpsupdate' %}";
+             let data = {
                      csrfmiddlewaretoken: '{{ csrf_token }}',
                      'id_device_id': id_device_id
                     };
              $.post(URL, data, function(response){
-               var res=JSON.parse(response);
+               let res=JSON.parse(response);
                  if(res.flag == 'success'){
                    //console.log(res.gpsdata);
                    t_obj=JSON.parse(res.gpsdata);

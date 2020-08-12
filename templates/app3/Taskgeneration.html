@@ -233,10 +233,12 @@
       let move_polygon;
       let area_extent;
 
+      let timerid1,timerid2,timerid3;
       let gpspatharray={};
       let all_gpsdata={};
       let arr_featureset=[];
       let waypointstartpointarray=[];
+      let gpshistoricalarraystart=[];
 
       let m_colorgroup={};// store color of symbols for gps and pathplaning
       let validSymbol;
@@ -270,7 +272,14 @@
         opacity:0.6//0.6
       });
       const gpsgraphicsLayer = new GraphicsLayer();
-      const pathplanninggraphicsLayer = new GraphicsLayer();
+
+      const pathplanninggraphicsLayer = new GraphicsLayer({
+        opacity:0.5
+      });
+
+      const gpshistoricalgraphicsLayer = new GraphicsLayer({
+        opacity:0.5
+      });
 
       const visualization_Contourmap_Layer = new GraphicsLayer({
         opacity:0.8
@@ -310,6 +319,7 @@
           graphicsLayer,//
           gpsgraphicsLayer,//
           pathplanninggraphicsLayer,
+          gpshistoricalgraphicsLayer,
           graphicInitLayer,//
           teamgraphicsLayer,//
           visualization_Trajectories_Layer,//
@@ -1064,6 +1074,7 @@
         view.graphics.removeAll();
         gpsgraphicsLayer.removeAll();
         pathplanninggraphicsLayer.removeAll();
+        gpshistoricalgraphicsLayer.removeAll();
 
         m_tasktrials=0;
         epsg4326_voronoiarr=[];
@@ -1091,8 +1102,10 @@
         //load target and calculate their regions.
         //m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
         SetTargetpolygon();
+        if(m_targetpolygon){
+          m_experimentres["targetcellindex"]=m_targetpolygon.attributes.cellindex;
+        }
 
-        m_experimentres["targetcellindex"]=m_targetpolygon.attributes.cellindex;
         m_experimentres["scenario"]=m_scenarios[m_scenario_index];
         m_experimentres["lostpersontype"]=m_lostpersontype[m_lostpersontype_index];
 
@@ -1588,6 +1601,7 @@
          view.graphics.removeAll();
          gpsgraphicsLayer.removeAll();
          pathplanninggraphicsLayer.removeAll();
+         gpshistoricalgraphicsLayer.removeAll();
          graphicInitLayer.removeAll();
          teamgraphicsLayer.removeAll();
          visualization_Contourmap_Layer.removeAll();
@@ -2724,6 +2738,10 @@
             view.goTo(waypointstartpointarray);
           }
 
+          document.getElementById("gotoGPSLocation4").onclick=function(){
+            view.goTo(gpshistoricalarraystart);
+          }
+
          document.getElementById("loadlpmcsv").onclick=function() {
            //draw initial condition centerpoints
            m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"start loading"});
@@ -2892,7 +2910,7 @@
              }
            }
 
-          let timerid1,timerid2;
+
           function readDB(gpsdevice,Loadgpsid){
 
             let sel_gpsdevice = document.getElementById(gpsdevice);
@@ -2952,24 +2970,9 @@
 
                   }
             }
-          function UpdateDronePath(dronepathid,Loadgpsid){
-              let sel_gpsdevice = document.getElementById(dronepathid);
-              let id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
-              getDronepathfromDB(id_device_id,m_colorgroup['path1']);
 
-          }
-          function getDronepathfromDB_test(dronepathid){
-            let waypoints = [
-              {"stamp":0,"timestamp":-1,"long":-80.572459,"lat":37.197321},
-              {"stamp":1,"timestamp":-1,"long":-80.573550,"lat":37.200823},
-              {"stamp":2,"timestamp":-1,"long":-80.570782,"lat":37.202780},
-              {"stamp":3,"timestamp":-1,"long":-80.566372,"lat":37.202037},
-              {"stamp":4,"timestamp":-1,"long":-80.565052,"lat":37.199977}
-            ];
-            return waypoints;
-          }
 
-          function getDronepathfromDB(id_device_id,pathcolor){
+          function getDronepathfromDB(id_device_id,pathcolor,lineweight=5){
               let URL = "{% url 'pathplanningupdate' %}";
               let data = {
                       csrfmiddlewaretoken: '{{ csrf_token }}',
@@ -2978,29 +2981,60 @@
               $.post(URL, data, function(response){
                 let res=JSON.parse(response);
                   if(res.flag == 'success'){
-
                     let arrres=JSON.parse(res.waypointsdata);
-                    //let tstr='{"stamp":0,"timestamp":-1,"long":-80.572459,"lat":37.197321}';
-                    //let arrres=JSON.parse(tstr);
-
-                    UpdateDronePathDisplay(arrres,pathcolor);
-
-                    //return arrres;
+                    waypointstartpointarray=[arrres[0].long,arrres[0].lat];
+                    UpdateDronePathDisplay(arrres,pathcolor,lineweight,pathplanninggraphicsLayer);
                    }
                   else{ alert(response); }
               });
 
           }
 
-          function UpdateDronePathDisplay(arrinput,pathcolor){
+          function UpdateGPSHistoricalPath(id_device_id,pathcolor,lineweight=5,type='update'){
+            clearInterval(timerid3);
+            if(type=='update'){
+              timerid3=setInterval(myTimer, 1000);
+            }
+            else{
+              //savepathtodb();
+              return
+            }
+            function myTimer(e){
+              getDronepathfromDB2(id_device_id,pathcolor,lineweight,gpshistoricalgraphicsLayer);
+              let d = new Date();
+              let t = d.toLocaleTimeString();
+              document.getElementById("daytime").innerHTML = t;
+            }
+         }
+
+          function getDronepathfromDB2(id_device_id,pathcolor,lineweight,displaylayer){
+              let URL = "{% url 'gpshistoricaldataupdate' %}";
+              let data = {
+                      csrfmiddlewaretoken: '{{ csrf_token }}',
+                      'id_device_id': id_device_id
+                     };
+              $.post(URL, data, function(response){
+                let res=JSON.parse(response);
+                  if(res.flag == 'success'){
+                    let arrres=JSON.parse(res.gpshistoricaldata);
+                    //console.log(arrres);
+                    gpshistoricalarraystart=[arrres[0].long,arrres[0].lat];
+                    UpdateDronePathDisplay(arrres,pathcolor,lineweight,displaylayer);
+                   }
+                  else{ alert(response); }
+              });
+
+          }
+
+          function UpdateDronePathDisplay(pt_arr,pathcolor,lineweight,displayLayer){
             //update the drone path on pathplanninglayer
 
-            pathplanninggraphicsLayer.removeAll();
+            displayLayer.removeAll();
             let path_featureset=[];
             let path_polyline=[];
             //draw all gpsdata
             //console.log(arrinput);
-            let pt_arr=arrinput;
+            //let pt_arr=arrinput;
             for(let i=0;i<pt_arr.length;i++){
               let t_graphic= new Graphic({
                 geometry: {
@@ -3043,7 +3077,7 @@
               path_featureset.push(t_graphic_text);
               path_polyline.push([pt_arr[i].long,pt_arr[i].lat]);
             }
-            waypointstartpointarray=path_polyline[0];
+            //waypointstartpointarray=path_polyline[0];
             //console.log(path_featureset);
             let polylineGraphic = new Graphic({
               geometry: {
@@ -3053,11 +3087,12 @@
               symbol: {
                 type: "simple-line",
                 color: pathcolor,
-                width: 4
+                width: lineweight
               }
             });
-            pathplanninggraphicsLayer.add(polylineGraphic);
-            pathplanninggraphicsLayer.addMany(path_featureset);
+            displayLayer.visible=true;
+            displayLayer.add(polylineGraphic);
+            displayLayer.addMany(path_featureset);
           }
 
            function savewholegpsdatatodb(sel_gpsdevice){
@@ -3130,8 +3165,37 @@
          document.getElementById('GPSStart2').addEventListener('click',function(){
            readDB2("sel_gpsdevice2","GPSStart2");
          });
+
          document.getElementById('loaddronepath').addEventListener('click',function(){
-           UpdateDronePath("sel_dronepath","loaddronepath");
+           if(document.getElementById('loaddronepath').value=="Show Path"){
+             document.getElementById('loaddronepath').value='Hide Path';
+
+             let sel_gpsdevice = document.getElementById("sel_dronepath");
+             let id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
+             getDronepathfromDB(id_device_id,m_colorgroup['path1']);
+
+           }
+           else{
+             document.getElementById('loaddronepath').value='Show Path';
+             //hide path
+             pathplanninggraphicsLayer.visible=false;
+           }
+
+         });
+
+         document.getElementById('loadhistoricaldronepath').addEventListener('click',function(){
+           let sel_gpsdevice = document.getElementById("sel_historicaldronepath");
+           let id_device_id = sel_gpsdevice.options[sel_gpsdevice.selectedIndex].text;
+           if(document.getElementById('loadhistoricaldronepath').value=="Load Path"){
+             document.getElementById('loadhistoricaldronepath').value='    Stop   ';
+             UpdateGPSHistoricalPath(id_device_id,m_colorgroup['path2'],3,type='update')
+           }
+           else{
+             document.getElementById('loadhistoricaldronepath').value='Load Path';
+             //hide path
+             UpdateGPSHistoricalPath(id_device_id,m_colorgroup['path2'],3,type='stop')
+           }
+
          });
 
 
@@ -3305,7 +3369,7 @@
           <option value="{{ device.id }}">{{ device.deviceid }}</option>
           {% endfor %}
         </select>
-        <input type="button" id="loaddronepath"  value="Load Path"></input>
+        <input type="button" id="loaddronepath"  value="Show Path"></input>
         <input type="button" id="gotoGPSLocation3"  value="Locate"></input>
       </div>
     </div>
@@ -3333,9 +3397,26 @@
           <input type="button" id="GPSStart2"  value="Load GPS"></input>
           <input type="button" id="gotoGPSLocation2"  value="Locate"></input>
         </div>
-      <p id="daytime"></p>
+
     </div>
+    <div>
+      <h3>Drone path</h3>
+      <div>
+        <select id="sel_historicaldronepath">
+          <option value="">Select a device</option>
+          {% for device in dronehistoricalpath %}
+          <option value="{{ device.id }}">{{ device.deviceid }}</option>
+          {% endfor %}
+        </select>
+        <input type="button" id="loadhistoricaldronepath"  value="Load Path"></input>
+        <input type="button" id="gotoGPSLocation4"  value="Locate"></input>
+      </div>
+
+    </div>
+    <p id="daytime"></p>
   </div>
+
+
 
   <div id="viewDiv">
     <div id="sidebar" class="esri-widget" style="display:none">

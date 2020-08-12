@@ -36,6 +36,16 @@ class WaypointsData(models.Model):
     def __str__(self):
         return self.waypointsdata
 
+class GPShistoricalData(models.Model):
+    #id = models.AutoField(primary_key=True)
+    deviceid = models.CharField(max_length=20,primary_key=True)
+    taskid = models.CharField(max_length=100,blank=True,null=True)
+    gpshistoricaldata = models.TextField(blank=True,null=True)
+    created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
+    def __str__(self):
+        return self.gpshistoricaldata
+
 class DataStorage(models.Model):
     id = models.AutoField(primary_key=True)
     taskid = models.CharField(max_length=100,blank=True,null=True)

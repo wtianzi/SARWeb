@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import ClueMedia
-from .models import GPSData,DataStorage,WaypointsData
+from .models import GPSData,DataStorage,WaypointsData,GPShistoricalData
 
 # Register your models here.
 class ClueMediaAdmin(admin.ModelAdmin):
@@ -29,3 +29,8 @@ class WaypointsDataAdmin(admin.ModelAdmin):
     list_display = ['deviceid','taskid','waypointsdata','created_at','updated_at']
     pass
 admin.site.register(WaypointsData, WaypointsDataAdmin)
+
+class GPShistoricalDataAdmin(admin.ModelAdmin):
+    list_display = ['deviceid','taskid','gpshistoricaldata','created_at','updated_at']
+    pass
+admin.site.register(GPShistoricalData, GPShistoricalDataAdmin)

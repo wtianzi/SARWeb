@@ -2,14 +2,14 @@ from django.shortcuts import render
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 from django.http import HttpResponse,HttpResponseRedirect
-from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData
+from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData
 import json
 from .forms import DemoForm,TaskAssignmentForm
 from django.urls import reverse
 from django.template import loader
 from django.core import serializers
 from rest_framework import viewsets
-from .serializers import GPSDataSerializer,ClueMediaSerializer,WaypointsDataSerializer
+from .serializers import GPSDataSerializer,ClueMediaSerializer,WaypointsDataSerializer, GPShistoricalDataSerializer
 
 from rest_framework import permissions
 
@@ -38,6 +38,9 @@ class TaskGenerationView(TemplateView):
 
         pathid = WaypointsData.objects.values().order_by('-updated_at')[:5]
         context['dronepath']=pathid
+
+        historicalpathid = GPShistoricalData.objects.values().order_by('-updated_at')[:5]
+        context['dronehistoricalpath']=pathid
         return context
 
     def get_values(request):
@@ -91,6 +94,14 @@ class TaskGenerationView(TemplateView):
             #context={'waypointsdata':tobj,'flag':'success'}
             context={'waypointsdata':getattr(pathitem, 'waypointsdata'),'flag':'success'}
             #print(context)
+            return HttpResponse(json.dumps(context)) # if everything is OK
+        return HttpResponse('FAIL!!!!!')
+
+    def gpshistoricaldataupdate(request):
+        if request.method == 'POST':
+            pathdata_id = request.POST['id_device_id']
+            pathitem = GPShistoricalData.objects.get(deviceid=pathdata_id)
+            context={'gpshistoricaldata':getattr(pathitem, 'gpshistoricaldata'),'flag':'success'}
             return HttpResponse(json.dumps(context)) # if everything is OK
         return HttpResponse('FAIL!!!!!')
 

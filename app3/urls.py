@@ -10,6 +10,7 @@ router = routers.DefaultRouter()
 router.register(r'gpsdatas', views.GPSDataViewSet,basename="gpsdatas")
 router.register(r'cluemedia', views.ClueMediaViewSet,basename="cluemedia")
 router.register(r'waypointsdata', views.WaypointsDataViewSet,basename="waypointsdata")
+router.register(r'gpshistoricaldata', views.WaypointsDataViewSet,basename="gpshistoricaldata")
 
 urlpatterns = [
     path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
@@ -25,6 +26,7 @@ urlpatterns = [
     url(r'^tasksave$',TaskGenerationView.tasksave,name='tasksave'),
     url(r'^gpsupdate$',TaskGenerationView.gpsupdate,name='gpsupdate'),
     url(r'^pathplanningupdate$',TaskGenerationView.pathplanningupdate,name='pathplanningupdate'),
+    url(r'^gpshistoricaldataupdate$',TaskGenerationView.gpshistoricaldataupdate,name='gpshistoricaldataupdate'),
     url(r'^getwatershed$',TaskGenerationView.getwatershed,name='getwatershed'),
     url(r'^getsegmentVal$',TaskGenerationView.getSegmentVal,name='getsegmentVal'),
     url(r'^gpsdatastorage$',TaskGenerationView.gpsdatastorage,name='gpsdatastorage'),

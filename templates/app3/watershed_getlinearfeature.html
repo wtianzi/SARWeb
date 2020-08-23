@@ -64,12 +64,25 @@
         SpatialReference,projection) {
       var leftop=[-80.576448,37.219548];
       var righbottom=[-80.528222,37.1912];
-
-      //leftop=[-81.576448,37.219548];
-      //righbottom=[-81.528222,37.1912];
-
       var gcx=0.5*(leftop[0]+righbottom[0]);
       var gcy=0.5*(leftop[1]+righbottom[1]);
+      let layeravaliable={
+        'elevation':false,
+        'river':true,
+        'road':true,
+        'lake':false,
+        'drawmultipoints':false
+      }
+      //leftop=[-81.576448,37.219548];
+      //righbottom=[-81.528222,37.1912];
+      var startcenter0=[-80.5459564891223,37.2040570285143];
+
+      var startcenter1=[-80.4757389347337,37.2040570285143];
+      var startcenter=[-80.5450562640660,37.1977538769385];
+
+      var gcx=startcenter[0];
+      var gcy=startcenter[1];
+
       var samplewidth=200;
       var sampleheight=200;
 
@@ -86,28 +99,39 @@
         basemap: "gray",//"topo",//"osm"
         layers: [graphicsSegmentLayer]
       });
-      var elevLyr = new ElevationLayer({
-        // Custom elevation service
-        url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
-      });
-      var linearfeatureLyr = new FeatureLayer({
 
-        url:"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6"
-        // riverLayer flow line, Spatial Reference: 102100  (3857)
+      var elevLyr,linearfeatureLyr,roadLyr,waterareaLyr;
+      if(layeravaliable.elevation){
+          elevLyr = new ElevationLayer({
+          // Custom elevation service
+          url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
+        });
+      }
 
-        //url:"https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/0"
-      });
-      map.add(linearfeatureLyr);
+      if(layeravaliable.river){
+        linearfeatureLyr = new FeatureLayer({
 
-      var roadLyr = new FeatureLayer({
-        url:"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/30"
-      });
-      map.add(roadLyr);
+          url:"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6"//6 detailed mape, 5 fewer features
+          // riverLayer flow line, Spatial Reference: 102100  (3857)
 
-      var waterareaLyr = new FeatureLayer({
-        url:"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/8"
-      });
-      map.add(waterareaLyr);
+          //url:"https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/0"
+        });
+        map.add(linearfeatureLyr);
+      }
+      if(layeravaliable.road){
+        roadLyr = new FeatureLayer({
+          url:"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/30"
+        });
+        map.add(roadLyr);
+      }
+
+      if(layeravaliable.lake){
+        waterareaLyr = new FeatureLayer({
+          url:"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/8"//8 river wide, 7 fewer river wide, 9 lake
+        });
+        map.add(waterareaLyr);
+      }
+
 
       const visualization_Multipoints = new GraphicsLayer({
         opacity:0.9
@@ -118,7 +142,7 @@
         map: map,
         container: "viewDiv",
         center: [gcx, gcy],
-        zoom: 14
+        zoom: 13
       });
       //spatialReference:  { wkid: 4326 },
 
@@ -130,198 +154,216 @@
         //show and download linearfeature
         //view.on("click", LinearFeature);
 
-      });
-
-      view.whenLayerView(waterareaLyr).then(function(layerView){
-        layerView.watch("updating", function(val){
-          if(!val){  // wait for the layer view to finish updating
-            layerView.queryFeatures().then(function(results){
-              var outSpatialReference = new SpatialReference({
-                wkid: 4326
-              });
-
-              projection.load().then(function() {
-                //var tgeo = projection.project(graphic.geometry, outSpatialReference);
-                let t_obj={};
-                let arr_rings=[];
-                console.log(results.features);
-
-                 results.features.forEach(function(graphic) {
-                   arr_rings=arr_rings.concat(graphic.geometry.rings);
-                 });
-                 //console.log(arr_rings);
-
-                 let tstr=GetUpdatedViewExtentString();
-                 let t_poly={
-                   type:"polygon",
-                   rings:arr_rings,
-                   spatialReference:results.features[0].geometry.spatialReference
-                 };
-                 let t_poly_g=new Graphic({
-                   geometry:t_poly
-                 });
-
-                 t_poly_g.geometry = projection.project(t_poly_g.geometry, outSpatialReference);
-                 //console.log(t_poly_g);
-                 t_obj.type=t_poly_g.geometry.type;
-                 t_obj.rings=t_poly_g.geometry.rings;
-                 t_obj.spatialReference=t_poly_g.geometry.spatialReference;
-                 let jsonContent=JSON.stringify(t_obj);
-                 //console.log(jsonContent);
-
-                 let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd8_lake.txt";
-                 if(enabledownload){
-                   download(filename,jsonContent);
-                 }
-                });
-
-            });
-          }
-        });
-      });
-      view.whenLayerView(linearfeatureLyr).then(function(layerView){
-        if(enabledownload){
+        if(layeravaliable.elevation){
           InitElevation();
         }
+      });
+      if(layeravaliable.lake){
+        view.whenLayerView(waterareaLyr).then(function(layerView){
+          layerView.watch("updating", function(val){
 
-        layerView.watch("updating", function(val){
-          if(!val){  // wait for the layer view to finish updating
-
-            layerView.queryFeatures().then(function(results){
-              //console.log(results.features);
-
-              var outSpatialReference = new SpatialReference({
-                wkid: 4326
-              });
-
-
-              projection.load().then(function() {
-                //var tgeo = projection.project(graphic.geometry, outSpatialReference);
-                let jsonContent = "[";
-                var t_obj={};
-                let arr_paths=[];
-                console.log(results.features);
-
-                 results.features.forEach(function(graphic) {
-                   //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
-                   t_obj.type=graphic.geometry.type;
-                   t_obj.paths=graphic.geometry.paths;
-                   t_obj.spatialReference=graphic.geometry.spatialReference;
-                   //console.log(t_obj.paths);
-                   arr_paths=arr_paths.concat(t_obj.paths);
-                   jsonContent+=JSON.stringify(t_obj)+",\r\n";
-                 });
-
-                 let multipoints_linear=[];
-                 for (let i=0;i<arr_paths.length;i++){
-                   multipoints_linear=multipoints_linear.concat(arr_paths[i]);
-                 }
-                 //console.log(multipoints_linear);
-                 var tmulpt=new Multipoint({
-                    points: multipoints_linear,
-                    spatialReference:results.features[0].geometry.spatialReference
-                  });
-                 DrawMultipoints(tmulpt,[0,255,0],3);
-
-                 let tstr=GetUpdatedViewExtentString();
-
-                 //console.log(arr_paths);
-                 let t_poly={
-                   type:"polyline",
-                   paths:arr_paths,
-                   spatialReference:results.features[0].geometry.spatialReference
-                 };
-                 let t_poly_g=new Graphic({
-                   geometry:t_poly
-                 });
-                 //console.log(t_poly_g);
-                 t_poly_g.geometry = projection.project(t_poly_g.geometry, outSpatialReference);
-                 t_obj.type=t_poly_g.geometry.type;
-                 t_obj.paths=t_poly_g.geometry.paths;
-                 t_obj.spatialReference=t_poly_g.geometry.spatialReference;
-                 jsonContent=JSON.stringify(t_obj);
-
-                 let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd6_river.txt";
-                 if(enabledownload){
-                   download(filename,jsonContent);
-                 }
-
+            if(!val){  // wait for the layer view to finish updating
+              layerView.queryFeatures().then(function(results){
+                var outSpatialReference = new SpatialReference({
+                  wkid: 4326
                 });
 
-            });
-          }
-        });
-      });
-      view.whenLayerView(roadLyr).then(function(layerView){
+                projection.load().then(function() {
+                  //var tgeo = projection.project(graphic.geometry, outSpatialReference);
+                  let t_obj={};
+                  let arr_rings=[];
+                  console.log(results.features);
 
-        layerView.watch("updating", function(val){
-          if(!val){  // wait for the layer view to finish updating
+                   results.features.forEach(function(graphic) {
+                     arr_rings=arr_rings.concat(graphic.geometry.rings);
+                   });
+                   //console.log(arr_rings);
 
-            layerView.queryFeatures().then(function(results){
-              //console.log(results.features);
+                   let tstr=GetUpdatedViewExtentString();
+                   let t_poly={
+                     type:"polygon",
+                     rings:arr_rings,
+                     spatialReference:results.features[0].geometry.spatialReference
+                   };
+                   let t_poly_g=new Graphic({
+                     geometry:t_poly
+                   });
 
-              var outSpatialReference = new SpatialReference({
-                wkid: 4326
-              });
+                   t_poly_g.geometry = projection.project(t_poly_g.geometry, outSpatialReference);
+                   //console.log(t_poly_g);
+                   t_obj.type=t_poly_g.geometry.type;
+                   t_obj.rings=t_poly_g.geometry.rings;
+                   t_obj.spatialReference=t_poly_g.geometry.spatialReference;
+                   let jsonContent=JSON.stringify(t_obj);
+                   //console.log(jsonContent);
 
-
-              projection.load().then(function() {
-                //var tgeo = projection.project(graphic.geometry, outSpatialReference);
-                let jsonContent = "[";
-                var t_obj={};
-                let arr_paths=[];
-                console.log(results.features);
-
-                 results.features.forEach(function(graphic) {
-                   //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
-                   t_obj.type=graphic.geometry.type;
-                   t_obj.paths=graphic.geometry.paths;
-                   t_obj.spatialReference=graphic.geometry.spatialReference;
-                   //console.log(t_obj.paths);
-                   arr_paths=arr_paths.concat(t_obj.paths);
-                   jsonContent+=JSON.stringify(t_obj)+",\r\n";
-                 });
-
-                 let multipoints_linear=[];
-                 for (let i=0;i<arr_paths.length;i++){
-                   multipoints_linear=multipoints_linear.concat(arr_paths[i]);
-                 }
-                 //console.log(multipoints_linear);
-                 var tmulpt=new Multipoint({
-                    points: multipoints_linear,
-                    spatialReference:results.features[0].geometry.spatialReference
+                   let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd8_lake.txt";
+                   if(enabledownload){
+                     download(filename,jsonContent);
+                   }
                   });
-                 DrawMultipoints(tmulpt,[0,255,255],3);
 
-                 let tstr=GetUpdatedViewExtentString();
+              });
+            }
+          });
+        });
+      }
 
-                 //console.log(arr_paths);
-                 let t_poly={
-                   type:"polyline",
-                   paths:arr_paths,
-                   spatialReference:results.features[0].geometry.spatialReference
-                 };
-                 let t_poly_g=new Graphic({
-                   geometry:t_poly
-                 });
-                 //console.log(t_poly_g);
-                 t_poly_g.geometry = projection.project(t_poly_g.geometry, outSpatialReference);
-                 t_obj.type=t_poly_g.geometry.type;
-                 t_obj.paths=t_poly_g.geometry.paths;
-                 t_obj.spatialReference=t_poly_g.geometry.spatialReference;
-                 jsonContent=JSON.stringify(t_obj);
 
-                 let filename=tstr.toString()+"_"+Date.now().toString()+"_trans30_road.txt";
-                 if(enabledownload){
-                   download(filename,jsonContent);
-                 }
+      if(layeravaliable.river){
+        view.whenLayerView(linearfeatureLyr).then(function(layerView){
 
+          layerView.watch("updating", function(val){
+            if(!val){  // wait for the layer view to finish updating
+
+              layerView.queryFeatures().then(function(results){
+                //console.log(results.features);
+
+                var outSpatialReference = new SpatialReference({
+                  wkid: 4326
                 });
 
-            });
-          }
+
+                projection.load().then(function() {
+                  //var tgeo = projection.project(graphic.geometry, outSpatialReference);
+                  let jsonContent = "[";
+                  var t_obj={};
+                  let arr_paths=[];
+                  console.log(results.features);
+
+                   results.features.forEach(function(graphic) {
+                     //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
+                     t_obj.type=graphic.geometry.type;
+                     t_obj.paths=graphic.geometry.paths;
+                     t_obj.spatialReference=graphic.geometry.spatialReference;
+                     //console.log(t_obj.paths);
+                     arr_paths=arr_paths.concat(t_obj.paths);
+                     jsonContent+=JSON.stringify(t_obj)+",\r\n";
+                   });
+
+                   let multipoints_linear=[];
+                   for (let i=0;i<arr_paths.length;i++){
+                     multipoints_linear=multipoints_linear.concat(arr_paths[i]);
+                   }
+                   //console.log(multipoints_linear);
+                   if(layeravaliable.drawmultipoints){
+
+                     var tmulpt=new Multipoint({
+                        points: multipoints_linear,
+                        spatialReference:results.features[0].geometry.spatialReference
+                      });
+
+                      DrawMultipoints(tmulpt,[0,255,0],3);
+                    }
+
+
+                   let tstr=GetUpdatedViewExtentString();
+
+                   //console.log(arr_paths);
+                   let t_poly={
+                     type:"polyline",
+                     paths:arr_paths,
+                     spatialReference:results.features[0].geometry.spatialReference
+                   };
+                   let t_poly_g=new Graphic({
+                     geometry:t_poly
+                   });
+                   //console.log(t_poly_g);
+                   t_poly_g.geometry = projection.project(t_poly_g.geometry, outSpatialReference);
+                   t_obj.type=t_poly_g.geometry.type;
+                   t_obj.paths=t_poly_g.geometry.paths;
+                   t_obj.spatialReference=t_poly_g.geometry.spatialReference;
+                   jsonContent=JSON.stringify(t_obj);
+
+                   let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd6_river.txt";
+                   if(enabledownload){
+                     download(filename,jsonContent);
+                   }
+
+                  });
+
+              });
+            }
+          });
         });
-      });
+      }
+      if(layeravaliable.road){
+        view.whenLayerView(roadLyr).then(function(layerView){
+
+          layerView.watch("updating", function(val){
+            if(!val){  // wait for the layer view to finish updating
+
+              layerView.queryFeatures().then(function(results){
+                //console.log(results.features);
+
+                var outSpatialReference = new SpatialReference({
+                  wkid: 4326
+                });
+
+
+                projection.load().then(function() {
+                  //var tgeo = projection.project(graphic.geometry, outSpatialReference);
+                  let jsonContent = "[";
+                  var t_obj={};
+                  let arr_paths=[];
+                  console.log(results.features);
+
+                   results.features.forEach(function(graphic) {
+                     //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
+                     t_obj.type=graphic.geometry.type;
+                     t_obj.paths=graphic.geometry.paths;
+                     t_obj.spatialReference=graphic.geometry.spatialReference;
+                     //console.log(t_obj.paths);
+                     arr_paths=arr_paths.concat(t_obj.paths);
+                     jsonContent+=JSON.stringify(t_obj)+",\r\n";
+                   });
+
+                   if(layeravaliable.drawmultipoints){
+                     console.log("draw roads");
+                     let multipoints_linear=[];
+                     for (let i=0;i<arr_paths.length;i++){
+                       multipoints_linear=multipoints_linear.concat(arr_paths[i]);
+                     }
+                     //console.log(multipoints_linear);
+                     var tmulpt=new Multipoint({
+                        points: multipoints_linear,
+                        spatialReference:results.features[0].geometry.spatialReference
+                      });
+                     DrawMultipoints(tmulpt,[0,255,255],3);
+                   }
+
+
+                   let tstr=GetUpdatedViewExtentString();
+
+                   //console.log(arr_paths);
+                   let t_poly={
+                     type:"polyline",
+                     paths:arr_paths,
+                     spatialReference:results.features[0].geometry.spatialReference
+                   };
+                   let t_poly_g=new Graphic({
+                     geometry:t_poly
+                   });
+                   //console.log(t_poly_g);
+                   t_poly_g.geometry = projection.project(t_poly_g.geometry, outSpatialReference);
+                   t_obj.type=t_poly_g.geometry.type;
+                   t_obj.paths=t_poly_g.geometry.paths;
+                   t_obj.spatialReference=t_poly_g.geometry.spatialReference;
+                   jsonContent=JSON.stringify(t_obj);
+
+                   let filename=tstr.toString()+"_"+Date.now().toString()+"_trans30_road.txt";
+                   if(enabledownload){
+                     download(filename,jsonContent);
+                   }
+
+                  });
+
+              });
+            }
+          });
+        });
+      }
+
 
 
       function LinearFeature(event){
@@ -460,7 +502,7 @@
         // [[pt1.geometry.longitude,pt1.geometry.latitude],[pt2.geometry.longitude,pt2.geometry.latitude]];
         let t_pts=GetUpdatedViewExtentString();
         let t_path=[[t_pts[0][0],t_pts[0][1]], [t_pts[1][0],t_pts[0][1]] , [t_pts[1][0],t_pts[1][1]] , [t_pts[0][0],t_pts[1][1]],[t_pts[0][0],t_pts[0][1]]];
-        //var t_path=[[leftop[0],leftop[1]],[righbottom[0],leftop[1]],[righbottom[0],righbottom[1]],[leftop[0],righbottom[1]],[leftop[0],leftop[1]]];
+
         var t_poly={
           type:'polygon',
            rings: t_path,//paths[i].reverse(),
@@ -486,7 +528,9 @@
            spatialReference: { wkid: 4326  }
          });
          //console.log(elepoints);
-         DrawMultipoints(tmulpt,[255,0,0],1);
+         if(layeravaliable.drawmultipoints){
+           DrawMultipoints(tmulpt,[255,0,0],1);
+         }
 
          var queryBeforeLandslide = elevLyr.queryElevation(tmulpt);
          //console.log(tmulpt);

@@ -68,42 +68,36 @@
       var gcy=0.5*(leftop[1]+righbottom[1]);
       let layeravaliable={
         'elevation':false,
-        'river':false,
-        'general':true,
+        'river':true,
+        'road':true,
         'lake':false,
         'drawmultipoints':false
-      };
+      }
 
       let dataurl={
         'electricpowertransmissionlines':"https://services1.arcgis.com/Hp6G80Pky0om7QvQ/ArcGIS/rest/services/Electric_Power_Transmission_Lines/FeatureServer/0",
         'localroads':"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/30",
         'elevation':"//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/",
         'river':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6",
-        'river_line':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6",
-        'river_wide':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/8",
+        'river_w':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/8",
         'lake':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/9",
         'railroads':"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/35"
-      };
+      }
       let datafileext={
         'electricpowertransmissionlines':"_eptl0_powerline",
         'localroads':"_trans30_localroad",
         'elevation':"_elevation",
         'river':"_nhd6_river",
-        'river_wide':"_nhd8_river",
+        'river_w':"_nhd8_river",
         'lake':"_nhd9_lake",
         'railroads':"_trans35_railroads"
-      };
-
-      let generallayerinfo={
-        'url':dataurl.electricpowertransmissionlines,
-        'fileext':datafileext.electricpowertransmissionlines
       }
       //leftop=[-81.576448,37.219548];
       //righbottom=[-81.528222,37.1912];
-      var startcenter=[-80.5459564891223,37.2040570285143];
+      var startcenter0=[-80.5459564891223,37.2040570285143];
 
       var startcenter1=[-80.4757389347337,37.2040570285143];
-      var startcenter2=[-80.5450562640660,37.1977538769385];
+      var startcenter=[-80.5450562640660,37.1977538769385];
 
       var gcx=startcenter[0];
       var gcy=startcenter[1];
@@ -121,7 +115,7 @@
 
 
       var map = new Map({
-        basemap: "gray",//"topo",//"osm"//"gray"
+        basemap: "gray",//"topo",//"osm"
         layers: [graphicsSegmentLayer]
       });
 
@@ -143,9 +137,9 @@
         });
         map.add(linearfeatureLyr);
       }
-      if(layeravaliable.general){
+      if(layeravaliable.road){
         roadLyr = new FeatureLayer({
-          url: generallayerinfo.url  //"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/30"//30: local roads, 35: railroads
+          url:"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/30"//30: local roads, 35: railroads
         });
         map.add(roadLyr);
       }
@@ -312,7 +306,7 @@
           });
         });
       }
-      if(layeravaliable.general){
+      if(layeravaliable.road){
         view.whenLayerView(roadLyr).then(function(layerView){
 
           layerView.watch("updating", function(val){
@@ -376,9 +370,7 @@
                    t_obj.spatialReference=t_poly_g.geometry.spatialReference;
                    jsonContent=JSON.stringify(t_obj);
 
-                   //let filename=tstr.toString()+"_"+Date.now().toString()+"_trans30_road.txt";
-                   let filename=tstr.toString()+"_"+Date.now().toString()+generallayerinfo.fileext +".txt";
-
+                   let filename=tstr.toString()+"_"+Date.now().toString()+"_trans30_road.txt";
                    if(enabledownload){
                      download(filename,jsonContent);
                    }

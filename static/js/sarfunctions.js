@@ -91,6 +91,15 @@ function FilterBoundary(x,y,maxx,maxy,minx,miny){
   return [x,y];
 }
 
+function GetObjectLength(object){
+  var length = 0;
+    for( var key in object ) {
+        if( object.hasOwnProperty(key) ) {
+            ++length;
+        }
+    }
+    return length;
+}
 
 var m_clue_template = {
     title: "{Name}",

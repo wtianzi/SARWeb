@@ -107,43 +107,27 @@
       "esri/Graphic",
       "esri/Map",
       "esri/views/MapView",
-      "esri/layers/FeatureLayer",
       "esri/layers/GraphicsLayer",
       "esri/geometry/Polygon",
       "esri/geometry/geometryEngine",
       "esri/widgets/Expand",
-        "esri/layers/TileLayer",
-        "esri/widgets/BasemapToggle",
-      "esri/widgets/CoordinateConversion",//,      "esri/widgets/Sketch"
-      "esri/widgets/DistanceMeasurement2D",
-      "esri/widgets/AreaMeasurement2D",
+      "esri/widgets/BasemapToggle",
+      "esri/widgets/CoordinateConversion",
       "esri/geometry/Extent",
       "esri/geometry/Point",
-      "esri/layers/OpenStreetMapLayer",
       "esri/widgets/Track",
       "esri/widgets/Search",
       "esri/geometry/Multipoint",
-      "esri/layers/ElevationLayer",
       "esri/geometry/Polyline",
       "esri/geometry/Circle",
-      "esri/layers/GeoJSONLayer",
       "esri/core/promiseUtils"
-
     ], function(
-      SketchViewModel, Graphic, Map, MapView, FeatureLayer,
-      GraphicsLayer, Polygon, geometryEngine, Expand, TileLayer,BasemapToggle,
-      CoordinateConversion,
-      DistanceMeasurement2D,AreaMeasurement2D,Extent,Point,
-      OpenStreetMapLayer,Track,Search,Multipoint,
-      ElevationLayer,Polyline,Circle,GeoJSONLayer,promiseUtils
+      SketchViewModel, Graphic, Map, MapView,GraphicsLayer, Polygon, geometryEngine, Expand, BasemapToggle,CoordinateConversion,Extent,Point,Track,Search,Multipoint,Polyline,Circle,promiseUtils
     ) {
-      let view, newDevelopmentGraphic,taskassignment_sketchViewModel,
-        instructionsExpand,coordinateLayer;
-      let intersects = false,
-        contains = true;
+      let view, newDevelopmentGraphic,taskassignment_sketchViewModel,instructionsExpand;
       let updated_polygonring=[];
-      let width=1600*1.5;
-      let height=900*1.5;
+      //let width=1600*1.5;
+      //let height=900*1.5;
       let m_d=new Date();
       let m_scale=16;//15
       let m_experimentres={
@@ -211,33 +195,19 @@
       let gcx=-80.556451;
       let gcy=37.2;
 
-      let gwidth=10;
-      let gheight=10;
-      let voronoistyle="random";
-      let glvertices;
-      let glverticeslist=[];
-      let maxdistanceerror = 0.0001;
-
-      //acer
-
       let eacharea=500000;//240000;//60 acer;
       let activeWidget = null;
 
       let allpolygons=[];
       let allpolygons_text=[];
-      let activepolygonset=[];
-      let activepolygonpoints=[];
-      let move_polygon;
+
       let area_extent;
       let arr_featureset=[];
       let validSymbol;
 
-      let m_filterprob=0.0000001;
       let m_lpdata_con=[];
       let m_lpdata_trajectory=[];
       let m_lpdata_tra_colormap=[];
-
-      let m_lpdata_trial=[];
       let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_visualizationtype='byhour';// or 'byclue' if any clue is found
@@ -246,12 +216,9 @@
 
       //let m_searchedarea=[];//all polygon marked gray
       let m_teamassign=[null,null,null,null,null];//
-      let m_lptrail_pts=[];//the target person location at hour index
       let m_targetpolygon;
       let m_taskstarttime=null;
       let m_tasktrials=0;//how many time the operator tried to assign teams
-      let m_taskpolygon={};
-
       let epsg4326_voronoiarr=[];
 
       const graphicInitLayer= new GraphicsLayer();
@@ -267,7 +234,6 @@
         opacity:0.5
       });
 
-
       const visualization_Trajectories_Layer = new GraphicsLayer({
         opacity:0.5
       });
@@ -277,12 +243,8 @@
       });
       const graphicInteractionLayer =new GraphicsLayer();
 
+      // display task information
       const temperalgraphicLayer = new GraphicsLayer();
-
-      let elevLyr = new ElevationLayer({
-        // Custom elevation service
-        url: "//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/"//"https://sampleserver6.arcgisonline.com/arcgis/rest/services/Elevation/MtBaldy_Elevation/ImageServer"
-      });
 
       const map = new Map({
         basemap: "hybrid",//"hybrid",//"satellite",
@@ -300,8 +262,6 @@
       });
 
       setUpView();
-      // creates new view and map, adds featurelayers and graphicslayer to the view
-
       // This function is called when a user clicks on the view.
       function setUpGraphicClickHandler() {
         view.on("click", function(event) {
@@ -350,7 +310,7 @@
           }
         })
         taskassignment_sketchViewModel.on(["update", "undo", "redo"], onTaskAssignmentGraphicUpdate);
-        activepolygonset=[];
+
       });
 
 
@@ -410,10 +370,8 @@
         return cpy;
       }
 
-
       function addGraphics(vtriangles) {
         // transfer the voronoi polygon:vpolygons to gispolygon
-        //validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);
         let text_symbol = {
           type: "text",  // autocasts as new TextSymbol()
           color: "white",
@@ -476,12 +434,6 @@
 
       // Create new view, map and layers... set up the view
       function setUpView() {
-        coordinateLayer=new FeatureLayer({
-          //wkid:4326
-          //spatialReference: { wkid: 4326  }
-          spatialReference: { wkid: 102100  }
-        });
-
         view = new MapView({
           container: "viewDiv",
           map: map,
@@ -510,7 +462,6 @@
           index: 5
         });
         setupEditing();
-        //validSymbol = createSymbol([0, 170, 255, 0.4], "solid", 2, [255,255, 255]);//task generation
         validSymbol = createSymbol([212,221,222, 0.2], "solid", 2, [255,255, 255]);//task generation
       }
 
@@ -753,14 +704,9 @@
 
         m_tasktrials=0;
         epsg4326_voronoiarr=[];
-        //wholetask=activeWidget.viewModel.measurement;
         allpolygons=[];
         allpolygons_text=[];
-        glverticeslist=[];
-        if(voronoistyle=="random"){
-          addVoronoi();
-        }
-
+        addVoronoi();
         AddTeams(true);
         DisplayLostPersonInfo();
 
@@ -847,7 +793,6 @@
        function () {
          m_experimentres["actions"].push({"id":"clearall","timestamp": Date.now(), "description":"clearall"});
          m_lpdata_con=[];
-         m_lpdata_trial=[];
          m_lpdata_trajectory=[];
          m_lpdata_tra_colormap=[];
 
@@ -858,9 +803,6 @@
        function ClearAll(){
          allpolygons=[];
          allpolygons_text=[];
-         activepolygonset=[];
-         activepolygonpoints=[];
-         glverticeslist=[];
          updated_polygonring=[];
          m_taskstarttime=null;
          m_visualizationtype='byhour';
@@ -1007,14 +949,14 @@
 
                  t_color_arr=[];
                  for (let j=0;j<sizeoftrajectory;j++){
-                   let t_rgb=hslToRgb(0.2*(1-t_ratio*j), 1, 1-t_ratio*j);
+                   t_rgb=hslToRgb(0.2*(1-t_ratio*j), 1, 1-t_ratio*j);
                    t_color_arr.push(t_rgb);
                    //t_color_arr.push([255-255*t_ratio*j,0,0]);
                  }
                  m_lpdata_tra_colormap.push(t_color_arr);
                  t_color_arr=[];
                  for (let j=0;j<sizeoftrajectory;j++){
-                  let t_rgb=hslToRgb(0.6, 1, 1-0.5*t_ratio*j);
+                  t_rgb=hslToRgb(0.6, 1, 1-0.5*t_ratio*j);
                   t_color_arr.push(t_rgb);
                 }
                 m_lpdata_tra_colormap.push(t_color_arr);
@@ -1264,7 +1206,6 @@
            //console.log(t_data);
 
            // display all 100 trajectories
-           // filter m_lpdata_trial
            let arr_visual=[];
 
            let t_case = document.getElementById("displaytype").checked;  // default unchecked: bypath, checked: byhour
@@ -1532,7 +1473,6 @@
              return;
            }
            //console.log(m_lpdata_con);
-
            let t_data_con,t_hour;
 
            if (t_type == "byclue"){
@@ -1593,6 +1533,7 @@
           let t_len=0;
           let t_index=0;
           let t_oppacity=3;//0.8
+
           m_colormap=document.getElementById("sel_colormap").selectedIndex;
            arr_heatpoints.map(function(item){
              t_len=t_rings.length-1;
@@ -1914,7 +1855,6 @@
          document.getElementById("sel_lpm").onchange=function(){
 
            m_lpdata_con=[];
-           m_lpdata_trial=[];
            m_lpdata_trajectory=[];
            m_lpdata_tra_colormap=[];
 
@@ -1964,7 +1904,6 @@
            view.goTo([ m_scenarios[m_scenario_index]['center'] ]);
 
            m_lpdata_con=[];
-           m_lpdata_trial=[];
 
            m_lpdata_trajectory=[];
            m_lpdata_tra_colormap=[];

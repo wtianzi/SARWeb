@@ -209,13 +209,23 @@
         {"lostperson_index":1,"lostperson_type":"dementia"},
         {"lostperson_index":2,"lostperson_type":"hiker"}
       ];
-
-      // this will be changed after the data is loaded
+      let m_clues=[
+        {'index':0,"target":[-80.476, 37.20],"clue":[{"clue_index":0,"status":"unfound","info":"cloth","data":[-80.46, 37.205],'photoid':4},
+                          {"clue_index":1,"status":"unfound","info":"drink","data":[-80.47, 37.20],'photoid':3},
+                          {"clue_index":2,"status":"unfound","info":"drink","data":[-80.47, 37.202],'photoid':2},
+                          {"clue_index":3,"status":"unfound","info":"drink","data":[-80.47, 37.207],'photoid':1}]
+        },
+        {'index':1,"target":[-80.5450562640660, 37.1977538769385],"clue":[{"clue_index":0,"status":"unfound","info":"cloth","data":[-80.54, 37.198],'photoid':1},
+                          {"clue_index":1,"status":"unfound","info":"drink","data":[-80.54, 37.192],'photoid':2}]
+        }
+      ];
       let m_targetandclues={
         "target":[-80.476, 37.20],
         "clue":[{"clue_index":0,"status":"unfound","info":"cloth","data":[-80.46, 37.205],'photoid':1},
                           {"clue_index":1,"status":"unfound","info":"drink","data":[-80.47, 37.20],'photoid':2}]
       };
+      let m_index=0;
+
       let m_scenarios_rings={'child10to12':[800,1600,3200,9000],
       'dementia':[300,800,1900,8300],
       'hiker':[1100,3100,5800,18300]};
@@ -265,6 +275,7 @@
       let t_rgb=[];
       let m_editing=false;
       let m_visualizationtype='byhour';// or 'byclue' if any clue is found
+      let m_lpdata_trajectory_clueindex_json;
 
       let m_teamiconlocation=null;
 
@@ -884,6 +895,11 @@
             }
 
             //check if the target is in the array
+            //console.log("team");
+            //console.log(m_teamassign);
+
+            //console.log("target");
+            //console.log(m_targetpolygon);
             if(m_teamassign[i].attributes.cellindex==m_targetpolygon.attributes.cellindex){
               //display the targetarea
               DrawPolygonToInitLayer(m_targetpolygon,"red");
@@ -1044,7 +1060,12 @@
 
 
       document.getElementById("btndisplaytarget").onclick=function() {
-        DrawToTemperalGraphicLayer(m_targetandclues.target,type="point");
+        //m_lpdata_trial["data"];
+        //AddTrialDataToTriallayer();
+        //console.log(m_clues);
+        //console.log(m_index);
+        DrawToTemperalGraphicLayer(m_clues[m_index].target,type="point");
+        //DrawPolygonToInitLayer(m_targetpolygon,[255,0,0,0.8]);
         m_experimentres["actions"].push({"id":"btndisplaytarget","timestamp": Date.now(), "description":"click dislpay"});
 
       }
@@ -1107,13 +1128,14 @@
 
       };
 
-      // target data is in the m_targetandclues object
+      // target data is in the m_clues object
       // function updated after the clue updates v2.1
       function SetTargetpolygon(){
-        //console.log(m_targetandclues);
+        //console.log(m_clues);
+        //console.log(m_index);
         let t_pt=new Point({
-          latitude: m_targetandclues.target[1],
-          longitude: m_targetandclues.target[0],
+          latitude: m_clues[m_index].target[1],
+          longitude: m_clues[m_index].target[0],
           spatialReference: view.spatialReference
         });
         //console.log(t_pt);
@@ -1590,8 +1612,10 @@
          m_visualizationtype='byhour';
 
          // change clue status from 'show' to 'unfound'
-         for (let j=0;j<m_targetandclues.clue.length;j++){
-           m_targetandclues.clue[j].status='unfound';
+         for(let i =0;i<m_clues.length;i++){
+           for (let j=0;j<m_clues[i].clue.length;j++){
+             m_clues[i].clue[j].status='unfound';
+           }
          }
          //area_extent=view.extent;
          graphicsLayer.removeAll();
@@ -1686,7 +1710,7 @@
             return true;
          }
          function LoadLPFromCSV_Tra_All(t_url,t_rank=0,t_index=0){
-
+           //m_lpdata_trajectory
            let t_data;
             $.ajax({
               type: "GET",
@@ -1749,10 +1773,75 @@
                   t_color_arr.push(t_rgb);
                 }
                 m_lpdata_tra_colormap.push(t_color_arr);
+
+                 //m_lpdata_trajectory.push({'index':t_index,'rank':t_rank,'data':t_data});
+                 //console.log(m_lpdata_trajectory);
               }
             });
             return true;
          }
+         function LoadLPFromCSV_Tra_All_old(t_url,t_rank=0,t_index=0){
+           //m_lpdata_trajectory
+           let t_data;
+            $.ajax({
+              type: "GET",
+              url:t_url,
+              dataType: "text",
+              success: function(response)
+              {
+                 t_data = $.csv.toArrays(response).map(function(item){
+                   return item.map(Number);
+                 });
+
+                 // column: time by hour, lon,lat,index of trajectory
+                 // cut t_data into 2 dimentional array every 13 items [ [t_data[1],t_data[2]],[],..,[] ]
+                 let t_index=t_data[0][3];
+                 let t_arr=[];
+                 let all_arr=[];
+                 for(let i=0;i<t_data.length;i++){
+                   if (t_index != t_data[i][3]){
+                     all_arr.push(t_arr);
+                     t_arr=[];
+                     t_index = t_data[i][3];
+                   }
+                   t_arr.push([t_data[i][1],t_data[i][2]]);// hour 0-hour 12
+                 }
+                 all_arr.push(t_arr);
+
+                 m_lpdata_trajectory.push({'index':-1,'notes':'all','data':all_arr});
+
+                 m_colormap=document.getElementById("sel_colormap").selectedIndex;
+                 let t_color_arr=[];
+                 let t_ratio=1.0/all_arr.length;
+
+                 for (let j=0;j<all_arr.length;j++){
+                   t_rgb=hslToRgb(1-t_ratio*j, 1, 1-0.6*t_ratio*j);//rainbow
+                   t_color_arr.push(t_rgb);
+                   //t_color_arr.push([getRandomInt(255), getRandomInt(255), getRandomInt(255)]);
+                 }
+                 m_lpdata_tra_colormap.push(t_color_arr);
+
+                 t_color_arr=[];
+                 for (let j=0;j<all_arr.length;j++){
+                   let t_rgb=hslToRgb(0.2*(1-t_ratio*j), 1, 1-t_ratio*j);
+                   t_color_arr.push(t_rgb);
+                   //t_color_arr.push([255-255*t_ratio*j,0,0]);
+                 }
+                 m_lpdata_tra_colormap.push(t_color_arr);
+                 t_color_arr=[];
+                 for (let j=0;j<all_arr.length;j++){
+                  let t_rgb=hslToRgb(0.6, 1, 1-0.5*t_ratio*j);
+                  t_color_arr.push(t_rgb);
+                }
+                m_lpdata_tra_colormap.push(t_color_arr);
+
+                 //m_lpdata_trajectory.push({'index':t_index,'rank':t_rank,'data':t_data});
+                 //console.log(m_lpdata_trajectory);
+              }
+            });
+            return true;
+         }
+
 
          function LoadLPFromCSV_trial(t_url,t_rank=0,t_index=0){
            let t_data;
@@ -1790,8 +1879,6 @@
 
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
-
-                   SetTargetClues();
                  }
               }
             });
@@ -1857,11 +1944,16 @@
            graphicInteractionLayer.removeAll();
            //display all clue points
            arr_featureset=[];
-           for (let i=0;i<m_targetandclues.clue.length;i++){
-             if(m_targetandclues.clue[i].status=="show"){
+
+           let t_clue=m_clues.find(function(element){
+             return element.index==m_index;
+           });
+
+           for (let i=0;i<t_clue.clue.length;i++){
+             if(t_clue.clue[i].status=="show"){
                let in_point=new Point({
-                 longitude:m_targetandclues.clue[i].data[0],
-                 latitude:m_targetandclues.clue[i].data[1],
+                 longitude:t_clue.clue[i].data[0],
+                 latitude:t_clue.clue[i].data[1],
                  spatialReference:view.spatialReference
                });
                let t_graphic =  new Graphic({
@@ -1874,6 +1966,7 @@
                     },
                   attributes:{
                     Name:"Clue",
+                    Hour:0,
                     Rank:1
                   }
                });
@@ -1927,13 +2020,14 @@
              });
              temperalgraphicLayer.add(t_graphic1);
 
-             let t_clue=m_targetandclues;
+             let t_clue=m_clues.find(function(element){
+               return element.index==m_index;
+             });
 
-
-             for (let i=0;i<m_targetandclues.clue.length;i++){
+             for (let i=0;i<t_clue.clue.length;i++){
                let in_point=new Point({
-                 longitude:m_targetandclues.clue[i].data[0],
-                 latitude:m_targetandclues.clue[i].data[1],
+                 longitude:t_clue.clue[i].data[0],
+                 latitude:t_clue.clue[i].data[1],
                  spatialReference:view.spatialReference
                });
 
@@ -1942,11 +2036,12 @@
                let URL = "{% url 'getcluemedia' %}";
                let data = {
                  csrfmiddlewaretoken: '{{ csrf_token }}',
-                 'photoid': m_targetandclues.clue[i].photoid.toString()
+                 'photoid': t_clue.clue[i].photoid.toString()
                };
                $.post(URL, data, function(response){
                  t_clueobj=JSON.parse(response);
                  if(t_clueobj.flag == 'success'){
+                   //console.log(t_clueobj);
 
                    let t_graphic =  new Graphic({
                      geometry: in_point,
@@ -2040,6 +2135,7 @@
 
            if (t_type == "byclue"){
              clueindex=parseInt(document.getElementById("myClues").value);
+             //console.log(m_lpdata_trajectory);
              //console.log(clueindex);
              if(clueindex<4){
                let t_reduced_arr=[];
@@ -2200,13 +2296,19 @@
            let angle=0.1; // 0~180, 0~1
 
            arr_featureset=[];
-           //let t_clueindex=document.getElementById("myClues").value;
+           let t_clueindex=document.getElementById("myClues").value;
 
-           for (let i=0;i<m_targetandclues.clue.length;i++){
+           let t_clue=m_clues.find(function(element){
+             return element.index==m_index;
+           });
 
-             if(m_targetandclues.clue[i].status=="show"){
+           //console.log(t_clue);
+           for (let i=0;i<t_clue.clue.length;i++){
 
-               let pt=m_targetandclues.clue[i].data;
+             if(t_clue.clue[i].status=="show"){
+
+               //let pt=t_clue.clue[t_clueindex].data;
+               let pt=t_clue.clue[i].data;
                let initpt = m_scenarios[m_scenario_index].center;//[lat,log]
 
                // calculate a Cone
@@ -2560,40 +2662,83 @@
 
          }
 
+         function AddTrialDataToTriallayer(){
+           let i_hr=document.getElementById("myRange").value;
+
+           //make the i_hr a larger circle
+           visualization_Trajectories_Layer.removeAll();
+           //convert area_extent to [long,lat]
+           let arr_visual=[];
+
+          let t_color=[getRandomInt(255), getRandomInt(255), getRandomInt(255)];
+
+
+          let t_mpts={
+            type:'multipoint',
+            points:m_lptrail_pts
+          };
+          let t_graphic =  new Graphic({
+            geometry: t_mpts,
+            symbol:  {
+                 type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                 style:"circle",
+                 color: t_color,//[t_mag, 0,0],
+                 size:5
+               }
+          });
+          arr_visual.push(t_graphic);
+          //console.log(arr_visual);
+
+         let polyline = {
+             type:'polyline',
+            paths: m_lptrail_pts,
+            spatialReference: { wkid: 4326 }
+          };
+          let polylineGraphic=new Graphic({
+            geometry: polyline,
+            symbol:{
+                    type: "simple-line", // autocasts as new SimpleLineSymbol()
+                    color: t_color, // RGB color values as an array
+                    width: 1
+                  }
+          });
+          //console.log(polylineGraphic);
+          arr_visual.push(polylineGraphic);
+          if (i_hr>=m_lptrail_pts.length){
+            //m_targetpolygon=allpolygons[getRandomInt(allpolygons.length)];
+            i_hr=m_lptrail_pts.length-1;
+          }
+          let t_pt={
+            type:'point',
+            latitude: m_lptrail_pts[i_hr][1],
+            longitude: m_lptrail_pts[i_hr][0]
+          }
+          let t_ptgraphic =  new Graphic({
+            geometry: t_pt,
+            symbol:  {
+                 type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                 style:"circle",
+                 color: t_color,//[t_mag, 0,0],
+                 size: 20
+               }
+          });
+          arr_visual.push(t_ptgraphic);
+
+
+           //console.log(arr_featureset);
+           visualization_Trajectories_Layer.addMany(arr_visual);
+           visualization_Trajectories_Layer.visible=true;
+
+         }
+
+
          document.getElementById("lpinfo").onclick=function() {
            DisplayLostPersonInfo();
            m_experimentres["actions"].push({"id":"lpinfo","timestamp": Date.now(), "description":"display lost person information"});
          }
 
          function SetTargetClues(){
-           // need m_lpdata_trajectory
-           let t_plitphase=0.618;
-           let t_targetarr=m_lpdata_trajectory.filter(obj=>{ return obj.index === -1;});
-
-           //let tdata_len=t_targetarr[0].data.length;
-           //let tlen=Math.floor(t_targetarr[0].data[tdata_len-2].length * t_plitphase);
-           //console.log(tdata_len,tlen);
-
-           // pick two point from t_targetarr
-           let t_cluearr=m_lpdata_trajectory.filter(obj=>{ return obj.index === 3;});
-           let tcluedata_len=t_cluearr[0].data.length;
-
-           let tlen_target=Math.floor(tcluedata_len * t_plitphase);
-           let tlen_clue1=Math.floor(tcluedata_len * t_plitphase*0.5);
-           let tlen_clue2=Math.floor(tcluedata_len * t_plitphase);
-
-           let index_tar=Math.floor(t_targetarr[0].data[tlen_target].length * t_plitphase);
-           let index_clue1=1;
-           let index_clue2=5;
-
-           m_targetandclues={
-             "target":t_targetarr[0].data[tlen_target][index_tar],
-             "clue":[{"clue_index":0,"status":"unfound","info":"cloth","data":t_targetarr[0].data[tlen_clue1][index_clue1],'photoid':1},
-                    {"clue_index":1,"status":"unfound","info":"drink","data":t_targetarr[0].data[tlen_clue2][index_clue2],'photoid':2}]
-            };
-            console.log(tcluedata_len,tlen_target,index_tar,m_targetandclues)
-            console.log(tlen_clue1,tlen_clue2,index_clue1,index_clue2);
-
+           //m_clues
          }
 
          function DisplayLostPersonInfo(){
@@ -2717,6 +2862,7 @@
             //console.log(m_searchedarea);
 
            graphicInitLayer.addMany(t_feature);
+           //AddTrialDataToTriallayer();
          }
 
           document.getElementById("gotoGPSLocation").onclick=function(){
@@ -2776,6 +2922,11 @@
             LoadLPFromCSV_con(csvfilename,totalfiles,i,0,'byclue');
             //console.log(csvfilename);
           }
+
+
+          // load whole trajectory data, index=0: hiker
+          //m_lpdata_trajectory
+
           let csvfilename= lpmfolder+"/clues/traj_"+persontype+"_bf1.csv";
           LoadLPFromCSV_Tra_All(csvfilename,0,0);
 
@@ -2784,7 +2935,7 @@
             LoadLPFromCSV_Tra_Item(csvfilename,0,i);
             //console.log(csvfilename);
           }
-
+          SetTargetClues();
 
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
@@ -2837,6 +2988,7 @@
          document.getElementById("sel_ic").onchange=function(){
            ClearAll();
            m_scenario_index=document.getElementById("sel_ic").selectedIndex;
+           m_index=m_scenario_index;
            view.goTo([ m_scenarios[m_scenario_index]['center'] ]);
 
            m_lpdata_con=[];

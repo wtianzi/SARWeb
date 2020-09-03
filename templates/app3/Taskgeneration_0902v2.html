@@ -234,6 +234,9 @@
 
       let eacharea=500000;//240000;//60 acer;
       let activeWidget = null;
+//  wkid: 102100 vs wkid: 4326
+//wkid 102100/pix =1.5 (2444,1366/1600,900)
+//wkid 102100: left-top (-8970062.142, 4467672.843), right-bottom (-8967625.712	4466311.309)
 
       let allpolygons=[];
       let allpolygons_text=[];
@@ -1574,11 +1577,6 @@
       document.getElementById("clearall").addEventListener("click",
        function () {
          m_experimentres["actions"].push({"id":"clearall","timestamp": Date.now(), "description":"clearall"});
-         m_lpdata_con=[];
-         m_lpdata_trial=[];
-         m_lpdata_trajectory=[];
-         m_lpdata_tra_colormap=[];
-
          ClearAll();
          area_extent=view.extent;
        });
@@ -2795,12 +2793,10 @@
          }
 
          document.getElementById("sel_lpm").onchange=function(){
-
            m_lpdata_con=[];
            m_lpdata_trial=[];
            m_lpdata_trajectory=[];
            m_lpdata_tra_colormap=[];
-
            ClearAll();
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
@@ -2848,9 +2844,6 @@
 
            m_lpdata_con=[];
            m_lpdata_trial=[];
-
-           m_lpdata_trajectory=[];
-           m_lpdata_tra_colormap=[];
 
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();

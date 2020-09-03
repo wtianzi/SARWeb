@@ -110,3 +110,39 @@ var m_clue_template = {
       }
     ]
 };
+function GetSites(n,t_extent){
+  let res_points=[];
+  //center point [0,0]
+  //first round radius:1, second:2,third:3
+  let t_radius=1;
+  let t_firstround=6;
+
+  //second round
+  let res_count=0;
+  let t_wholearea=0;
+  let t_cellarea=t_radius*t_radius/t_firstround;
+
+  while(n>res_count){
+    let t_roundarea=t_radius*t_radius-t_wholearea;
+    let t_celldegree=t_cellarea/t_roundarea;
+    let t_totaldegree=0;
+    while(t_totaldegree<=0.99){
+      res_points.push([(t_radius-0.5)*Math.sin(2*Math.PI*t_totaldegree),(t_radius-0.5)*Math.cos(2*Math.PI*t_totaldegree)]);
+      t_totaldegree=t_totaldegree+t_celldegree;
+      res_count=res_count+1;
+    }
+    t_wholearea=t_radius*t_radius;
+    t_radius=t_radius+1;
+  }
+
+  //standrized from 1:1 into width and height ratio
+  t_radius=t_radius-1;
+  let t_wscale=t_extent.width/(2*t_radius);
+  let t_hscale=t_extent.height/(2*t_radius);
+
+  for(let i=0;i<res_count;i++){
+    res_points[i][0]=res_points[i][0]*t_wscale+t_extent.center.x;
+    res_points[i][1]=res_points[i][1]*t_hscale+t_extent.center.y;
+  }
+  return res_points;
+}

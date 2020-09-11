@@ -13,8 +13,9 @@ router.register(r'waypointsdata', views.WaypointsDataViewSet,basename="waypoints
 router.register(r'gpshistoricaldata', views.GPShistoricalDataViewSet,basename="gpshistoricaldata")
 
 urlpatterns = [
-    path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
+    path('', TaskGenerationView.as_view(),name='mapdivisioninit'),    
     path('experiment', TaskassignmentExperimentView.as_view(),name='experiment'),
+    path('consentform',TemplateView.as_view(template_name="app3/consentform.html"),name='consentform'),
     url(r'^updateexperimentdata$', TaskassignmentExperimentView.updateExperimentData,name='updateexperimentdata'),
     path('full', TaskassignmentFullView.as_view(),name='full'),
     path('members', IndexView.as_view()),

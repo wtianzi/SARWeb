@@ -170,4 +170,4 @@ class QuestionnaireModel(models.Model):
     updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
 
     def __str__(self):
-        return self.resourcetype
+        return str(self.id)

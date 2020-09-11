@@ -2,9 +2,9 @@ from django.shortcuts import render
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 from django.http import HttpResponse,HttpResponseRedirect
-from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData
+from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage
 import json
-from .forms import DemoForm,TaskAssignmentForm
+from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm
 from django.urls import reverse
 from django.template import loader
 from django.core import serializers
@@ -41,6 +41,7 @@ class TaskGenerationView(TemplateView):
 
         historicalpathid = GPShistoricalData.objects.values().order_by('-updated_at')[:5]
         context['dronehistoricalpath']=pathid
+
         return context
 
     def get_values(request):
@@ -178,8 +179,24 @@ class TaskGenerationView(TemplateView):
         # nothing went well
         return HttpResponse('Getwatershed failed!')
 
+
 class TaskassignmentExperimentView(TaskGenerationView):
-    template_name='app3/Taskgeneration_exp_v2.html'
+    template_name='app3/Taskgeneration_exp_v3.html'
+
+    def updateExperimentData(request):
+        if request.method == 'POST':
+            print("update experiment data")
+            resarr = request.POST.get('resarr')
+            details=json.loads(resarr)
+
+            t_datastorage=ExperimentDataStorage()
+            t_datastorage.details = resarr
+            t_datastorage.save()
+
+            context={'flag':'success'}
+
+            return HttpResponse(json.dumps(context))
+        return HttpResponse('Getexperimentdatastorage failed!')
 
 class TaskIndexView(TemplateView):
     template_name="app3/index.html"
@@ -235,6 +252,18 @@ class WaypointsDataViewSet(viewsets.ModelViewSet):
     queryset = WaypointsData.objects.all()
     serializer_class = WaypointsDataSerializer
 
+'''
+class ExperimentDataStorage(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    queryset = ExperimentDataStorage.objects.all()
+    serializer_class = ExperimentDataStorageSerializer
+'''
+
+class GPShistoricalDataViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    queryset = GPShistoricalData.objects.all()
+    serializer_class = GPShistoricalDataSerializer
+
 class GPSDataViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
@@ -289,3 +318,25 @@ class ClueMediaViewSet(viewsets.ModelViewSet):
 
 class TaskassignmentFullView(TaskassignmentExperimentView):
     template_name='app3/Taskgeneration_full.html'
+
+class QuestionnaireFormView(TemplateView):
+    template_name="app3/questionnaire_task.html"
+    context={"form":{"participantid":"0"}}
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["participant_id"] = kwargs['participant_id']
+        context["task_id"] = kwargs['task_id']
+        return context
+
+    def FormToDB(request):
+        form=QuestionnaireForm(request.POST or None)
+        #print(request.POST)
+        if form.is_valid():
+            form.save()
+        #print(form)
+        context={'form': form,"flag":"success"}
+        return  HttpResponse('''
+   <script type="text/javascript">
+      opener.dismissAddAnotherPopup(window);
+   </script>''')

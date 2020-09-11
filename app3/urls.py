@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
-from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView
+from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView
 from django.conf.urls import url
 from rest_framework import routers
 from django.conf.urls import include
@@ -10,18 +10,28 @@ router = routers.DefaultRouter()
 router.register(r'gpsdatas', views.GPSDataViewSet,basename="gpsdatas")
 router.register(r'cluemedia', views.ClueMediaViewSet,basename="cluemedia")
 router.register(r'waypointsdata', views.WaypointsDataViewSet,basename="waypointsdata")
-router.register(r'gpshistoricaldata', views.WaypointsDataViewSet,basename="gpshistoricaldata")
+router.register(r'gpshistoricaldata', views.GPShistoricalDataViewSet,basename="gpshistoricaldata")
 
 urlpatterns = [
     path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
     path('experiment', TaskassignmentExperimentView.as_view(),name='experiment'),
+    url(r'^updateexperimentdata$', TaskassignmentExperimentView.updateExperimentData,name='updateexperimentdata'),
     path('full', TaskassignmentFullView.as_view(),name='full'),
     path('members', IndexView.as_view()),
     path('edit',TemplateView.as_view(template_name="app3/edit.html"),name='edit'),
     path('sketch',TemplateView.as_view(template_name="app3/sketch.html")),
     path('formdemo',TemplateView.as_view(template_name="app3/FormDemo.html")),
+
     path('taskgenerationform',TaskGenerationFormView.as_view(),name="taskgenerationform"),
+    url(r'^taskgenerationform/(?P<task_id>\w+)_(?P<subtask_id>\d+)/$',TaskGenerationFormView.as_view(),name="taskgenerationform"),
     path('action_page', TaskGenerationFormView.FormToDB),#.get_values
+    url(r'^taskgenerationform/\w+/action_page$',TaskGenerationFormView.FormToDB,name="action_page"),
+
+    path('questionnaireform',QuestionnaireFormView.as_view(),name="questionnaireform"),
+    url(r'^questionnaireform/(?P<participant_id>\w+)/(?P<task_id>\w+)/$',QuestionnaireFormView.as_view(),name="questionnaireform"),
+    path('questionnaire_action', QuestionnaireFormView.FormToDB),
+    url(r'^questionnaireform/\w+/\w+/questionnaire_action$',QuestionnaireFormView.FormToDB,name="questionnaire_action"),
+
     path('offlinemapdemo',TemplateView.as_view(template_name="app3/offlinemapdemo.html")),
     url(r'^tasksave$',TaskGenerationView.tasksave,name='tasksave'),
     url(r'^gpsupdate$',TaskGenerationView.gpsupdate,name='gpsupdate'),
@@ -33,7 +43,6 @@ urlpatterns = [
     url(r'^demo$',TemplateView.as_view(template_name="app3/demo.html"), name="demo"),
     url(r'^openstreatmap$',TemplateView.as_view(template_name="app3/openstreatmap.html"), name="openstreatmap"),
     url(r'^taskgenerationform/(?P<task_id>\w+)_(?P<subtask_id>\d+)/$',TaskGenerationFormView.as_view(),name="taskgenerationform"),
-    url(r'^taskgenerationform/\w+/action_page$',TaskGenerationFormView.FormToDB,name="action_page"),
     url(r'^readfile$',TemplateView.as_view(template_name="app3/readfile.html"), name="readfile"),
     path('api-auth/', include('rest_framework.urls')),
     path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),

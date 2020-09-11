@@ -148,3 +148,26 @@ class ClueMedia(models.Model):
 
     def __str__(self):
         return str(self.id)
+
+class ExperimentDataStorage(models.Model):
+    id = models.AutoField(primary_key=True)
+    created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    details = models.TextField( blank=True,null=True)
+
+    def __str__(self):
+        return str(self.id)
+
+
+class QuestionnaireModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    participantid=models.CharField(max_length=100, blank=True, null=True)
+    taskid=models.CharField(max_length=100, blank=True, null=True)
+    trust=models.IntegerField(blank=True,null=True)
+    transparency=models.IntegerField(blank=True,null=True)
+    workload=models.IntegerField(blank=True,null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
+
+    def __str__(self):
+        return self.resourcetype

@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ModelForm
-from .models import TaskAssignment
+from .models import TaskAssignment,QuestionnaireModel
 
 class DemoForm(forms.Form):
     resourcetype=forms.CharField(label='Resource type',max_length=100)
@@ -18,3 +18,8 @@ class TaskAssignmentForm(ModelForm):
         #exclude = ['id','created_at','updated_at']
         #fields=["resourcetype","planningno","priority"]
         #fields = '__all__'
+
+class QuestionnaireForm(ModelForm):
+    class Meta:
+        model = QuestionnaireModel
+        fields = '__all__'

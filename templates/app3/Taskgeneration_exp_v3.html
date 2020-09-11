@@ -1989,6 +1989,17 @@
                  m_visualizationtype='byhour';
                }
          });
+
+         document.getElementById('q_scene_1').addEventListener('click',function(){
+           // open a new page
+           //questionnaireform/participantid_taskid/
+           let participant_id="0";
+           let task_id="0";
+           let task_url="{% url 'questionnaireform' %}"+"/"+participant_id+'/'+task_id+'/';
+           console.log(task_url);
+           let win = window.open(task_url, '_blank');
+           win.focus();
+         });
       //--------------------------------------------------
     });
 

@@ -27,7 +27,7 @@
 
   </head>
 
-  <body>
+  <body onload="myFunction()">
     <div id="wrapper" class="page-header mb-3">
       <h1>Please take this questionnaire for the previous assignment task.</h1>
 
@@ -37,14 +37,20 @@
       <div class="consent" >
         <form action="consentform_action" method="post" target="_blank" id="quiz">
           {% csrf_token %}
+          <div style="display:none">
+            <input type="text" id="participantid" name="participantid" value="I Agree">
+          </div>
+
           <div style="float: left;">
             <label for="fname">Please enter your name:</label>
             <input type="text" id="participantname" name="participantname">
           </div>
 
           <div style="float: right; width: 130px;">
-            <input type="submit" value="I Agree" id="agree"/>
+            <input type="submit" value="I Agree" id="agree" onclick="dismissAddAnotherPopup(this)"/>
           </div>
+
+
         </form>
 
       </div>
@@ -63,8 +69,11 @@
 
       }
       function dismissAddAnotherPopup(win) {
-          win.close();
-          top.window.close();
+       window.close();
+      }
+
+      function myFunction(){
+        document.getElementById("participantid").value = Date.now().toString();
       }
     </script>
   </body>

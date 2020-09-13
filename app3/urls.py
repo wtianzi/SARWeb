@@ -16,7 +16,7 @@ urlpatterns = [
     path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
 
     url(r'^experiment/$', TaskassignmentExperimentView.as_view(),name='experiment'),
-    url(r'^experiment/(?P<participant_id>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
+    url(r'^experiment/(?P<participantid>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
 
     path('consentform',ConsentFormView.as_view(),name='consentform'),
     path('consentform_action', ConsentFormView.FormToDB),

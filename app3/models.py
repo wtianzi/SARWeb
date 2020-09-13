@@ -175,10 +175,10 @@ class QuestionnaireModel(models.Model):
 class ParticipantStatusModel(models.Model):
     id = models.AutoField(primary_key=True)
     participantid=models.CharField(max_length=100, blank=True, null=True) # a unix time
-    participantindex=models.CharField(max_length=100, blank=True, null=True) # a number between 1-122
+    participantindex=models.IntegerField(blank=True, null=True) # a number between 1-122
     participantname=models.CharField(max_length=100, blank=True, null=True)
 
-    status=models.BooleanField(default=False) # participant id has not been used
+    status=models.BooleanField(default=False) # participant id has finished the whole task
     taskstatus=models.TextField( blank=True,null=True) # json text {'task1':{'status':0,'experimentsetup':54,'duration':0},}
 
     created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)

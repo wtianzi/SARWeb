@@ -171,3 +171,17 @@ class QuestionnaireModel(models.Model):
 
     def __str__(self):
         return str(self.id)
+
+class ParticipantStatusModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    participantid=models.CharField(max_length=100, blank=True, null=True) # a unix time
+    participantindex=models.CharField(max_length=100, blank=True, null=True) # a number between 1-122
+    participantname=models.CharField(max_length=100, blank=True, null=True)
+
+    status=models.BooleanField(default=False) # participant id has not been used
+    taskstatus=models.TextField( blank=True,null=True) # json text {'task1':{'status':0,'experimentsetup':54,'duration':0},}
+
+    created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
+    def __str__(self):
+        return str(self.id)

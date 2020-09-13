@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import ClueMedia
-from .models import GPSData,DataStorage,WaypointsData,GPShistoricalData,ExperimentDataStorage,QuestionnaireModel
+from .models import GPSData,DataStorage,WaypointsData,GPShistoricalData,ExperimentDataStorage,QuestionnaireModel,ParticipantStatusModel
 
 # Register your models here.
 class ClueMediaAdmin(admin.ModelAdmin):
@@ -41,6 +41,11 @@ class ExperimentDataStorageAdmin(admin.ModelAdmin):
 admin.site.register(ExperimentDataStorage, ExperimentDataStorageAdmin)
 
 class QuestionnaireModelAdmin(admin.ModelAdmin):
-    list_display =['id','participantid','taskid','trust','transparency','workload','created_at','updated_at']    
+    list_display =['id','participantid','taskid','trust','transparency','workload','created_at','updated_at']
     pass
 admin.site.register(QuestionnaireModel, QuestionnaireModelAdmin)
+
+class ParticipantStatusModelAdmin(admin.ModelAdmin):
+    list_display =['id','participantid','participantindex','participantname','status','taskstatus','created_at','updated_at']
+    pass
+admin.site.register(ParticipantStatusModel, ParticipantStatusModelAdmin)

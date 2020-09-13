@@ -1,10 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 from django.http import HttpResponse,HttpResponseRedirect
 from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage
 import json
-from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm
+from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm,ConsentForm
 from django.urls import reverse
 from django.template import loader
 from django.core import serializers
@@ -183,6 +183,13 @@ class TaskGenerationView(TemplateView):
 class TaskassignmentExperimentView(TaskGenerationView):
     template_name='app3/Taskgeneration_exp_v3.html'
 
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        participant_id = kwargs.get('participant_id', None)
+        if participant_id != None:
+            context["participant_id"] = kwargs['participant_id']
+        return context
+
     def updateExperimentData(request):
         if request.method == 'POST':
             print("update experiment data")
@@ -318,6 +325,18 @@ class ClueMediaViewSet(viewsets.ModelViewSet):
 
 class TaskassignmentFullView(TaskassignmentExperimentView):
     template_name='app3/Taskgeneration_full.html'
+
+class ConsentFormView(TemplateView):
+    template_name="app3/consentform.html"
+    context={"form":{"participantid":"0"}}
+    def FormToDB(request):
+        form=ConsentForm(request.POST or None)
+        #print(request.POST)
+        if form.is_valid():
+            form.save()
+        context={'form': form}
+        #print(form)
+        return redirect('experiment')
 
 class QuestionnaireFormView(TemplateView):
     template_name="app3/questionnaire_task.html"

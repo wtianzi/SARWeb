@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ModelForm
-from .models import TaskAssignment,QuestionnaireModel
+from .models import TaskAssignment,QuestionnaireModel,ParticipantStatusModel
 
 class DemoForm(forms.Form):
     resourcetype=forms.CharField(label='Resource type',max_length=100)
@@ -22,4 +22,9 @@ class TaskAssignmentForm(ModelForm):
 class QuestionnaireForm(ModelForm):
     class Meta:
         model = QuestionnaireModel
+        fields = '__all__'
+
+class ConsentForm(ModelForm):
+    class Meta:
+        model = ParticipantStatusModel
         fields = '__all__'

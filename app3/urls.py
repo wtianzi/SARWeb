@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
-from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView
+from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView,ConsentFormView
 from django.conf.urls import url
 from rest_framework import routers
 from django.conf.urls import include
@@ -13,9 +13,14 @@ router.register(r'waypointsdata', views.WaypointsDataViewSet,basename="waypoints
 router.register(r'gpshistoricaldata', views.GPShistoricalDataViewSet,basename="gpshistoricaldata")
 
 urlpatterns = [
-    path('', TaskGenerationView.as_view(),name='mapdivisioninit'),    
-    path('experiment', TaskassignmentExperimentView.as_view(),name='experiment'),
-    path('consentform',TemplateView.as_view(template_name="app3/consentform.html"),name='consentform'),
+    path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
+
+    url(r'^experiment/$', TaskassignmentExperimentView.as_view(),name='experiment'),
+    url(r'^experiment/(?P<participant_id>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
+
+    path('consentform',ConsentFormView.as_view(),name='consentform'),
+    path('consentform_action', ConsentFormView.FormToDB),
+
     url(r'^updateexperimentdata$', TaskassignmentExperimentView.updateExperimentData,name='updateexperimentdata'),
     path('full', TaskassignmentFullView.as_view(),name='full'),
     path('members', IndexView.as_view()),

@@ -23,6 +23,12 @@
         width="500px";
         vertical-align: middle;
       }
+      input[type="checkbox"] {
+          width:2em;
+          height:2em;
+          margin-top: 25%;
+          vertical-align: middle;
+      }
     </style>
 
   </head>
@@ -35,18 +41,18 @@
 
 
       <div class="consent" >
-        <form action="consentform_action" method="post" target="_blank" id="quiz">
-          {% csrf_token %}
-          <div style="float: left;">
-            <label for="fname">Please enter your name:</label>
+
+        <div style="float: left;">
+          <input type="checkbox" id="mycheck" value="no" onclick="handleClick(this)">
+        </div>
+
+        <div style="float: right; width: 130px;">
+          <form action="{% url 'experiment' %}">
+            <label for="fname">Please enter your name:</label><br>
             <input type="text" id="participantname" name="participantname">
-          </div>
-
-          <div style="float: right; width: 130px;">
-            <input type="submit" value="I Agree" id="agree"/>
-          </div>
-        </form>
-
+            <input type="submit" value="I Agree" class="button" id="agree" disabled />
+          </form>
+        </div>
       </div>
 
     </div>
@@ -62,6 +68,16 @@
         }
 
       }
+      /*
+      document.getElementById("mycheck").onclick=function() {
+
+        if(document.getElementById("mycheck").checked){
+          document.getElementById("agree").enable=true;
+        }
+        else{
+          document.getElementById("agree").enable=false;
+        }
+      }*/
       function dismissAddAnotherPopup(win) {
           win.close();
           top.window.close();

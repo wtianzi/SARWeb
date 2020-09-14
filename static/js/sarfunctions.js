@@ -147,4 +147,3 @@ function GetSites(n,t_extent){
   }
   return res_points;
 }
- 

@@ -16,6 +16,7 @@
   <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
   <script src="{% static 'js/jquery.csv.js' %}"></script>
   <script src="{% static 'js/sarfunctions.js' %}"></script>
+  <script type="text/javascript" src="{% static 'data/scenariodetails.json' %}"></script>
   <link rel="stylesheet" type="text/css" href="{% static 'taskgeneration.css' %}"  />
   <style>
   html,
@@ -168,15 +169,13 @@
       let m_experimentlog={
 
       };
-      let m_expsetupobj;
-      $.getJSON("{% static 'data/scenariodetails.json' %}", function(json) {
-        m_expsetupobj=json;
-      });
+      let m_expsetupobj=g_experiment;
+      let m_expindex=4;
       let m_exp_participantindex={{participantindex|safe}};
       //console.log(m_exp_participantindex);
       let m_exp_lostpersontype={"index":0,"type":"child10to12","name":"child", "ring":[800,1600,3200,9000]};
       let m_exp_location={"index":0,"name":"ic1","center":[-80.4757389347337, 37.2040570285143],"target":[-80.4757389347337, 37.4040570285143]};
-
+      let m_exp_visualization={"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"};
       //console.log(m_experimentres);
       //kentlane farm (-80.572567,37.203604)
 
@@ -690,6 +689,10 @@
       }
         //generate voronoi
       document.getElementById("btngeneratearea").onclick=function() {
+        TaskGenerateArea();
+      }
+
+      function TaskGenerateArea(){
         m_experimentres["actions"].push({"id":"btngeneratearea","timestamp": Date.now(), "description":"generate task"});
         graphicsLayer.removeAll();
         view.graphics.removeAll();
@@ -870,7 +873,7 @@
              });
            }
          });
-         function LoadLPFromCSV_Tra_Item(t_url,t_rank=0,t_index=0){
+         function LoadLPFromCSV_Tra_Item(t_url,t_index=0,t_arr_count=15){
            let t_data;
             $.ajax({
               type: "GET",
@@ -883,11 +886,16 @@
                  });
                  m_lpdata_trajectory.push({'index':t_index,'notes':'clue','clue':t_index,'data':t_data});
 
+                 if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
+                   document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
+                   m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
+                   SetTargetClues();
+                 }
               }
             });
             return true;
          }
-         function LoadLPFromCSV_Tra_All(t_url,t_rank=0,t_index=0){
+         function LoadLPFromCSV_Tra_All(t_url,t_arr_count=15){
 
            let t_data;
             $.ajax({
@@ -951,6 +959,12 @@
                   t_color_arr.push(t_rgb);
                 }
                 m_lpdata_tra_colormap.push(t_color_arr);
+
+                if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
+                  document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
+                  m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
+                  SetTargetClues();
+                }
               }
             });
             return true;
@@ -969,7 +983,7 @@
                  });
                  m_lpdata_con.push({'type':t_type,'hour':t_hour,'rank':t_rank,'data':t_data});
 
-                 if (m_lpdata_con.length == t_arr_count){
+                 if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
 
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
@@ -1639,6 +1653,8 @@
          }
          function SetTargetClues(){
            // need m_lpdata_trajectory
+           console.log(m_exp_location,m_exp_lostpersontype);
+           console.log(m_lpdata_trajectory);
            let t_plitphase=0.618;
            let t_targetarr=m_lpdata_trajectory.filter(obj=>{ return obj.index === -1;});
            // pick two point from t_targetarr
@@ -1657,8 +1673,10 @@
            let index_clue2=4;
 
            m_exp_location.target=t_targetarr[0].data[tlen_target][index_tar];
-           m_exp_location.clue=[{"clue_index":0,"status":"unfound","info":"cloth","data":t_targetarr[0].data[tlen_clue][index_clue1],'photoid':1},
-                  {"clue_index":1,"status":"unfound","info":"drink","data":t_targetarr[0].data[tlen_clue][index_clue2],'photoid':2}];
+           m_exp_location.clue=[{"clue_index":0,"status":"unfound","info":"cloth","location":t_targetarr[0].data[tlen_clue][index_clue1],'photoid':1},
+                  {"clue_index":1,"status":"unfound","info":"drink","location":t_targetarr[0].data[tlen_clue][index_clue2],'photoid':2}];
+
+          TaskGenerateArea();
          }
 
          function DisplayLostPersonInfo(){
@@ -1784,6 +1802,10 @@
          }
 
          document.getElementById("loadlpmcsv").onclick=function() {
+           LoadLPMData();
+         }
+
+         function LoadLPMData(){
            if(document.getElementById("loadlpmcsv").value=="Load LPM Data (Loaded)"){
              //clear everything before loading anything
 
@@ -1800,21 +1822,15 @@
 
           // number of clue files
           let count_clues=4;
+          let count_trajectory=count_clues+1;
 
           // number of contour map files
-          let totalfiles=1*(ih_stop-ih_start+1)+count_clues;
+          let totalfiles=1*(ih_stop-ih_start+1)+count_clues+count_trajectory;
 
           //folder of files
           let lpmfolder="/static/data/LPMdata5/"+m_exp_location.name+"/"+m_exp_lostpersontype.type;//"LPMdata3"
           //console.log(lpmfolder);
           //load 2 types of data: contour map, trajectory
-          for(let i=ih_start;i<=ih_stop;i++){
-            for(let t_rank=1;t_rank<=1;t_rank++){
-              // m_lpdata_con.push
-              let csvfilename=lpmfolder+"/best fits/contour data csv/con_"+m_exp_lostpersontype.type+"bf"+t_rank.toString()+"_t"+i.toString()+".csv";
-              LoadLPFromCSV_con(csvfilename,totalfiles,i-1,t_rank-1,'byhour');
-            }
-          }
 
           // clue1:t1, clue2:t2, clue12:t3, final: t4, final is the overall
           let cluenames=['final','clue1','clue2','clue12'];
@@ -1823,15 +1839,24 @@
             LoadLPFromCSV_con(csvfilename,totalfiles,i,0,'byclue');
             //console.log(csvfilename);
           }
+
           let csvfilename= lpmfolder+"/clues/traj_"+m_exp_lostpersontype.type+"_bf1.csv";
-          LoadLPFromCSV_Tra_All(csvfilename,0,0);
+          LoadLPFromCSV_Tra_All(csvfilename,totalfiles);
+          //console.log(csvfilename);
 
           for(let i=0;i<count_clues;i++){
             let csvfilename= lpmfolder+"/clues/"+cluenames[i]+"index_"+m_exp_lostpersontype.type+"_bf1.csv";
-            LoadLPFromCSV_Tra_Item(csvfilename,0,i);
+            LoadLPFromCSV_Tra_Item(csvfilename,i,totalfiles);
             //console.log(csvfilename);
           }
 
+          for(let i=ih_start;i<=ih_stop;i++){
+            for(let t_rank=1;t_rank<=1;t_rank++){
+              // m_lpdata_con.push
+              let csvfilename=lpmfolder+"/best fits/contour data csv/con_"+m_exp_lostpersontype.type+"bf"+t_rank.toString()+"_t"+i.toString()+".csv";
+              LoadLPFromCSV_con(csvfilename,totalfiles,i-1,t_rank-1,'byhour');
+            }
+          }
 
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
@@ -1847,17 +1872,13 @@
            DisableAllGraphicLayers();
          }
          document.getElementById("sel_rank").onchange=function(){
-
-             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
-             m_experimentres["actions"].push({"id":"sel_lpmodel","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
-             DisableAllGraphicLayers();
-             UpdateVisualization();
+           DisableAllGraphicLayers();
+           UpdateVisualization();
          }
 
           document.getElementById("sel_lpmodel").onchange=function(){
-
-            m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
-            m_experimentres["actions"].push({"id":"sel_lpmodel","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
+            let t_index=document.getElementById("sel_lpmodel").value;
+            m_exp_visualization=m_expsetupobj.visualizationtype[t_index];
             DisableAllGraphicLayers();
             UpdateVisualization();
           }
@@ -1889,15 +1910,9 @@
 
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
-
          }
 
          document.getElementById("sel_colormap").onchange=function(){
-
-             m_experimentres["visualization_type"]=document.getElementById("sel_lpmodel").value;
-             m_experimentres["actions"].push({"id":"sel_colormap","timestamp": Date.now(), "description":m_experimentres["visualization_type"]});
-
-             //console.log(m_experimentres);
              DisableAllGraphicLayers();
              UpdateVisualization();
          }
@@ -1914,10 +1929,12 @@
              if(t_menu=='none'){
                document.getElementById("menudetail").style.display='block';
                document.getElementById("btmoreinfo").value="Hide Control Pannel";
+               document.getElementById("experimentpannel").style.display='none';
              }
              else{
                document.getElementById("menudetail").style.display='none';
                document.getElementById("btmoreinfo").value="Show Control Pannel";
+               document.getElementById("experimentpannel").style.display='block';
              }
            }
            function DisableAllGraphicLayers(){
@@ -1928,23 +1945,21 @@
            }
 
            function UpdateVisualization(){
-             //console.log("UpdateVisualization");
-             if (document.getElementById("sel_lpmodel").value=="contour"){
-               // either 'byhour' or 'byclue'
-               //console.log(m_lpdata_con);
+             if(m_exp_visualization.index==0){
+               // ring
+
+             }
+             else if(m_exp_visualization.index==1){
+               // weighted maps
+               AddLPDataToSegmentheatlayer(m_visualizationtype);
+             }
+             else if(m_exp_visualization.index==2){
+               //contour map
                AddLPDataToContourlayer(m_visualizationtype);
              }
-             else if(document.getElementById("sel_lpmodel").value=="clueipp"){
-               //AddCluetoInteractionImagelayer();
-             }
-             else if(document.getElementById("sel_lpmodel").value=="trajectories"){
-               //AddCluetoInteractionImagelayer();
-
+             else if(m_exp_visualization.index==3){
+               // trajectories
                AddLPDataToTrajectorylayer(m_visualizationtype);
-             }
-             else if(document.getElementById("sel_lpmodel").value=="segmentheat"){
-               //AddCluetoInteractionImagelayer();
-               AddLPDataToSegmentheatlayer(m_visualizationtype);
              }
            }
 
@@ -1957,7 +1972,7 @@
                }
          });
 
-         document.getElementById('q_scene_1').addEventListener('click',function(){
+         document.getElementById('q_scene').addEventListener('click',function(){
            // open a new page
            //questionnaireform/participantid_taskid/
            let participantid={{ participantid |safe }};
@@ -1966,18 +1981,23 @@
            //console.log(task_url);
            let win = window.open(task_url, '_blank');
            win.focus();
+
+           m_expindex=m_expindex+1;
+           document.getElementById("exp_scene").value="Load Data for Scene "+(m_expindex+1).toString();
+           document.getElementById("exp_scene").style.color="#0079c1";
          });
 
          function InitializeExperiment(task=0){
-           console.log(m_expsetupobj);
+           //console.log(m_expsetupobj);
            let taskindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[task];
 
            //{"index":0,"loc":0,"lpt":0,"vt":0},
            let expindex=m_expsetupobj.experimentsetup[taskindex];
            m_exp_lostpersontype=m_expsetupobj.lostpersontype[expindex.lpt];
            m_exp_location=m_expsetupobj.location[expindex.loc];
-           console.log(m_exp_lostpersontype,m_exp_location);
-
+           m_exp_visualization=m_expsetupobj.visualizationtype[expindex.vt];
+           //console.log(m_exp_lostpersontype,m_exp_location);
+           console.log(m_exp_location.center);
            ClearAll();
            view.goTo([m_exp_location.center]);
            m_lpdata_con=[];
@@ -1985,14 +2005,16 @@
            m_lpdata_tra_colormap=[];
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
-         }
 
-         for(let expindex=0;expindex<12;expindex++){
-           let tstr_id="exp_scene_"+(expindex+1).toString();
-           document.getElementById(tstr_id).addEventListener('click',function(){
-             InitializeExperiment(expindex);
-           });
+           // load data
+           LoadLPMData();
+           // generate task after loaded
          }
+         document.getElementById("exp_scene").addEventListener('click',function(){
+           InitializeExperiment(m_expindex);
+           document.getElementById("exp_scene").style.color='gray';
+
+         });
 
       //--------------------------------------------------
     });
@@ -2009,20 +2031,43 @@
     <div>
       <h3 class="list-heading">Experiments</h3>
 
-      <div>
-        {% with ''|center:12 as range %}
-        {% for i in range %}
-          <div class-"sceneblock">
-            <button type="button" class="scenebutton" id="exp_scene_{{ forloop.counter }}">Scene {{ forloop.counter }}</button>
-            <button type="button" class="scenebutton" id="q_scene_{{ forloop.counter }}">Questionnaire</button>
-          </div>
-        {% endfor %}
-        {% endwith %}
+      <div id="experimentpannel">
+        <input type="button" class="edit-button" value="Load Data for Scene 1" id="exp_scene">
+
+        <div>
+          <h3>Team location</h3>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>1</th>
+                <th>2</th>
+                <th>3</th>
+                <th>4</th>
+                <th>5</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Cell</th>
+                <th id="th_team1">SX</th>
+                <th id="th_team2">SX</th>
+                <th id="th_team3">SX</th>
+                <th id="th_team4">SX</th>
+                <th id="th_team5">SX</th>
+              </tr>
+            </tbocy>
+          </table>
+          <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"></input>
+        </div>
+
+        <input type="button" class="edit-button" value="Questionnaire" id="q_scene">
+
+        <div>
+          <input type="button" class="scenebutton" value="Post Experiment Questionnaire" id="exp_post" style="display:none">
+        </div>
       </div>
-
-
-
-      <input type="button" class="edit-button" value="Submit" id="exp_submit">
       <hr>
       <input type="button" class="edit-button" value="More Info" id="btmoreinfo">
     </div>
@@ -2092,10 +2137,10 @@
 
         <div>
           <select id="sel_lpmodel">
-            <option value="clueipp">IPP & Rings</option>
-            <option value="contour">Contour map</option>
-            <option value="trajectories">Trajectories</option>
-            <option value="segmentheat">Weighted map</option>
+            <option value=0>IPP & Rings</option>
+            <option value=1>Weighted map</option>
+            <option value=2>Contour map</option>
+            <option value=3>Trajectories</option>
           </select>
           <input type="button" id="lpmmodeldisplay" value="Display" disabled></input>
           <input type="checkbox" id="displaytype" name="displaytype" value="byhour">
@@ -2105,33 +2150,7 @@
 
 
       <hr/>
-      <div>
-        <h3>Task Assignment</h3>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Team</th>
-              <th>1</th>
-              <th>2</th>
-              <th>3</th>
-              <th>4</th>
-              <th>5</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>Cell</th>
-              <th id="th_team1">SX</th>
-              <th id="th_team2">SX</th>
-              <th id="th_team3">SX</th>
-              <th id="th_team4">SX</th>
-              <th id="th_team5">SX</th>
-            </tr>
-          </tbocy>
-        </table>
-        <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"></input>
-      </div>
 
       <div>
         <input type="checkbox" id="visualizationtype" name="visualizationtype" value="byhour">

@@ -18,7 +18,7 @@ urlpatterns = [
     url(r'^experiment/$', TaskassignmentExperimentView.as_view(),name='experiment'),
     url(r'^experiment/(?P<participantid>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
     url(r'^experiment/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
-    
+
     path('consentform',ConsentFormView.as_view(),name='consentform'),
     path('consentform_action', ConsentFormView.FormToDB),
 
@@ -54,6 +54,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),
     path('watershed',TemplateView.as_view(template_name="app3/watershed_getlinearfeature.html"),name='watershed'),
+
     path('heatmapringdownload',TemplateView.as_view(template_name="app3/Taskgeneration_download.html")),
     path('videostream',TemplateView.as_view(template_name="app3/UAVVideostream.html")),
     path('index',TaskIndexView.as_view(),name='index'),

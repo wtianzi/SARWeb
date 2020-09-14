@@ -35,6 +35,8 @@
     />
     <script src="https://js.arcgis.com/4.12/"></script>
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script type="text/javascript" src="{% static 'data/scenariodetails.json' %}"></script>
+
     <script>
       require([
         "esri/Map",
@@ -63,8 +65,8 @@
         ElevationLayer,promiseUtils,Multipoint,
         SpatialReference,projection) {
 
-      var m_conditions=bobdata;
-      var m_location=m_conditions.BOB921[0];
+      var m_conditions=location.Bob921[0];
+
       var leftop=[-80.576448,37.219548];
       var righbottom=[-80.528222,37.1912];
       var gcx=0.5*(leftop[0]+righbottom[0]);
@@ -73,7 +75,7 @@
         'elevation':false,
         'river':false,
         'general':true,
-        'water':false,
+        'lake':false,
         'drawmultipoints':false
       };
 
@@ -97,21 +99,14 @@
         'railroads':"_trans35_railroads"
       };
 
-      //electricpowertransmissionlines,localroads,railroads,
       let generallayerinfo={
         'url':dataurl.electricpowertransmissionlines,
         'fileext':datafileext.electricpowertransmissionlines
       }
-
-      //river_wide, lake
-      let waterlayerinfo={
-        'url':dataurl.river_wide,
-        'fileext':datafileext.river_wide
-      }
       //leftop=[-81.576448,37.219548];
       //righbottom=[-81.528222,37.1912];
-      var startcenter=m_location.location;
-      var prename=m_location.index.toString()+"_"+m_location.namekey+"_";
+      var startcenter=m_conditions.location;
+      var prename=m_conditions.index.toString()+"_"+m_conditions.namekey+"_";
 
       var startcenter1=[-80.4757389347337,37.2040570285143];
       var startcenter2=[-80.5450562640660,37.1977538769385];
@@ -146,7 +141,10 @@
 
       if(layeravaliable.river){
         linearfeatureLyr = new FeatureLayer({
-          url:datafileext.river//"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6"
+          url:"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6"//6 detailed mape, 5 fewer features
+          // riverLayer flow line, Spatial Reference: 102100  (3857)
+
+          //url:"https://hydro.nationalmap.gov/arcgis/rest/services/wbd/MapServer/0"
         });
         map.add(linearfeatureLyr);
       }
@@ -157,9 +155,9 @@
         map.add(roadLyr);
       }
 
-      if(layeravaliable.water){
+      if(layeravaliable.lake){
         waterareaLyr = new FeatureLayer({
-          url:waterlayerinfo.url//"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/8"//8 river wide, 7 fewer river wide, 9 lake
+          url:dataurl.river_wide//"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/8"//8 river wide, 7 fewer river wide, 9 lake
         });
         map.add(waterareaLyr);
       }
@@ -190,7 +188,7 @@
           InitElevation();
         }
       });
-      if(layeravaliable.water){
+      if(layeravaliable.lake){
         view.whenLayerView(waterareaLyr).then(function(layerView){
           layerView.watch("updating", function(val){
 
@@ -204,7 +202,7 @@
                   //var tgeo = projection.project(graphic.geometry, outSpatialReference);
                   let t_obj={};
                   let arr_rings=[];
-                  //console.log(results.features);
+                  console.log(results.features);
 
                    results.features.forEach(function(graphic) {
                      arr_rings=arr_rings.concat(graphic.geometry.rings);
@@ -229,7 +227,8 @@
                    let jsonContent=JSON.stringify(t_obj);
                    //console.log(jsonContent);
 
-                   let filename=prename+waterlayerinfo.fileext+".txt";
+                   //let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd8_lake.txt";
+                   let filename=prename+"_nhd8_lake.txt";
                    if(enabledownload){
                      download(filename,jsonContent);
                    }
@@ -307,8 +306,7 @@
                    t_obj.spatialReference=t_poly_g.geometry.spatialReference;
                    jsonContent=JSON.stringify(t_obj);
 
-
-                   let filename=prename+datafileext.river+".txt";
+                   let filename=tstr.toString()+"_"+Date.now().toString()+"_nhd6_river.txt";
                    if(enabledownload){
                      download(filename,jsonContent);
                    }
@@ -384,6 +382,7 @@
                    t_obj.spatialReference=t_poly_g.geometry.spatialReference;
                    jsonContent=JSON.stringify(t_obj);
 
+                   //let filename=tstr.toString()+"_"+Date.now().toString()+"_trans30_road.txt";
                    let filename=tstr.toString()+"_"+Date.now().toString()+generallayerinfo.fileext +".txt";
 
                    if(enabledownload){

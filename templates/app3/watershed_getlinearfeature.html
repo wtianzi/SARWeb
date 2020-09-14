@@ -35,6 +35,7 @@
     />
     <script src="https://js.arcgis.com/4.12/"></script>
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script type="text/javascript" src="{% static 'data/location.json' %}"></script>
     <script>
       require([
         "esri/Map",
@@ -64,13 +65,19 @@
         SpatialReference,projection) {
 
       var m_conditions=bobdata;
-      var m_location=m_conditions.BOB921[0];
+      var m_location=m_conditions.BOB921[{{bobid|safe}}];
       var leftop=[-80.576448,37.219548];
       var righbottom=[-80.528222,37.1912];
       var gcx=0.5*(leftop[0]+righbottom[0]);
       var gcy=0.5*(leftop[1]+righbottom[1]);
+
+      //1: eleveation,electric,
+      //2: river,railroads
+      //3: river_wide,localroads
+      //4: lake,highway
+      //5: secondaryhighway
       let layeravaliable={
-        'elevation':false,
+        'elevation':true,
         'river':false,
         'general':true,
         'water':false,
@@ -80,6 +87,8 @@
       let dataurl={
         'electricpowertransmissionlines':"https://services1.arcgis.com/Hp6G80Pky0om7QvQ/ArcGIS/rest/services/Electric_Power_Transmission_Lines/FeatureServer/0",
         'localroads':"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/30",
+        'highway':"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/27",
+        'secondaryhighway':"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/28",
         'elevation':"//elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer/",
         'river':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6",
         'river_line':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6",
@@ -94,24 +103,26 @@
         'river':"_nhd6_river",
         'river_wide':"_nhd8_river",
         'lake':"_nhd9_lake",
-        'railroads':"_trans35_railroads"
+        'railroads':"_trans35_railroads",
+        'highway':"_trans27_highway",
+        'secondaryhighway':"_trans28_2ndhighway"
       };
 
       //electricpowertransmissionlines,localroads,railroads,
       let generallayerinfo={
-        'url':dataurl.electricpowertransmissionlines,
-        'fileext':datafileext.electricpowertransmissionlines
+        'url':dataurl.railroads,
+        'fileext':datafileext.railroads
       }
 
       //river_wide, lake
       let waterlayerinfo={
-        'url':dataurl.river_wide,
-        'fileext':datafileext.river_wide
+        'url':dataurl.lake,
+        'fileext':datafileext.lake
       }
       //leftop=[-81.576448,37.219548];
       //righbottom=[-81.528222,37.1912];
       var startcenter=m_location.location;
-      var prename=m_location.index.toString()+"_"+m_location.namekey+"_";
+      var prename=m_location.index.toString()+"_"+m_location.namekey;
 
       var startcenter1=[-80.4757389347337,37.2040570285143];
       var startcenter2=[-80.5450562640660,37.1977538769385];
@@ -261,7 +272,7 @@
                   let jsonContent = "[";
                   var t_obj={};
                   let arr_paths=[];
-                  console.log(results.features);
+                  //console.log(results.features);
 
                    results.features.forEach(function(graphic) {
                      //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
@@ -339,7 +350,7 @@
                   let jsonContent = "[";
                   var t_obj={};
                   let arr_paths=[];
-                  console.log(results.features);
+                  //console.log(results.features);
 
                    results.features.forEach(function(graphic) {
                      //graphic.geometry = projection.project(graphic.geometry, outSpatialReference);
@@ -352,7 +363,7 @@
                    });
 
                    if(layeravaliable.drawmultipoints){
-                     console.log("draw roads");
+                     //console.log("draw roads");
                      let multipoints_linear=[];
                      for (let i=0;i<arr_paths.length;i++){
                        multipoints_linear=multipoints_linear.concat(arr_paths[i]);
@@ -384,8 +395,7 @@
                    t_obj.spatialReference=t_poly_g.geometry.spatialReference;
                    jsonContent=JSON.stringify(t_obj);
 
-                   let filename=tstr.toString()+"_"+Date.now().toString()+generallayerinfo.fileext +".txt";
-
+                   let filename=prename+generallayerinfo.fileext+".txt";
                    if(enabledownload){
                      download(filename,jsonContent);
                    }
@@ -412,7 +422,7 @@
             var graphic=results.features[0];
             //console.log(graphic.geometry);
             var tgeo = projection.project(graphic.geometry, outSpatialReference);
-            console.log(tgeo);
+            //console.log(tgeo);
             });
         });
 
@@ -583,7 +593,8 @@
                   csvContent += row + "\r\n";
               });
               let tstr=GetUpdatedViewExtentString();
-              let filename=tstr.toString()+"_"+Date.now().toString()+"_elevation.csv";
+              //let filename=tstr.toString()+"_"+Date.now().toString()+"_elevation.csv";
+              let filename=prename+"_elevation.csv";
              //let filename=Date.now().toString();
              download(filename,csvContent);
 
@@ -593,7 +604,7 @@
 
       function DrawMultipoints(m_pts,t_color=[255,255,255],t_size=1){
         return;
-        console.log(m_pts);
+        //console.log(m_pts);
         let arr_visual=[];
         let t_graphic =  new Graphic({
           geometry: m_pts,
@@ -648,11 +659,11 @@
 
                    if(res.flag == 'success'){
                      //console.log(res.watershedpolygon);
-                     console.log("elevation success!");
+                     //console.log("elevation success!");
 
                      let w_ratio=(view.extent.xmax-view.extent.xmin)/200;
                      let h_ratio=(view.extent.ymax-view.extent.ymin)/200;
-                     console.log([w_ratio,h_ratio]);
+                     //console.log([w_ratio,h_ratio]);
 
                      for (let i=0;i<res.watershedpolygon.length;i++){
                        let a=[];

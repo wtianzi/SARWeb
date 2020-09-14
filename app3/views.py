@@ -181,13 +181,17 @@ class TaskGenerationView(TemplateView):
 
 
 class TaskassignmentExperimentView(TaskGenerationView):
-    template_name='app3/Taskgeneration_exp_v3.html'
+    template_name='app3/Taskgeneration_exp_v4.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         pid = kwargs.get('participantid', None)
         if pid != None:
             context["participantid"] = kwargs['participantid']
+
+        pindex = kwargs.get('participantindex', None)
+        if pindex != None:
+            context["participantindex"] = kwargs['participantindex']
         return context
 
     def updateExperimentData(request):
@@ -343,7 +347,7 @@ class ConsentFormView(TemplateView):
         res.save()
         #print(queryset)
         #context={"participantid":pid}#,"participantindex":pindex
-        return redirect(reverse('experiment',kwargs={"participantid":pid}))
+        return redirect(reverse('experiment',kwargs={"participantid":pid,"participantindex":pindex}))
 
 class QuestionnaireFormView(TemplateView):
     template_name="app3/questionnaire_task.html"

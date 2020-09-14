@@ -110,6 +110,7 @@ var m_clue_template = {
       }
     ]
 };
+
 function GetSites(n,t_extent){
   let res_points=[];
   //center point [0,0]
@@ -146,3 +147,4 @@ function GetSites(n,t_extent){
   }
   return res_points;
 }
+ 

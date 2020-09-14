@@ -97,6 +97,19 @@
         margin-top: 6px;
         margin-bottom: 6px;
       }
+      .scenebutton{
+        padding: 10px 15px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+      }
+      .sceneblock{
+        float:center;
+        display: inline-block;
+        width="500px";
+        vertical-align: middle;
+      }
   </style>
   <script>
 
@@ -155,40 +168,17 @@
       let m_experimentlog={
 
       };
-      let m_expsetupobj={};
+      let m_expsetupobj;
       $.getJSON("{% static 'data/scenariodetails.json' %}", function(json) {
         m_expsetupobj=json;
-        console.log(m_expsetupobj);
       });
-      let m_participantindex={{participantindex|safe}};
-      let m_rings_arr=[1100,3100,5800,18300];
-      //let m_taskorderarr=m_expsetupobj.participantsetup[m_participantindex].taskorder;
-      //console.log(m_taskorderarr);
+      let m_exp_participantindex={{participantindex|safe}};
+      //console.log(m_exp_participantindex);
+      let m_exp_lostpersontype={"index":0,"type":"child10to12","name":"child", "ring":[800,1600,3200,9000]};
+      let m_exp_location={"index":0,"name":"ic1","center":[-80.4757389347337, 37.2040570285143],"target":[-80.4757389347337, 37.4040570285143]};
 
       //console.log(m_experimentres);
       //kentlane farm (-80.572567,37.203604)
-      //load from database
-      let m_scenario_index=0;
-      let m_lostpersontype=[
-        {"lostperson_index":0,"lostperson_type":"child"},
-        {"lostperson_index":1,"lostperson_type":"dementia"},
-        {"lostperson_index":2,"lostperson_type":"hiker"}
-      ];
-      let m_lostpersontype_index=0;
-      let m_scenarios=[
-        {"scenario_index":0,"scenario_name":"ic1","center":[-80.4757389347337, 37.2040570285143]}, //[-80.4757389347337, 37.2040570285143]//-80.5460, 37.2041
-        {"scenario_index":1,"scenario_name":"ic2","center":[-80.5450562640660, 37.1977538769385]},//[-80.5450562640660, 37.1977538769385]//-80.4757, 37.2041
-        {"scenario_index":2,"scenario_name":"ic3","center":[-80.5451, 37.1978]}
-      ];
-      // this will be changed after the data is loaded
-      let m_targetandclues={
-        "target":[-80.476, 37.20],
-        "clue":[{"clue_index":0,"status":"unfound","info":"cloth","data":[-80.46, 37.205],'photoid':1},
-                          {"clue_index":1,"status":"unfound","info":"drink","data":[-80.47, 37.20],'photoid':2}]
-      };
-      let m_scenarios_rings={'child10to12':[800,1600,3200,9000],
-      'dementia':[300,800,1900,8300],
-      'hiker':[1100,3100,5800,18300]};
 
       let gcx=-80.556451;
       let gcy=37.2;
@@ -436,10 +426,9 @@
           container: "viewDiv",
           map: map,
           zoom: m_scale,
-          center: m_scenarios[m_scenario_index].center//[gcx,gcy],//,35.4
+          center: [gcx,gcy]
         });
-        m_experimentres["scenario"]=m_scenarios[m_scenario_index];
-        m_experimentres["lostpersontype"]=m_lostpersontype[m_lostpersontype_index];
+
 
         let toggle = new BasemapToggle({
           view: view, // view that provides access to the map's 'topo' basemap
@@ -501,12 +490,11 @@
           //console.log(m_teamassign[i]);
           if(m_teamassign[i]){
             //check if the clue are in the assigned area
-            //console.log(m_targetandclues);
-            for(let j=0;j<m_targetandclues.clue.length;j++){
+            for(let j=0;j<m_exp_location.clue.length;j++){
 
               let t_pt=new Point({
-                latitude: m_targetandclues.clue[j].data[1],
-                longitude: m_targetandclues.clue[j].data[0],
+                latitude: m_exp_location.clue[j].location[1],
+                longitude: m_exp_location.clue[j].location[0],
                 spatialReference: view.spatialReference
               });
               if(geometryEngine.contains(m_teamassign[i].geometry,t_pt)){
@@ -516,7 +504,7 @@
                 let URL = "{% url 'getcluemedia' %}";
                 let data = {
                  csrfmiddlewaretoken: '{{ csrf_token }}',
-                 'photoid': m_targetandclues.clue[j].photoid.toString()
+                 'photoid': m_exp_location.clue[j].photoid.toString()
                 };
                 $.post(URL, data, function(response){
                   t_clueobj=JSON.parse(response);
@@ -526,15 +514,15 @@
                   else{ alert(response); }
                 });
                 // change the clue status from "unfound" to "show"
-                m_targetandclues.clue[j].status="show";
+                m_exp_location.clue[j].status="show";
                 let t_contour_value=0;
-                if(m_targetandclues.clue[0].status=="show" && m_targetandclues.clue[1].status=="show"){
+                if(m_exp_location.clue[0].status=="show" && m_exp_location.clue[1].status=="show"){
                   t_contour_value=3;
                 }
-                else if(m_targetandclues.clue[0].status=="show"){
+                else if(m_exp_location.clue[0].status=="show"){
                   t_contour_value=2;
                 }
-                else if(m_targetandclues.clue[1].status=="show"){
+                else if(m_exp_location.clue[1].status=="show"){
                   t_contour_value=1;
                 }
                 document.getElementById("myClues").value=t_contour_value;
@@ -696,7 +684,7 @@
       }
 
       document.getElementById("btndisplaytarget").onclick=function() {
-        DrawToTemperalGraphicLayer(m_targetandclues.target,type="point");
+        DrawToTemperalGraphicLayer(m_exp_location.target,type="point");
         m_experimentres["actions"].push({"id":"btndisplaytarget","timestamp": Date.now(), "description":"click dislpay"});
 
       }
@@ -721,17 +709,16 @@
           m_experimentres["targetcellindex"]=m_targetpolygon.attributes.cellindex;
         }
 
-        m_experimentres["scenario"]=m_scenarios[m_scenario_index];
-        m_experimentres["lostpersontype"]=m_lostpersontype[m_lostpersontype_index];
+        m_experimentres["scenario"]=m_exp_location;
 
       };
 
-      // target data is in the m_targetandclues object
+
       // function updated after the clue updates v2.1
       function SetTargetpolygon(){
         let t_pt=new Point({
-          latitude: m_targetandclues.target[1],
-          longitude: m_targetandclues.target[0],
+          latitude: m_exp_location.target[1],
+          longitude: m_exp_location.target[0],
           spatialReference: view.spatialReference
         });
         for(let i=0;i<allpolygons.length;i++){
@@ -812,8 +799,8 @@
          m_visualizationtype='byhour';
 
          // change clue status from 'show' to 'unfound'
-         for (let j=0;j<m_targetandclues.clue.length;j++){
-           m_targetandclues.clue[j].status='unfound';
+         for (let j=0;j<m_exp_location.clue.length;j++){
+           m_exp_location.clue[j].status='unfound';
          }
          //area_extent=view.extent;
          graphicsLayer.removeAll();
@@ -1046,11 +1033,11 @@
            graphicInteractionLayer.removeAll();
            //display all clue points
            arr_featureset=[];
-           for (let i=0;i<m_targetandclues.clue.length;i++){
-             if(m_targetandclues.clue[i].status=="show"){
+           for (let i=0;i<m_exp_location.clue.length;i++){
+             if(m_exp_location.clue[i].status=="show"){
                let in_point=new Point({
-                 longitude:m_targetandclues.clue[i].data[0],
-                 latitude:m_targetandclues.clue[i].data[1],
+                 longitude:m_exp_location.clue[i].location[0],
+                 latitude:m_exp_location.clue[i].location[1],
                  spatialReference:view.spatialReference
                });
                let t_graphic =  new Graphic({
@@ -1115,11 +1102,11 @@
                 }
              });
              temperalgraphicLayer.add(t_graphic1);
-             let t_clue=m_targetandclues;
-             for (let i=0;i<m_targetandclues.clue.length;i++){
+             let t_clue=m_exp_location;
+             for (let i=0;i<m_exp_location.clue.length;i++){
                let in_point=new Point({
-                 longitude:m_targetandclues.clue[i].data[0],
-                 latitude:m_targetandclues.clue[i].data[1],
+                 longitude:m_exp_location.clue[i].location[0],
+                 latitude:m_exp_location.clue[i].location[1],
                  spatialReference:view.spatialReference
                });
 
@@ -1128,7 +1115,7 @@
                let URL = "{% url 'getcluemedia' %}";
                let data = {
                  csrfmiddlewaretoken: '{{ csrf_token }}',
-                 'photoid': m_targetandclues.clue[i].photoid.toString()
+                 'photoid': m_exp_location.clue[i].photoid.toString()
                };
                $.post(URL, data, function(response){
                  t_clueobj=JSON.parse(response);
@@ -1669,14 +1656,9 @@
            let index_clue1=0;
            let index_clue2=4;
 
-           m_targetandclues={
-             "target":t_targetarr[0].data[tlen_target][index_tar],
-             "clue":[{"clue_index":0,"status":"unfound","info":"cloth","data":t_targetarr[0].data[tlen_clue][index_clue1],'photoid':1},
-                    {"clue_index":1,"status":"unfound","info":"drink","data":t_targetarr[0].data[tlen_clue][index_clue2],'photoid':2}]
-            };
-            //console.log(tcluedata_len,"target",tlen_target,index_tar,"clues:",tlen_clue,index_clue1,index_clue2,m_targetandclues)
-            //console.log(tlen_clue1,tlen_clue2,index_clue1,index_clue2);
-
+           m_exp_location.target=t_targetarr[0].data[tlen_target][index_tar];
+           m_exp_location.clue=[{"clue_index":0,"status":"unfound","info":"cloth","data":t_targetarr[0].data[tlen_clue][index_clue1],'photoid':1},
+                  {"clue_index":1,"status":"unfound","info":"drink","data":t_targetarr[0].data[tlen_clue][index_clue2],'photoid':2}];
          }
 
          function DisplayLostPersonInfo(){
@@ -1684,10 +1666,10 @@
            let t_feature=[];
 
            let t_center=new Point({
-             longitude:m_scenarios[m_scenario_index].center[0],
-             latitude:m_scenarios[m_scenario_index].center[1],
+             longitude:m_exp_location.center[0],
+             latitude:m_exp_location.center[1],
              spatialReference:view.spatialReference
-           });//m_scenarios[m_scenario_index].center;
+           });
 
            let t_graphic =  new Graphic({
              geometry: t_center,//area_extent.center,//view.extent.center,
@@ -1716,13 +1698,12 @@
 
             //draw 25%,50%,75% ring
 
-           let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
-           m_rings_arr=m_scenarios_rings[persontype];
+           let rings_arr=m_exp_lostpersontype.ring;
            let ringsname_arr=["25% ring","50% ring","75% ring","95% ring"];
            for(let i=0;i<4;i++){
              let t_circle=new Circle({
                center:t_center,//area_extent.center,
-               radius:m_rings_arr[i]
+               radius:rings_arr[i]
              });
              t_graphic =  new Graphic({
                geometry: t_circle,//view.extent.center,
@@ -1813,7 +1794,6 @@
            document.getElementById("lpmmodeldisplay").disabled=true;
            document.getElementById("loadlpmcsv").value="Load LPM Data (Loading)";
 
-          let persontype=document.getElementById("sel_lpm").value;//lpm_hiker
           // time duration
           let ih_start = 1;//1
           let ih_stop = 12;//12;
@@ -1825,13 +1805,13 @@
           let totalfiles=1*(ih_stop-ih_start+1)+count_clues;
 
           //folder of files
-          let lpmfolder="/static/data/LPMdata5/"+m_scenarios[m_scenario_index]["scenario_name"]+"/"+persontype;//"LPMdata3"
+          let lpmfolder="/static/data/LPMdata5/"+m_exp_location.name+"/"+m_exp_lostpersontype.type;//"LPMdata3"
           //console.log(lpmfolder);
           //load 2 types of data: contour map, trajectory
           for(let i=ih_start;i<=ih_stop;i++){
             for(let t_rank=1;t_rank<=1;t_rank++){
               // m_lpdata_con.push
-              let csvfilename=lpmfolder+"/best fits/contour data csv/con_"+persontype+"bf"+t_rank.toString()+"_t"+i.toString()+".csv";
+              let csvfilename=lpmfolder+"/best fits/contour data csv/con_"+m_exp_lostpersontype.type+"bf"+t_rank.toString()+"_t"+i.toString()+".csv";
               LoadLPFromCSV_con(csvfilename,totalfiles,i-1,t_rank-1,'byhour');
             }
           }
@@ -1839,15 +1819,15 @@
           // clue1:t1, clue2:t2, clue12:t3, final: t4, final is the overall
           let cluenames=['final','clue1','clue2','clue12'];
           for(let i=0;i<count_clues;i++){
-            let csvfilename= lpmfolder+"/clues/contour data csv/con_"+persontype+"_bf1_"+cluenames[i]+".csv";
+            let csvfilename= lpmfolder+"/clues/contour data csv/con_"+m_exp_lostpersontype.type+"_bf1_"+cluenames[i]+".csv";
             LoadLPFromCSV_con(csvfilename,totalfiles,i,0,'byclue');
             //console.log(csvfilename);
           }
-          let csvfilename= lpmfolder+"/clues/traj_"+persontype+"_bf1.csv";
+          let csvfilename= lpmfolder+"/clues/traj_"+m_exp_lostpersontype.type+"_bf1.csv";
           LoadLPFromCSV_Tra_All(csvfilename,0,0);
 
           for(let i=0;i<count_clues;i++){
-            let csvfilename= lpmfolder+"/clues/"+cluenames[i]+"index_"+persontype+"_bf1.csv";
+            let csvfilename= lpmfolder+"/clues/"+cluenames[i]+"index_"+m_exp_lostpersontype.type+"_bf1.csv";
             LoadLPFromCSV_Tra_Item(csvfilename,0,i);
             //console.log(csvfilename);
           }
@@ -1865,9 +1845,6 @@
            ClearAll();
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
-           m_lostpersontype_index=document.getElementById("sel_lpm").selectedIndex;
-
-
          }
          document.getElementById("sel_rank").onchange=function(){
 
@@ -1904,11 +1881,9 @@
 
          document.getElementById("sel_ic").onchange=function(){
            ClearAll();
-           m_scenario_index=document.getElementById("sel_ic").selectedIndex;
-           view.goTo([ m_scenarios[m_scenario_index]['center'] ]);
+           view.goTo([m_exp_location.center]);
 
            m_lpdata_con=[];
-
            m_lpdata_trajectory=[];
            m_lpdata_tra_colormap=[];
 
@@ -1993,15 +1968,31 @@
            win.focus();
          });
 
-         function InitializeExperiment(taskindex=0){
+         function InitializeExperiment(task=0){
            console.log(m_expsetupobj);
-           m_rings_arr=m_scenarios_rings[persontype];
+           let taskindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[task];
+
+           //{"index":0,"loc":0,"lpt":0,"vt":0},
+           let expindex=m_expsetupobj.experimentsetup[taskindex];
+           m_exp_lostpersontype=m_expsetupobj.lostpersontype[expindex.lpt];
+           m_exp_location=m_expsetupobj.location[expindex.loc];
+           console.log(m_exp_lostpersontype,m_exp_location);
+
+           ClearAll();
+           view.goTo([m_exp_location.center]);
+           m_lpdata_con=[];
+           m_lpdata_trajectory=[];
+           m_lpdata_tra_colormap=[];
+           document.getElementById("loadlpmcsv").value="Load LPM Data";
+           DisableAllGraphicLayers();
          }
 
-         document.getElementById('exp_scene_1').addEventListener('click',function(){
-           InitializeExperiment(0);
-         });
-
+         for(let expindex=0;expindex<12;expindex++){
+           let tstr_id="exp_scene_"+(expindex+1).toString();
+           document.getElementById(tstr_id).addEventListener('click',function(){
+             InitializeExperiment(expindex);
+           });
+         }
 
       //--------------------------------------------------
     });
@@ -2017,12 +2008,20 @@
     <h2 class="list-heading">Search & Rescue Tools</h2>
     <div>
       <h3 class="list-heading">Experiments</h3>
-      <input type="button" class="edit-button" value="Scene 1" id="exp_scene_1">
-      <input type="button" class="edit-button" value="Questionnaire" id="q_scene_1">
 
-      <input type="button" class="edit-button" value="Scene 2" id="exp_scene_2">
-      <input type="button" class="edit-button" value="Scene 3" id="exp_scene_3">
-      <input type="button" class="edit-button" value="Scene 4" id="exp_scene_4">
+      <div>
+        {% with ''|center:12 as range %}
+        {% for i in range %}
+          <div class-"sceneblock">
+            <button type="button" class="scenebutton" id="exp_scene_{{ forloop.counter }}">Scene {{ forloop.counter }}</button>
+            <button type="button" class="scenebutton" id="q_scene_{{ forloop.counter }}">Questionnaire</button>
+          </div>
+        {% endfor %}
+        {% endwith %}
+      </div>
+
+
+
       <input type="button" class="edit-button" value="Submit" id="exp_submit">
       <hr>
       <input type="button" class="edit-button" value="More Info" id="btmoreinfo">

@@ -17,7 +17,8 @@ urlpatterns = [
 
     url(r'^experiment/$', TaskassignmentExperimentView.as_view(),name='experiment'),
     url(r'^experiment/(?P<participantid>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
-
+    url(r'^experiment/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
+    
     path('consentform',ConsentFormView.as_view(),name='consentform'),
     path('consentform_action', ConsentFormView.FormToDB),
 

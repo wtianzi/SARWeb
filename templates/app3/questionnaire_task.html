@@ -6,19 +6,25 @@
     <link href='//fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <style>
       .radiocontainer label {
         display: block;
         position: relative;
         float: left;
         text-align: center;
-        width: 100px;
+        width: 80px;
       }
       input[type="radio"] {
           width:2em;
           height:2em;
       }
+      .vertical {
+        border-left: 5px solid black;
+        height: 900px;
+        }
     </style>
     <script>
                 // function to calculate the result of the survey
@@ -40,47 +46,61 @@
   </head>
   <body>
     <div id="wrapper" class="page-header mb-3">
-      <h1>Please take this questionnaire for the previous assignment task.</h1>
+      <h1 class="text-center">Subjective Questionnaire (Scene {{scene_id}})</h1>
 
       <form action="questionnaire_action" method="post" target="_blank" id="quiz">
         {% csrf_token %}
-        <div>
-          <label for="participantid">Participant ID</label>
-          <input type="text" class="checkbox style-2 pull-right"  value={{participant_id}} id="participantid" name="participantid">
+        <div class="mx-auto">
+          <label>Participant ID: {{participant_id}}, Task ID:{{task_id}} </label>
+        </div>
+        <div class="container-fluid">
+
+          <div class="row">
+        		<div class="col-sm-5">
+              {% for t_ms in measurement_left %}
+                <p>{{t_ms.question}}</p>
+                <div class="radiocontainer">
+                  <label>{{t_ms.left}}</label>
+                  {% with ''|center:7 as range %}
+                  {% for i in range %}
+                    <label><input type="radio" name={{t_ms.name}} value={{ forloop.counter }}>{{ forloop.counter }}</label>
+                  {% endfor %}
+                  {% endwith %}
+                  <label>{{t_ms.right}}</label>
+                </div>
+                <br>
+                <br>
+              {% endfor %}
+        		</div>
+            <div class="col-sm-1">
+              <div class= "vertical">
+              </div>
+            </div>
+        		<div class="col-sm-5">
+              {% for t_ms in measurement_right %}
+                <p>{{t_ms.question}}</p>
+                <div class="radiocontainer">
+                  <label>{{t_ms.left}}</label>
+                  {% with ''|center:7 as range %}
+                  {% for i in range %}
+                    <label><input type="radio" name={{t_ms.name}} value={{ forloop.counter }}>{{ forloop.counter }}</label>
+                  {% endfor %}
+                  {% endwith %}
+                  <label>{{t_ms.right}}</label>
+                </div>
+                <br>
+                <br>
+              {% endfor %}
+        		</div>
+        	</div>
         </div>
 
-        <div>
-          <label for="taskid">Task ID</label>
-          <input type="text" class="checkbox style-2 pull-right"  value={{task_id}} id="id_task_id" name="task_id">
+        <div class="container-fluid">
+          <div class="col-md-12 text-right">
+            <button  type="submit" id="submit" onclick="tabulateAnswers()">Submit Your Answers</button>
+            <button type="reset" id="reset" onclick="resetAnswer()">Reset</button>
+          </div>
         </div>
-
-        <div class="slidecontainer">
-          <label for="trust" id="ltrust">Trust</label>
-          <input type="range" min="1" max="7" value="4" class="slider" id="trust" name="trust">
-        </div>
-
-        <div class="slidecontainer">
-          <label for="transparency" id="ltrust">Transparency</label>
-          <input type="range" min="1" max="7" value="4" class="slider" id="transparency" name="transparency">
-        </div>
-
-        <p>Please select your workload:</p>
-        <div class="radiocontainer">
-          <label><input type="radio" name="workload" value=1>1</label>
-          <label><input type="radio" name="workload" value=2> 2</label>
-          <label><input type="radio" name="workload" value=3> 3</label>
-          <label><input type="radio" name="workload" value=4> 4</label>
-          <label><input type="radio" name="workload" value=5> 5</label>
-          <label><input type="radio" name="workload" value=6> 6</label>
-          <label><input type="radio" name="workload" value=7> 7</label>
-        </div>
-        <br>
-
-        <br>
-
-
-        <button type="submit" id="submit" onclick="tabulateAnswers()">Submit Your Answers</button>
-        <button type="reset" id="reset" onclick="resetAnswer()">Reset</button>
       </form>
     </div>
 

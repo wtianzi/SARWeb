@@ -1,4 +1,18 @@
 var g_experiment={
+  "experimentparameters":{
+    "hour":0,"hourstep":2,
+    "displaytype":[
+      {"index":0,"value":true,"name":"byhour"},
+      {"index":1,"value":false,"name":"bypath"}
+    ],
+    "eacharea":500000,
+    "colormap":[
+      {"index":0,"value":0,"name":"rainbow","uivalue":"o_rainbow"},
+      {"index":1,"value":1,"name":"yellow-red","uivalue":"o_yr"},
+      {"index":2,"value":2,"name":"blue-red","uivalue":"o_br"}
+    ]
+  },
+  "variables":{"hour":0,"hourstep":2,"displaytype":true,"eacharea":500000,"colormap":0},
   "visualizationtype":[
     {"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"},
     {"index":1,"name":"choroplethmap","type":"segmentheat","description":"Weighted map"},

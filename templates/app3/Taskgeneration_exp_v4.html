@@ -166,23 +166,33 @@
         "mapscale":m_scale,
         "totaltaskround":5 // after 5 rounds of try, the task will be complet
       };
-      let m_experimentlog={
 
-      };
       let m_expsetupobj=g_experiment;
-      let m_expindex=4;
+      let m_expindex=0;
       let m_exp_participantindex={{participantindex|safe}};
+      let m_exp_participantid={{participantid|safe}};
       //console.log(m_exp_participantindex);
       let m_exp_lostpersontype={"index":0,"type":"child10to12","name":"child", "ring":[800,1600,3200,9000]};
       let m_exp_location={"index":0,"name":"ic1","center":[-80.4757389347337, 37.2040570285143],"target":[-80.4757389347337, 37.4040570285143]};
       let m_exp_visualization={"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"};
+      let m_exp_variables={"hour":0,"hourstep":2,"displaytype":true,"eacharea":500000,"colormap":0};//"displaytype":"byhour" true or "bypath" false
+
+      let m_experimentlog={
+        "m_exp_variables":m_exp_variables,
+        "m_exp_lostpersontype":m_exp_lostpersontype,
+        "m_exp_location":m_exp_location,
+        "m_exp_visualization":m_exp_visualization,
+        "generalinfo":{"participantindex":m_exp_participantindex,"participantid":m_exp_participantid,"taskid":m_expindex},
+        "taskstart":Date.now(),
+      };
       //console.log(m_experimentres);
       //kentlane farm (-80.572567,37.203604)
+      //
 
       let gcx=-80.556451;
       let gcy=37.2;
 
-      let eacharea=500000;//240000;//60 acer;
+      //let eacharea=500000;//240000;//60 acer;
       let activeWidget = null;
 
       let allpolygons=[];
@@ -195,7 +205,6 @@
       let m_lpdata_con=[];
       let m_lpdata_trajectory=[];
       let m_lpdata_tra_colormap=[];
-      let m_colormap=0;//0: rainbow, 1: yellow-red, 2: blue-red
       let t_rgb=[];
       let m_visualizationtype='byhour';// or 'byclue' if any clue is found
 
@@ -320,7 +329,7 @@
           area_extent=textent;
           wholearea=geometryEngine.planarArea(Polygon.fromExtent(textent));
         }
-        let npoints=2*Math.round(wholearea/eacharea+0.5);      //wholearea=wholetask.area;//metric   240  : acre  60
+        let npoints=2*Math.round(wholearea/m_exp_variables.eacharea+0.5);      //wholearea=wholetask.area;//metric   240  : acre  60
         let lbx=textent.xmin,
             lby=textent.ymin,
             rtx=textent.xmax,
@@ -455,7 +464,7 @@
       document.getElementById("btntaskassignment").onclick=function() {
         m_tasktrials=m_tasktrials+1;
         m_experimentres["step_number"]=m_tasktrials;
-        let i_hr=document.getElementById("myRange").value;
+        let i_hr=m_exp_variables.hour;
         //console.log(m_tasktrials);
 
         m_experimentres["actions"].push({"id":"btntaskassignment","timestamp": Date.now(), "description":"click task assign", 'trial':m_tasktrials,'hourslide':i_hr});
@@ -526,7 +535,7 @@
                 }
                 document.getElementById("myClues").value=t_contour_value;
                 $("#lmyClues").text("Clue(0-3): "+t_contour_value);
-                UpdateVisualization();
+
               }
             }
 
@@ -541,7 +550,7 @@
               m_experimentres["taskstop"]=Date.now();
               m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
               download(filename+".txt",JSON.stringify(m_experimentres));
-
+              SaveExperimentdatatoDB();
               // upload data to database
               m_tasktrials=0;
             }
@@ -557,7 +566,7 @@
           m_experimentres["taskstop"]=Date.now();
           m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
           download(filename+".txt",JSON.stringify(m_experimentres));
-
+          SaveExperimentdatatoDB();
           // upload data to database
 
           m_tasktrials=0;
@@ -567,7 +576,8 @@
 
         m_teamassign=[null,null,null,null,null];
         m_taskstarttime=null;
-        i_hr+=2;
+        m_exp_variables.hour+=2;
+        UpdateVisualization();
       }
       function DrawcongratulationsToInitLayer(){
         let graphic = new Graphic({
@@ -615,7 +625,7 @@
             color: [255,125,0],
             haloColor: "black",
             haloSize: "2px",
-            text: "This round is finished,",
+            text: "This scene is finished",
             xoffset: 0,
             yoffset: 60,
             font: { // autocast as Font
@@ -631,12 +641,12 @@
             type: "text",
             color: [255,125,0],
             haloColor: "black",
-            haloSize: "2px",
-            text: "please start a new search.",
+            haloSize: "1px",
+            text: "Take the questionnaire ->",
             xoffset: 0,
             yoffset: 0,
             font: { // autocast as Font
-              size: 50,
+              size: 30,
               family: "sans-serif"
             }
           }
@@ -890,6 +900,7 @@
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                    SetTargetClues();
+                   UpdateVisualization();
                  }
               }
             });
@@ -935,7 +946,6 @@
 
                  m_lpdata_trajectory.push({'index':-1,'notes':'all','data':res_arr});
 
-                 m_colormap=document.getElementById("sel_colormap").selectedIndex;
                  let t_color_arr=[];
                  let t_ratio=1.0/sizeoftrajectory;
 
@@ -964,6 +974,7 @@
                   document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
                   m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                   SetTargetClues();
+                  UpdateVisualization();
                 }
               }
             });
@@ -989,6 +1000,7 @@
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
 
                    SetTargetClues();
+                   UpdateVisualization();
                  }
               }
             });
@@ -1177,8 +1189,8 @@
          }
 
          function AddLPDataToTrajectorylayer(t_type = "byhour"){
-           let i_hr=parseInt(document.getElementById("myRange").value);
-           m_colormap=document.getElementById("sel_colormap").selectedIndex;
+           let i_hr=m_exp_variables.hour;
+
            let clueindex=0;
            let t_arr=m_lpdata_trajectory.filter(obj=>{ return obj.index === -1;});
            let t_data=t_arr[0].data;
@@ -1240,7 +1252,7 @@
                   geometry: polyline,
                   symbol:{
                           type: "simple-line", // autocasts as new SimpleLineSymbol()
-                          color: m_lpdata_tra_colormap[m_colormap][(11-i)*9], // RGB color values as an array
+                          color: m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9], // RGB color values as an array
                           width: 1
                         }
                 });
@@ -1248,7 +1260,7 @@
                 arr_visual.push(polylineGraphic);
              }
              for(let i=0;i<mid_data[i_hr].length;i++){
-               let t_color= m_lpdata_tra_colormap[m_colormap][(11-i_hr)*9];
+               let t_color= m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i_hr)*9];
                if (i_hr>=t_data.length){
                  i_hr=t_data.length-1;
                  t_color=[125,125,125,0.1];
@@ -1292,7 +1304,7 @@
                   geometry: polyline,
                   symbol:{
                           type: "simple-line", // autocasts as new SimpleLineSymbol()
-                          color: m_lpdata_tra_colormap[m_colormap][i], // RGB color values as an array
+                          color: m_lpdata_tra_colormap[m_exp_variables.colormap][i], // RGB color values as an array
                           width: 1
                         }
                 });
@@ -1300,7 +1312,7 @@
                 arr_visual.push(polylineGraphic);
              }
              for(let i=0;i<t_data.length;i++){
-               let t_color=m_lpdata_tra_colormap[m_colormap][i];
+               let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][i];
                if (i_hr>=t_data.length){
                  i_hr=t_data.length-1;
                  t_color=[125,125,125,0.1];
@@ -1352,7 +1364,7 @@
              t_hour=document.getElementById("myClues").value;
            }
            else if(t_type == "byhour"){
-             t_hour=document.getElementById("myRange").value;
+             t_hour=m_exp_variables.hour;
            }
 
            let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
@@ -1370,7 +1382,6 @@
              i++;
            }
 
-           m_colormap=document.getElementById("sel_colormap").selectedIndex;
            //loop to find rings
            let t_rings=[];//
            let all_paths=[];
@@ -1385,7 +1396,7 @@
 
            let t_distance=0.0001;//define as a circle
            let t_len=0;
-           m_colormap=document.getElementById("sel_colormap").selectedIndex;
+
            arr_heatpoints.map(function(item){
              t_len=t_rings.length-1;
              if(item[0]==t_startprobability){
@@ -1484,7 +1495,7 @@
              t_hour=document.getElementById("myClues").value;
            }
            else if(t_type == "byhour"){
-             t_hour=document.getElementById("myRange").value;
+             t_hour=m_exp_variables.hour;
            }
            //console.log(m_lpdata_con);
 
@@ -1506,7 +1517,6 @@
            }
            //console.log(arr_heatpoints);
 
-           m_colormap=document.getElementById("sel_colormap").selectedIndex;
            //loop to find rings
            let t_rings=[];//
            let all_paths=[];
@@ -1539,7 +1549,7 @@
           let t_index=0;
           let t_oppacity=3;//0.8
 
-          m_colormap=document.getElementById("sel_colormap").selectedIndex;
+
            arr_heatpoints.map(function(item){
              t_len=t_rings.length-1;
              if(item[0]==t_startprobability){
@@ -1552,10 +1562,10 @@
                       rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
                       spatialReference: { wkid: 4326 }
                     });
-                    if (m_colormap==0){
+                    if (m_exp_variables.colormap==0){
                       t_rgb=hslToRgb(1-t_mag, 1, 1-0.6*t_mag);//rainbow
                     }
-                    else if (m_colormap==1){
+                    else if (m_exp_variables.colormap==1){
                       t_rgb=hslToRgb(0.2*(1-t_mag), 1, 1-0.5*t_mag);//red:0, yellow:0.2
                     }
                     else{
@@ -1586,10 +1596,10 @@
                   rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
                   spatialReference: { wkid: 4326 }
                 });
-                if (m_colormap==0){
+                if (m_exp_variables.colormap==0){
                   t_rgb=hslToRgb(1-t_mag, 1, 1-0.6*t_mag);//rainbow
                 }
-                else if (m_colormap==1){
+                else if (m_exp_variables.colormap==1){
                   t_rgb=hslToRgb(0.2*(1-t_mag), 1, 1-0.5*t_mag);//red:0, yellow:0.2
                 }
                 else{
@@ -1623,10 +1633,10 @@
                 rings: t_rings.reverse(),//[[view.extent.xmin,view.extent.ymax],[view.extent.xmax,view.extent.ymax]],
                 spatialReference: { wkid: 4326 }
               });
-              if (m_colormap==0){
+              if (m_exp_variables.colormap==0){
                 t_rgb=hslToRgb(1-t_mag, 1, 1-0.6*t_mag);//rainbow
               }
-              else if (m_colormap==1){
+              else if (m_exp_variables.colormap==1){
                 t_rgb=hslToRgb(0.2*(1-t_mag), 1, 1-0.5*t_mag);//red:0, yellow:0.2
               }
               else{
@@ -1653,8 +1663,8 @@
          }
          function SetTargetClues(){
            // need m_lpdata_trajectory
-           console.log(m_exp_location,m_exp_lostpersontype);
-           console.log(m_lpdata_trajectory);
+           //console.log(m_exp_location,m_exp_lostpersontype);
+           //console.log(m_lpdata_trajectory);
            let t_plitphase=0.618;
            let t_targetarr=m_lpdata_trajectory.filter(obj=>{ return obj.index === -1;});
            // pick two point from t_targetarr
@@ -1805,6 +1815,20 @@
            LoadLPMData();
          }
 
+         function SaveExperimentdatatoDB(){
+           let URL = "{% url 'updateexperimentdata' %}";
+           let data = {
+                   csrfmiddlewaretoken: '{{ csrf_token }}',
+                   'resarr': JSON.stringify(m_experimentres)
+                  };
+           $.post(URL, data, function(response){
+             let res=JSON.parse(response);
+               if(res.flag == 'success'){
+                 //console.log(res);
+                }
+               else{ alert(response); }
+           });
+         }
          function LoadLPMData(){
            if(document.getElementById("loadlpmcsv").value=="Load LPM Data (Loaded)"){
              //clear everything before loading anything
@@ -1877,6 +1901,7 @@
          }
 
           document.getElementById("sel_lpmodel").onchange=function(){
+            //console.log("here sel_lpmodel");
             let t_index=document.getElementById("sel_lpmodel").value;
             m_exp_visualization=m_expsetupobj.visualizationtype[t_index];
             DisableAllGraphicLayers();
@@ -1885,10 +1910,11 @@
 
          document.getElementById("myRange").onchange=function(){
            //console.log("change");
-           m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+document.getElementById("myRange").value.toString()});
-           let t_hour=parseInt(document.getElementById("myRange").value)+1;
-            $("#lmyRange").text("Hour(1-12): "+t_hour);
-            SetTargetpolygon();
+           m_exp_variables.hour=parseInt(document.getElementById("myRange").value);
+           m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+m_exp_variables.hour.toString()});
+           let t_hour=m_exp_variables.hour+1;
+           $("#lmyRange").text("Hour(1-12): "+t_hour);
+           SetTargetpolygon();
            UpdateVisualization();
          }
 
@@ -1913,8 +1939,9 @@
          }
 
          document.getElementById("sel_colormap").onchange=function(){
-             DisableAllGraphicLayers();
-             UpdateVisualization();
+           m_exp_variables.colormap=document.getElementById("sel_colormap").selectedIndex;
+           DisableAllGraphicLayers();
+           UpdateVisualization();
          }
          //--------------------------------------------------
            document.getElementById("lpmmodeldisplay").onclick=function() {
@@ -1945,6 +1972,8 @@
            }
 
            function UpdateVisualization(){
+             getResolution();
+             console.log("inupdatevisualization",m_exp_visualization,m_exp_variables);
              if(m_exp_visualization.index==0){
                // ring
 
@@ -1974,10 +2003,10 @@
 
          document.getElementById('q_scene').addEventListener('click',function(){
            // open a new page
-           //questionnaireform/participantid_taskid/
+           DisableAllGraphicLayers();
+
            let participantid={{ participantid |safe }};
-           let task_id="0";
-           let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+task_id+'/';
+           let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_expindex.toString()+'/';
            //console.log(task_url);
            let win = window.open(task_url, '_blank');
            win.focus();
@@ -1996,8 +2025,11 @@
            m_exp_lostpersontype=m_expsetupobj.lostpersontype[expindex.lpt];
            m_exp_location=m_expsetupobj.location[expindex.loc];
            m_exp_visualization=m_expsetupobj.visualizationtype[expindex.vt];
-           //console.log(m_exp_lostpersontype,m_exp_location);
-           console.log(m_exp_location.center);
+           m_exp_variables=m_expsetupobj.variables;
+
+           document.getElementById("myRange").value=m_exp_variables.hour;
+           //console.log(m_exp_lostpersontype,m_exp_location,m_exp_visualization);
+           //console.log(m_exp_location.center);
            ClearAll();
            view.goTo([m_exp_location.center]);
            m_lpdata_con=[];
@@ -2009,6 +2041,8 @@
            // load data
            LoadLPMData();
            // generate task after loaded
+
+           // show model after loaded
          }
          document.getElementById("exp_scene").addEventListener('click',function(){
            InitializeExperiment(m_expindex);
@@ -2016,6 +2050,10 @@
 
          });
 
+         function getResolution() {
+           m_experimentres["resolution"]={"width":screen.width,"height":screen.height};
+            //alert("Your screen resolution is: " + screen.width + "x" + screen.height);
+          }
       //--------------------------------------------------
     });
 

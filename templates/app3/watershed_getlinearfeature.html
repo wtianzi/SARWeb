@@ -73,14 +73,15 @@
 
       //1: eleveation,electric,
       //2: river,railroads
-      //3: river_wide,localroads
-      //4: lake,highway
-      //5: secondaryhighway
+      //3: localroads
+      //4: river_wide,highway
+
+      //5: lake,secondaryhighway
       let layeravaliable={
-        'elevation':true,
+        'elevation':false,
         'river':false,
         'general':true,
-        'water':false,
+        'water':true,
         'drawmultipoints':false
       };
 
@@ -93,7 +94,7 @@
         'river':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6",
         'river_line':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6",
         'river_wide':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/8",
-        'lake':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/9",
+        'lake':"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/10",
         'railroads':"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/35"
       };
       let datafileext={
@@ -102,7 +103,7 @@
         'elevation':"_elevation",
         'river':"_nhd6_river",
         'river_wide':"_nhd8_river",
-        'lake':"_nhd9_lake",
+        'lake':"_nhd10_lake",
         'railroads':"_trans35_railroads",
         'highway':"_trans27_highway",
         'secondaryhighway':"_trans28_2ndhighway"
@@ -110,8 +111,8 @@
 
       //electricpowertransmissionlines,localroads,railroads,
       let generallayerinfo={
-        'url':dataurl.railroads,
-        'fileext':datafileext.railroads
+        'url':dataurl.secondaryhighway,
+        'fileext':datafileext.secondaryhighway
       }
 
       //river_wide, lake
@@ -157,7 +158,7 @@
 
       if(layeravaliable.river){
         linearfeatureLyr = new FeatureLayer({
-          url:datafileext.river//"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6"
+          url:dataurl.river//"https://hydro.nationalmap.gov/arcgis/rest/services/nhd/MapServer/6"
         });
         map.add(linearfeatureLyr);
       }

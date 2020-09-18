@@ -10,7 +10,7 @@ from django.template import loader
 from django.core import serializers
 from rest_framework import viewsets
 from .serializers import GPSDataSerializer,ClueMediaSerializer,WaypointsDataSerializer, GPShistoricalDataSerializer
-
+import time
 from rest_framework import permissions
 
 from .py.watershed import AreaSegment
@@ -194,6 +194,12 @@ class TaskassignmentExperimentView(TaskGenerationView):
         pindex = kwargs.get('participantindex', None)
         if pindex != None:
             context["participantindex"] = kwargs['participantindex']
+
+        #save to ParticipantStatusModel
+        pname=""
+        res=ParticipantStatusModel(participantid=pid,participantname=pname,participantindex=pindex,status=True,taskstatus={"startat":int(time.time()*1000)})
+        res.save()
+
         return context
 
     def updateExperimentData(request):
@@ -343,7 +349,7 @@ class ConsentFormView(TemplateView):
         queryset = ParticipantStatusModel.objects.exclude(participantindex=None).values().order_by('-participantindex')
         if queryset.count() > 0:
             #print(queryset[0])
-            pindex = queryset[0]['participantindex']+1
+            pindex = (queryset[0]['participantindex']+1) % 36
 
         res=ParticipantStatusModel(participantid=pid,participantname=pname,participantindex=pindex)
         res.save()
@@ -399,7 +405,6 @@ class QuestionnaireFormView(TemplateView):
       opener.dismissAddAnotherPopup(window);
    </script>''')
 
-
 class DownloadDataView(TemplateView):
     template_name="app3/downloaddata.html"
     context={}
@@ -417,7 +422,7 @@ class DownloadDataView(TemplateView):
         'created_at','updated_at']
         rows.insert(0,columrow)
         response = StreamingHttpResponse((writer.writerow(row) for row in rows),content_type="text/csv")
-        response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+        response['Content-Disposition'] = 'attachment; filename="questionnairedata.csv"'
         return response
 
     def questionnaireview(request):
@@ -432,6 +437,18 @@ class DownloadDataView(TemplateView):
         context["columname"]= columrow
         return render(request,'app3/downloaddata.html',context)
 
+    def questionnaireviewall(request):
+        context={}
+        columrow=['id','participantid','taskid','trust','transparency','workload',
+        'trans1','trans2','trans3','trans4','trans5',
+        'trust1','trust2','trust3','trust4','trust5',
+        'NASATLX1_mental','NASATLX2_physical','NASATLX3_temporal','NASATLX4_performance','NASATLX5_effort','NASATLX6_frustration',
+        'created_at','updated_at']
+        #context["query_results"]= list(QuestionnaireModel.objects.all())
+        context["query_results"]=QuestionnaireModel.objects.values().order_by('-updated_at')
+        context["columname"]= columrow
+        return render(request,'app3/downloaddata_details.html',context)
+
     def expdata(request):
         """A view that streams a large CSV file."""
         all_set=ExperimentDataStorage.objects.all().values_list()
@@ -441,7 +458,7 @@ class DownloadDataView(TemplateView):
         columrow=['id','details','created_at']
         rows.insert(0,columrow)
         response = StreamingHttpResponse((writer.writerow(row) for row in rows),content_type="text/csv")
-        response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+        response['Content-Disposition'] = 'attachment; filename="expdata.csv"'
         return response
 
     def expview(request):
@@ -449,6 +466,11 @@ class DownloadDataView(TemplateView):
         context["query_results"]=ExperimentDataStorage.objects.values('id','created_at').order_by('-created_at')[:5]
         context["columname"]= ['id','created_at']
         return render(request,'app3/downloaddata.html',context)
+    def expviewall(request):
+        context={}
+        context["query_results"]=ExperimentDataStorage.objects.values('id','created_at').order_by('-created_at')
+        context["columname"]= ['id','created_at']
+        return render(request,'app3/downloaddata_details.html',context)
 
     def participantdata(request):
         """A view that streams a large CSV file."""
@@ -459,7 +481,7 @@ class DownloadDataView(TemplateView):
         columrow=['id','participantid','participantindex','participantname','status','taskstatus','created_at','updated_at']
         rows.insert(0,columrow)
         response = StreamingHttpResponse((writer.writerow(row) for row in rows),content_type="text/csv")
-        response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+        response['Content-Disposition'] = 'attachment; filename="participantdata.csv"'
         return response
 
     def participantview(request):
@@ -467,7 +489,11 @@ class DownloadDataView(TemplateView):
         context["query_results"]=ParticipantStatusModel.objects.values().order_by('-created_at')[:5]
         context["columname"]= ['id','participantid','participantindex','participantname','status','taskstatus','created_at','updated_at']
         return render(request,'app3/downloaddata.html',context)
-
+    def participantviewall(request):
+        context={}
+        context["query_results"]=ParticipantStatusModel.objects.values().order_by('-created_at')
+        context["columname"]= ['id','participantid','participantindex','participantname','status','taskstatus','created_at','updated_at']
+        return render(request,'app3/downloaddata_details.html',context)
 class Echo:
     """An object that implements just the write method of the file-like
     interface.

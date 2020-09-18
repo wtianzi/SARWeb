@@ -20,16 +20,23 @@ urlpatterns = [
     url(r'^experiment/(?P<participantid>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
     url(r'^experiment/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
 
-    path('consentform',ConsentFormView.as_view(),name='consentform'),
-    path('consentform_action', ConsentFormView.FormToDB),
+    path('experiment/consentform',ConsentFormView.as_view(),name='consentform'),
+    path('experiment/consentform_action', ConsentFormView.FormToDB),
 
     path('downloaddata', DownloadDataView.as_view(),name='downloaddata'),
-    url(r'^questionnairedata/$',DownloadDataView.questionnairedata,name="questionnairedata"),
-    url(r'^viewquestionnairedata/$',DownloadDataView.questionnaireview,name="viewquestionnairedata"),
+    path('downloaddatadetails',TemplateView.as_view(template_name="app3/downloaddata_details.html"),name='downloaddata'),
+
+    url(r'^qndata/$',DownloadDataView.questionnairedata,name="qndata"),
+    url(r'^viewqndata/$',DownloadDataView.questionnaireview,name="viewqndata"),
+    url(r'^viewqnall/$',DownloadDataView.questionnaireviewall,name="viewqnall"),
+
     url(r'^expdata/$',DownloadDataView.expdata,name="expdata"),
     url(r'^viewexpdata/$',DownloadDataView.expview,name="viewexpdata"),
+    url(r'^viewexpdataall/$',DownloadDataView.expviewall,name="viewexpdataall"),
+
     url(r'^ptdata/$',DownloadDataView.participantdata,name="ptdata"),
-    url(r'^viewptdata/$',DownloadDataView.participantview,name="viewptdata"),    
+    url(r'^viewptdata/$',DownloadDataView.participantview,name="viewptdata"),
+    url(r'^viewptdataall/$',DownloadDataView.participantviewall,name="viewptdataall"),
 
     url(r'^updateexperimentdata$', TaskassignmentExperimentView.updateExperimentData,name='updateexperimentdata'),
     path('full', TaskassignmentFullView.as_view(),name='full'),

@@ -25,7 +25,7 @@
              $('.click-to-show').click(function(e) {
                  $.ajax({
                      type: "POST",
-                     url: "{% url 'viewqndata' %}",
+                     url: "{% url 'viewqnall' %}",
                      data: {
                          'ajax_data' : $(e.target).attr("data-desc"),
                          'csrfmiddlewaretoken' :'{{ csrf_token }}'
@@ -41,7 +41,7 @@
              $('.expview').click(function(e) {
                  $.ajax({
                      type: "POST",
-                     url: "{% url 'viewexpdata' %}",
+                     url: "{% url 'viewexpdataall' %}",
                      data: {
                          'ajax_data' : $(e.target).attr("data-desc"),
                          'csrfmiddlewaretoken' :'{{ csrf_token }}'
@@ -57,7 +57,7 @@
              $('.ptview').click(function(e) {
                  $.ajax({
                      type: "POST",
-                     url: "{% url 'viewptdata' %}",
+                     url: "{% url 'viewptdataall' %}",
                      data: {
                          'ajax_data' : $(e.target).attr("data-desc"),
                          'csrfmiddlewaretoken' :'{{ csrf_token }}'
@@ -93,7 +93,7 @@
         <td>
           <div class="form-group">
             <a class="click-to-show" href="#" data-desc="{{ i.description }}">Questionnaire Data</a>
-            <input type="button" onclick="tabulateAnswers()" value="download"></button>
+            <input type="button" onclick="tabulateAnswers()" value="download"></button> 
 
             <a class="expview" href="#" data-desc="{{ i.description }}">Experiment Data</a>
             <input type="button" onclick="expdata()" value="download"></button>

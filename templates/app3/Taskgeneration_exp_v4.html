@@ -2048,6 +2048,13 @@
            InitializeExperiment(m_expindex);
            document.getElementById("exp_scene").style.color='gray';
 
+         })
+         document.getElementById("btsetptindex").addEventListener('click',function(){
+           m_exp_participantindex=document.getElementById("setptindex").value;
+           let URL="{% url 'experiment' %}";
+           //consentform_action
+           window.open(URL+m_exp_participantid.toString()+"/"+m_exp_participantindex.toString()+"/");
+                      
          });
 
          function getResolution() {
@@ -2148,6 +2155,13 @@
       <hr/>
       <div>
         <h3>Lost person model</h3>
+        <div class="container">
+          <div class="row">
+            <label class="col">Set Participant Index:</label>
+            <input class="col" type="text" id="setptindex" size="3"></input>
+            <input class="col" type="button" id="btsetptindex" value="Set" ></input>
+          </div>
+        </div>
         <div>
           <label id="colormap">Color map: </label>
           <select id="sel_colormap" class="sel_options">

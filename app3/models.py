@@ -166,6 +166,25 @@ class QuestionnaireModel(models.Model):
     transparency=models.IntegerField(blank=True,null=True)
     workload=models.IntegerField(blank=True,null=True)
 
+    trans1=models.IntegerField(blank=True,null=True)
+    trans2=models.IntegerField(blank=True,null=True)
+    trans3=models.IntegerField(blank=True,null=True)
+    trans4=models.IntegerField(blank=True,null=True)
+    trans5=models.IntegerField(blank=True,null=True)
+
+    trust1=models.IntegerField(blank=True,null=True)
+    trust2=models.IntegerField(blank=True,null=True)
+    trust3=models.IntegerField(blank=True,null=True)
+    trust4=models.IntegerField(blank=True,null=True)
+    trust5=models.IntegerField(blank=True,null=True)
+
+    NASATLX1_mental=models.IntegerField(blank=True,null=True)
+    NASATLX2_physical=models.IntegerField(blank=True,null=True)
+    NASATLX3_temporal=models.IntegerField(blank=True,null=True)
+    NASATLX4_performance=models.IntegerField(blank=True,null=True)
+    NASATLX5_effort=models.IntegerField(blank=True,null=True)
+    NASATLX6_frustration=models.IntegerField(blank=True,null=True)
+
     created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
 

@@ -2,6 +2,7 @@ from django.urls import path
 from django.views.generic import TemplateView
 from . import views
 from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView,ConsentFormView
+from app3.views import DownloadDataView
 from django.conf.urls import url
 from rest_framework import routers
 from django.conf.urls import include
@@ -21,6 +22,14 @@ urlpatterns = [
 
     path('consentform',ConsentFormView.as_view(),name='consentform'),
     path('consentform_action', ConsentFormView.FormToDB),
+
+    path('downloaddata', DownloadDataView.as_view(),name='downloaddata'),
+    url(r'^questionnairedata/$',DownloadDataView.questionnairedata,name="questionnairedata"),
+    url(r'^viewquestionnairedata/$',DownloadDataView.questionnaireview,name="viewquestionnairedata"),
+    url(r'^expdata/$',DownloadDataView.expdata,name="expdata"),
+    url(r'^viewexpdata/$',DownloadDataView.expview,name="viewexpdata"),
+    url(r'^ptdata/$',DownloadDataView.participantdata,name="ptdata"),
+    url(r'^viewptdata/$',DownloadDataView.participantview,name="viewptdata"),    
 
     url(r'^updateexperimentdata$', TaskassignmentExperimentView.updateExperimentData,name='updateexperimentdata'),
     path('full', TaskassignmentFullView.as_view(),name='full'),

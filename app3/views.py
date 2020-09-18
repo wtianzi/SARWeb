@@ -2,7 +2,7 @@ from django.shortcuts import render,redirect
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 from django.http import HttpResponse,HttpResponseRedirect
-from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage,ParticipantStatusModel
+from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage,ParticipantStatusModel,QuestionnaireModel
 import json
 from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm,ConsentForm
 from django.urls import reverse
@@ -15,9 +15,11 @@ from rest_framework import permissions
 
 from .py.watershed import AreaSegment
 from .py.contourmapanalysis import SegmentWeight
+
+import csv
+from django.http import StreamingHttpResponse
+
 # Create your views here.
-
-
 class IndexView(ListView):
     template_name='app3/MemberManagement.html'
 
@@ -396,3 +398,80 @@ class QuestionnaireFormView(TemplateView):
    <script type="text/javascript">
       opener.dismissAddAnotherPopup(window);
    </script>''')
+
+
+class DownloadDataView(TemplateView):
+    template_name="app3/downloaddata.html"
+    context={}
+
+    def questionnairedata(request):
+        """A view that streams a large CSV file."""
+        all_set=QuestionnaireModel.objects.all().values_list()
+        rows = list(all_set)
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+        columrow=['id','participantid','taskid','trust','transparency','workload',
+        'trans1','trans2','trans3','trans4','trans5',
+        'trust1','trust2','trust3','trust4','trust5',
+        'NASATLX1_mental','NASATLX2_physical','NASATLX3_temporal','NASATLX4_performance','NASATLX5_effort','NASATLX6_frustration',
+        'created_at','updated_at']
+        rows.insert(0,columrow)
+        response = StreamingHttpResponse((writer.writerow(row) for row in rows),content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+        return response
+
+    def questionnaireview(request):
+        context={}
+        columrow=['id','participantid','taskid','trust','transparency','workload',
+        'trans1','trans2','trans3','trans4','trans5',
+        'trust1','trust2','trust3','trust4','trust5',
+        'NASATLX1_mental','NASATLX2_physical','NASATLX3_temporal','NASATLX4_performance','NASATLX5_effort','NASATLX6_frustration',
+        'created_at','updated_at']
+        #context["query_results"]= list(QuestionnaireModel.objects.all())
+        context["query_results"]=QuestionnaireModel.objects.values().order_by('-updated_at')[:5]
+        context["columname"]= columrow
+        return render(request,'app3/downloaddata.html',context)
+
+    def expdata(request):
+        """A view that streams a large CSV file."""
+        all_set=ExperimentDataStorage.objects.all().values_list()
+        rows = list(all_set)
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+        columrow=['id','details','created_at']
+        rows.insert(0,columrow)
+        response = StreamingHttpResponse((writer.writerow(row) for row in rows),content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+        return response
+
+    def expview(request):
+        context={}
+        context["query_results"]=ExperimentDataStorage.objects.values('id','created_at').order_by('-created_at')[:5]
+        context["columname"]= ['id','created_at']
+        return render(request,'app3/downloaddata.html',context)
+
+    def participantdata(request):
+        """A view that streams a large CSV file."""
+        all_set=ParticipantStatusModel.objects.all().values_list()
+        rows = list(all_set)
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+        columrow=['id','participantid','participantindex','participantname','status','taskstatus','created_at','updated_at']
+        rows.insert(0,columrow)
+        response = StreamingHttpResponse((writer.writerow(row) for row in rows),content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="somefilename.csv"'
+        return response
+
+    def participantview(request):
+        context={}
+        context["query_results"]=ParticipantStatusModel.objects.values().order_by('-created_at')[:5]
+        context["columname"]= ['id','participantid','participantindex','participantname','status','taskstatus','created_at','updated_at']
+        return render(request,'app3/downloaddata.html',context)
+
+class Echo:
+    """An object that implements just the write method of the file-like
+    interface.
+    """
+    def write(self, value):
+        """Write the value by returning it, instead of storing in a buffer."""
+        return value

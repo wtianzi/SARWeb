@@ -41,7 +41,11 @@ class ExperimentDataStorageAdmin(admin.ModelAdmin):
 admin.site.register(ExperimentDataStorage, ExperimentDataStorageAdmin)
 
 class QuestionnaireModelAdmin(admin.ModelAdmin):
-    list_display =['id','participantid','taskid','trust','transparency','workload','created_at','updated_at']
+    list_display =['id','participantid','taskid','trust','transparency','workload',
+    'trans1','trans2','trans3','trans4','trans5',
+    'trust1','trust2','trust3','trust4','trust5',
+    'NASATLX1_mental','NASATLX2_physical','NASATLX3_temporal','NASATLX4_performance','NASATLX5_effort','NASATLX6_frustration',
+    'created_at','updated_at']
     pass
 admin.site.register(QuestionnaireModel, QuestionnaireModelAdmin)
 

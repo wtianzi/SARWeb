@@ -25,6 +25,11 @@
         border-left: 5px solid black;
         height: 900px;
         }
+        input[readonly]{
+          background-color:transparent;
+          border: 0;
+          font-size: 1em;
+        }
     </style>
     <script>
                 // function to calculate the result of the survey
@@ -51,7 +56,11 @@
       <form action="questionnaire_action" method="post" target="_blank" id="quiz">
         {% csrf_token %}
         <div class="mx-auto">
-          <label>Participant ID: {{participant_id}}, Task ID:{{task_id}} </label>
+          <label >Participant ID:</label>
+          <input type="text" class=".asd"  value={{participant_id}} name="participantid" readonly/>
+
+          <label >Task ID:</label>
+          <input type="text" class=".asd"  value={{task_id}} name="taskid" readonly/>
         </div>
         <div class="container-fluid">
 

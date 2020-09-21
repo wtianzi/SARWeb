@@ -175,15 +175,37 @@
       let m_exp_lostpersontype={"index":0,"type":"child10to12","name":"child", "ring":[800,1600,3200,9000]};
       let m_exp_location={"index":0,"name":"ic1","center":[-80.4757389347337, 37.2040570285143],"target":[-80.4757389347337, 37.4040570285143]};
       let m_exp_visualization={"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"};
-      let m_exp_variables={"hour":0,"hourstep":2,"displaytype":true,"eacharea":500000,"colormap":0};//"displaytype":"byhour" true or "bypath" false
+      let m_exp_variables={"hour":0,"hourstep":2,"displaytype":true,"eacharea":500000,"zoomlevel":m_scale,"colormap":0};//"displaytype":"byhour" true or "bypath" false
 
+      // update to db every 5 rounds/ or task finished
       let m_experimentlog={
+        "logtype":"task",
         "m_exp_variables":m_exp_variables,
         "m_exp_lostpersontype":m_exp_lostpersontype,
         "m_exp_location":m_exp_location,
         "m_exp_visualization":m_exp_visualization,
-        "generalinfo":{"participantindex":m_exp_participantindex,"participantid":m_exp_participantid,"taskid":m_expindex},
+        "participantindex":m_exp_participantindex,
+        "participantid":m_exp_participantid,
+        "taskindex":m_expindex,
         "taskstart":Date.now(),
+        "taskend":Date.now(),
+        "totalrounds":0,
+        "screenresolutionw":1024,
+        "screenresolutionh":768,
+        "segmentnumber":54,
+        "targetcellindex":0
+      };
+
+      // update to db at each assignment
+      let m_exp_assignlog={
+        "logtype":"assignment",
+        "participantid":m_exp_participantid,
+        "taskindex":m_expindex,
+        "timestamp":Date.now(),
+        "visostamp":Date.now(),
+        "roundindex":0,
+        "teaminfo":{"t1":null,"t2":null,"t3":null,"t4":null,"t5":null},
+        "clueindex":0//(0: no clue, 1: clue1, 2: clue 2, 3: clue 1 and 2)
       };
       //console.log(m_experimentres);
       //kentlane farm (-80.572567,37.203604)
@@ -2054,13 +2076,18 @@
            let URL="{% url 'experiment' %}";
            //consentform_action
            window.open(URL+m_exp_participantid.toString()+"/"+m_exp_participantindex.toString()+"/");
-                      
+
          });
 
          function getResolution() {
            m_experimentres["resolution"]={"width":screen.width,"height":screen.height};
             //alert("Your screen resolution is: " + screen.width + "x" + screen.height);
           }
+
+          // log
+          $(element).on("click mousedown mouseup focus blur keydown change",function(e){
+               console.log(e);
+          });
       //--------------------------------------------------
     });
 
@@ -2102,7 +2129,7 @@
                 <th id="th_team4">SX</th>
                 <th id="th_team5">SX</th>
               </tr>
-            </tbocy>
+            </tbody>
           </table>
           <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"></input>
         </div>

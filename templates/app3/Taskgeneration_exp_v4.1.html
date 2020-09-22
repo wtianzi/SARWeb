@@ -716,29 +716,6 @@
         });
         graphicInitLayer.add(graphic);
       }
-
-      function DrawTextToInitLayer(inputtext){
-        graphicInitLayer.removeAll();
-        graphic = new Graphic({
-          geometry: area_extent.center,//view.extent.center,
-          symbol: {
-            type: "text",
-            color: [255,125,0],
-            haloColor: "black",
-            haloSize: "1px",
-            text: inputtext,
-            xoffset: 0,
-            yoffset: 0,
-            font: { // autocast as Font
-              size: 20,
-              family: "sans-serif"
-            }
-          }
-        });
-        graphicInitLayer.add(graphic);
-      }
-
-
       function DrawPolygonToInitLayer(t_obj,t_color=[0, 102, 255, 0.8]){
         //draw the polygon into graphicInitLayer
         let graphic = new Graphic({
@@ -1544,8 +1521,6 @@
            //console.log(voronoiarr);
            //console.log(contourring_arr);
 
-           //show wait
-           DrawTextToInitLayer("Please wait for the visualization");
            let URL = "{% url 'getsegmentVal' %}";
            let data = {
              csrfmiddlewaretoken: '{{ csrf_token }}',
@@ -1581,7 +1556,6 @@
                //console.log(arr_featureset);
                visualization_Segmentheat_Layer.addMany(arr_featureset);
                visualization_Segmentheat_Layer.visible=true;
-               graphicInitLayer.removeAll();
               }
              else{ alert(response); }
            });
@@ -1624,7 +1598,7 @@
            }
            //console.log(m_lpdata_con);
            //console.log(arr_heatpoints);
-           //console.log(t_type,t_hour,t_rank);
+           console.log(t_type,t_hour,t_rank);
            //loop to find rings
            let t_rings=[];//
            let all_paths=[];
@@ -2081,7 +2055,7 @@
 
            function UpdateVisualization(){
 
-             //console.log(m_visualizationtype);
+             console.log(m_visualizationtype);
              if(m_exp_visualization.index==0){
                // ring
              }
@@ -2137,6 +2111,10 @@
 
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
+
+
+           //console.log(m_expsetupobj);
+
            m_experimentlog.experimentindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[task];
            m_experimentlog.sceneindex=task;
            //{"index":0,"loc":0,"lpt":0,"vt":0},
@@ -2145,7 +2123,7 @@
            m_exp_location=m_expsetupobj.location[t_expsetup.loc];
            m_exp_visualization=m_expsetupobj.visualizationtype[t_expsetup.vt];
            m_exp_variables.hour=0;
-           //console.log(m_exp_order,m_exp_variables);
+           console.log(m_exp_order,m_exp_variables);
 
            m_experimentlog.m_exp_variables=m_exp_variables;
            m_experimentlog.m_exp_lostpersontype=m_exp_lostpersontype;

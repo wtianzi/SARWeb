@@ -1108,7 +1108,7 @@
         m_experimentres["scenario"]=m_scenarios[m_scenario_index];
         m_experimentres["lostpersontype"]=m_lostpersontype[m_lostpersontype_index];
 
-        DrawAllPoints();
+
       };
 
       // target data is in the m_targetandclues object
@@ -3209,25 +3209,61 @@
          });
       //--------------------------------------------------
 
-      var m_conditions=bobdata.bob160;
+      var m_conditions=bobdata.filtered;
       let gc_longitude=m_scenarios[m_scenario_index]['center'][0];
       let gc_latitude=m_scenarios[m_scenario_index]['center'][1];
       //DrawAllPoints();
 
-      function DrawAllPoints(){
+      function DrawAllPoints(ncount=158){
         graphicfilterLayer.removeAll();
         let t_feature=[];
 
-        for(let i=0;i<158;i++){
+        for(let i=0;i<ncount;i++){
           //console.log(i);
           let in_symbol=getSymbol(m_conditions[i].subject);
-          let t_pt=GetPoints(i,in_symbol)
+          let t_pt=GetPoints(i,in_symbol);
           //console.log(t_pt);
           t_feature.push(t_pt);
         }
 
          graphicfilterLayer.addMany(t_feature);
       }
+
+      function DrawTwoPoints(nindex=0){
+        graphicfilterLayer.removeAll();
+        let paths=[];
+
+        let in_symbol=getSymbol("center");
+        let t_longitude=m_conditions[nindex].lpp[1];
+        let t_latitude=m_conditions[nindex].lpp[0];
+        paths.push([t_longitude,t_latitude]);
+
+        let t_pt=GetPoint(t_longitude,t_latitude,in_symbol,nindex);
+
+        in_symbol=getSymbol(m_conditions[nindex].subject);
+        t_longitude=m_conditions[nindex].findcoord[1];
+        t_latitude=m_conditions[nindex].findcoord[0];
+        paths.push([t_longitude,t_latitude]);
+        let t_pt2=GetPoint(t_longitude,t_latitude,in_symbol,nindex);
+
+        // a line
+        let polyline = {
+          type:'polyline',
+          paths: paths,
+          spatialReference: { wkid: 4326 }
+        };
+        let polylineGraphic=new Graphic({
+          geometry: polyline,
+          symbol:{
+                  type: "simple-line", // autocasts as new SimpleLineSymbol()
+                  color: [200,200,0], // RGB color values as an array
+                  width: 1
+                }
+        });
+
+        graphicfilterLayer.addMany([t_pt,t_pt2,polylineGraphic]);
+      }
+
       function getSymbol(keywords){
         let res={
           type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
@@ -3254,13 +3290,24 @@
                 size: 10
               };
         if(keywords.includes("Child")){
-          res=symbol_child
+          res=symbol_child;
         }
         else if(keywords.includes("Hiker")){
-          res=symbol_hiker
+          res=symbol_hiker;
         }
         else if(keywords.includes("Dementia")){
-          res=symbol_others
+          res=symbol_others;
+        }
+        else if(keywords.includes("center")){
+          res={
+                type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                style:"triangle",
+                color: [255,0,0],
+                size: 10
+              };
+        }
+        else if(keywords.includes("hiker")){
+          res.style="circle";
         }
         return res;
       }
@@ -3316,12 +3363,36 @@
         return d * 1000; // meters
       }
 
+      function GetPoint(t_longitude=0,t_latitude=0,in_symbol={},in_index=0){
+        let in_point=new Point({
+          longitude:t_longitude,
+          latitude:t_latitude,
+          spatialReference:view.spatialReference
+        });
+
+        let t_graphic =  new Graphic({
+          geometry: in_point,
+          symbol:  in_symbol,
+           attributes:{
+             Name:"findlocation"
+           },
+           popupTemplate:{
+              title: m_conditions[in_index].subject,
+              content: generatehtml(m_conditions[in_index])
+            }
+
+        });
+        return t_graphic;
+      }
 
       function GetPoints(in_index=0,in_symbol={}){
 
         //translate m_location
-        let t_longitude=gc_longitude-m_conditions[in_index].distanceew;
-        let t_latitude=gc_latitude-m_conditions[in_index].distancens;
+        let t_longitude=gc_longitude-m_conditions[in_index].findcoord[1]+m_conditions[in_index].lpp[1];
+        let t_latitude=gc_latitude-m_conditions[in_index].findcoord[0]+m_conditions[in_index].lpp[0];
+
+        //let t_longitude=gc_longitude-m_conditions[in_index].distanceew;
+        //let t_latitude=gc_latitude-m_conditions[in_index].distancens;
         let in_point=new Point({
           longitude:t_longitude,
           latitude:t_latitude,
@@ -3348,6 +3419,52 @@
         });
         return t_graphic;
       }
+
+      let m_filteredindex;
+      document.getElementById('bt_showallpoints').addEventListener('click',function(){
+        ClearAll();
+        DrawAllPoints(38);
+      });
+
+      document.getElementById('bt_goto').addEventListener('click',function(){
+        ClearAll();
+        // get location  tx_scenarioindex
+        m_filteredindex = parseInt(document.getElementById('tx_scenarioindex').value)-1;
+
+        // initial location changed
+        m_scenarios=[{"scenario_index":0,"scenario_name":"ic1","center":[m_conditions[m_filteredindex].lpp[1],m_conditions[m_filteredindex].lpp[0]]}];
+        // view.goto
+        view.zoom=scale;
+        view.goTo(m_scenarios[0].center);
+
+        // show target and center
+        DrawTwoPoints(m_filteredindex);
+        DisplayLostPersonInfo();
+      });
+
+      document.getElementById('bt_next').addEventListener('click',function(){
+        ClearAll();
+        // get location tx_scenarioindex +1
+        m_filteredindex = parseInt(document.getElementById('tx_scenarioindex').value);
+        if(m_filteredindex>39){
+          m_filteredindex=1;
+        }
+
+        // initial location changed
+        m_scenarios=[{"scenario_index":0,"scenario_name":"ic1","center":[m_conditions[m_filteredindex].lpp[1],m_conditions[m_filteredindex].lpp[0]]}];
+
+        // view.goto
+        view.zoom=scale;
+        view.goTo(m_scenarios[0].center);
+        // show target and center
+        DrawTwoPoints(m_filteredindex);
+        DisplayLostPersonInfo();
+
+        // set value of tx_scenarioindex
+        document.getElementById('tx_scenarioindex').value=(m_filteredindex+1).toString();
+      });
+
+
     });
 
 
@@ -3359,6 +3476,17 @@
 
   <div id="editArea" class="editArea-container">
     <h2 class="list-heading">Search & Rescue Tools</h2>
+    <div>
+      <h3 class="list-heading">Scenario filtering</h3>
+      <div>
+        <input type="text" id="tx_scenarioindex" value="1"></input>
+        <input type="button" value="Go to" id="bt_goto"></input>
+        <input type="button" value="Next" id="bt_next"></input>
+        <input type="button" class="edit-button" value="Show All Points Before Filtering" id="bt_showallpoints"></input>
+
+      </div>
+    </div>
+
     <div>
       <h3 class="list-heading">Map Division</h3>
       <div>

@@ -77,7 +77,7 @@ urlpatterns = [
     url(r'^getcluemedia$', TaskGenerationView.getClueMedia,name='getcluemedia'),
     path('translateshapefiletogeojson',TemplateView.as_view(template_name="app3/Translate_shapefile_to_geojson.html")),
     path('realdatalocation',TemplateView.as_view(template_name="app3/realdatalocation.html")),
-
+    path('realdatalocationfiltered',TemplateView.as_view(template_name="app3/realdatalocation_filtered.html")),
     #path('index',TaskIndexView.asView()),
 ]
 

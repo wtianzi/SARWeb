@@ -150,7 +150,7 @@
         "traildatacenter":null,
         "participantid":Date.now(),
         "participant_index":(m_d.getMonth()+1).toString()+m_d.getDate().toString()+m_d.getHours().toString(),
-        "teamnumber":4,
+        "teamnumber":5,
         "taskid":m_d.getHours().toString()+m_d.getMinutes().toString()+m_d.getSeconds().toString(),
         "taskstart":Date.now(),
         "taskstop":null,
@@ -212,7 +212,7 @@
         "stopts":Date.now(),
         "visostamp":Date.now(),
         "roundindex":0,
-        "teaminfo":{"t1":null,"t2":null,"t3":null,"t4":null},
+        "teaminfo":{"t1":null,"t2":null,"t3":null,"t4":null,"t5":null},
         "clueindex":0//(0: no clue, 1: clue1, 2: clue 2, 3: clue 1 and 2)
       };
 
@@ -251,7 +251,7 @@
       let m_teamiconlocation=null;
 
       //let m_searchedarea=[];//all polygon marked gray
-      let m_teamassign=[null,null,null,null];//
+      let m_teamassign=[null,null,null,null,null];//
       let m_targetpolygon;
       let m_taskstarttime=null;
       let m_tasktrials=0;//how many time the operator tried to assign teams
@@ -635,7 +635,7 @@
         }
 
         //initialize for the next step
-        m_teamassign=[null,null,null,null];
+        m_teamassign=[null,null,null,null,null];
         m_taskstarttime=null;
         m_exp_variables.hour+=2;
 
@@ -1111,7 +1111,7 @@
             return true;
          }
 
-         function AddTeams(init=false,teamcount=4){
+         function AddTeams(init=false,teamcount=5){
            teamgraphicsLayer.removeAll();
            if(init){
              m_teamiconlocation=null;
@@ -1452,7 +1452,6 @@
 
            visualization_Trajectories_Layer.addMany(arr_visual);
            visualization_Trajectories_Layer.visible=true;
-           m_exp_assignlog.visostamp=Date.now();
          }
 
          function AddLPDataToSegmentheatlayer(t_type = "byhour"){
@@ -1583,7 +1582,6 @@
                visualization_Segmentheat_Layer.addMany(arr_featureset);
                visualization_Segmentheat_Layer.visible=true;
                graphicInitLayer.removeAll();
-               m_exp_assignlog.visostamp=Date.now();
               }
              else{ alert(response); }
            });
@@ -1769,7 +1767,7 @@
            //console.log(arr_featureset);
            visualization_Contourmap_Layer.addMany(arr_featureset);
            visualization_Contourmap_Layer.visible=true;
-           m_exp_assignlog.visostamp=Date.now();
+
          }
          function SetTargetClues(){
            // need m_lpdata_trajectory
@@ -2237,6 +2235,7 @@
                 <th>2</th>
                 <th>3</th>
                 <th>4</th>
+                <th>5</th>
               </tr>
             </thead>
             <tbody>
@@ -2246,6 +2245,7 @@
                 <th id="th_team2">SX</th>
                 <th id="th_team3">SX</th>
                 <th id="th_team4">SX</th>
+                <th id="th_team5">SX</th>
               </tr>
             </tbody>
           </table>
@@ -2259,7 +2259,7 @@
         </div>
       </div>
       <hr>
-      <input type="button" class="edit-button" value="..." id="btmoreinfo">
+      <input type="button" class="edit-button" value="More Info" id="btmoreinfo">
     </div>
 
     <div id="menudetail" style="display:none">

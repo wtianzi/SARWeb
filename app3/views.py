@@ -204,7 +204,7 @@ class TaskassignmentExperimentView(TaskGenerationView):
 
     def updateExperimentData(request):
         if request.method == 'POST':
-            print("update experiment data")
+            #print("update experiment data")
             resarr = request.POST.get('resarr')
             details=json.loads(resarr)
 

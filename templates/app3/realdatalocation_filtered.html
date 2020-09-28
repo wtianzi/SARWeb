@@ -3260,10 +3260,27 @@
                   width: 1
                 }
         });
-
         graphicfilterLayer.addMany([t_pt,t_pt2,polylineGraphic]);
-      }
 
+        if (nindex < bobdata.details.length ){
+          if ("paths" in bobdata.details[nindex]){
+            polylineGraphic=new Graphic({
+              geometry: {
+                type:'polyline',
+                paths: bobdata.details[nindex].paths,
+                spatialReference: { wkid: 4326 }
+              },
+              symbol:{
+                      type: "simple-line", // autocasts as new SimpleLineSymbol()
+                      color: [0,0,200], // RGB color values as an array
+                      width: 1
+                    }
+            });
+            graphicfilterLayer.addMany([polylineGraphic]);
+          }
+        }        
+
+      }
       function getSymbol(keywords){
         let res={
           type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
@@ -3459,7 +3476,6 @@
         // show target and center
         DrawTwoPoints(m_filteredindex);
         DisplayLostPersonInfo();
-
         // set value of tx_scenarioindex
         document.getElementById('tx_scenarioindex').value=(m_filteredindex+1).toString();
       });

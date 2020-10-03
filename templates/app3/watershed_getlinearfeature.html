@@ -71,20 +71,6 @@
       var gcx=0.5*(leftop[0]+righbottom[0]);
       var gcy=0.5*(leftop[1]+righbottom[1]);
 
-      //1: eleveation,electric,
-      //2: river,railroads
-      //3: localroads
-      //4: river_wide,highway
-
-      //5: lake,secondaryhighway
-      let layeravaliable={
-        'elevation':false,
-        'river':false,
-        'general':true,
-        'water':true,
-        'drawmultipoints':false
-      };
-
       let dataurl={
         'electricpowertransmissionlines':"https://services1.arcgis.com/Hp6G80Pky0om7QvQ/ArcGIS/rest/services/Electric_Power_Transmission_Lines/FeatureServer/0",
         'localroads':"https://carto.nationalmap.gov/arcgis/rest/services/transportation/MapServer/30",
@@ -107,6 +93,20 @@
         'railroads':"_trans35_railroads",
         'highway':"_trans27_highway",
         'secondaryhighway':"_trans28_2ndhighway"
+      };
+
+      //1: eleveation,electric,
+      //2: river,railroads
+      //3: localroads
+      //4: river_wide,highway
+
+      //5: lake,secondaryhighway
+      let layeravaliable={
+        'elevation':false,
+        'river':false,
+        'general':true,
+        'water':true,
+        'drawmultipoints':false
       };
 
       //electricpowertransmissionlines,localroads,railroads,

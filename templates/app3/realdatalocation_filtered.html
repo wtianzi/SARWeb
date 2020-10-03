@@ -37,7 +37,9 @@
         background: rgba(0, 0, 0, 0.05);
         width: 80.2%;
       }
-
+      #tx_scenarioindex{
+        width: 40%;
+      }
       #text {
         color: white;
         padding: 3%;
@@ -3278,7 +3280,47 @@
             });
             graphicfilterLayer.addMany([polylineGraphic]);
           }
-        }        
+          if(true){
+            //draw target and two clues
+            let t_obj=bobdata.details[nindex];
+            let t_symbol=["circle","diamond","square"];
+            let pt=[t_obj.targetindex,t_obj.clue1,t_obj.clue2];
+            //pt=[86,20,50];
+            for (let i = 0;i<3;i++){
+              in_symbol=getSymbol("Dementia");
+              ptGraphic=new Graphic({
+                geometry: {
+                  type:'point',
+                  longitude:t_obj.paths[pt[i]][0],
+                  latitude:t_obj.paths[pt[i]][1],
+                  spatialReference: { wkid: 4326 }
+                },
+                symbol:{
+                  type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                  style:t_symbol[i],
+                  color: [255,70*i,0],
+                  size: 15
+                  },
+                attributes:{
+                    Name:"Last known position",
+                    target:t_obj.paths[t_obj.targetindex],
+                    clue1:t_obj.paths[t_obj.clue1],
+                    clue2:t_obj.paths[t_obj.clue2],
+                  },
+                popupTemplate:{
+                        title: "{Name}",
+                        content: [
+                          {
+                            type: "fields",
+                            fieldInfos: [{fieldName: "Name"},{fieldName: "target"},{fieldName: "clue1"},{fieldName: "clue2"}]
+                          }
+                        ]
+                }
+              });
+              graphicfilterLayer.addMany([ptGraphic]);
+            }
+          }
+        }
 
       }
       function getSymbol(keywords){

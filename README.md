@@ -15,6 +15,11 @@ http://sar.caslab.ece.vt.edu/experiment
 
 User interface demo: [https://sites.google.com/vt.edu/vacsesardemo](https://sites.google.com/vt.edu/vacsesardemo/home)
 
+# Experiment flow:
+- a demographic questionnaire
+
+
+
 Reference
 [ESRI Javascript API](https://developers.arcgis.com/javascript/latest/api-reference/esri-views-View.html#width)
 

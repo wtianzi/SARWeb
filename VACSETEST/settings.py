@@ -143,6 +143,7 @@ USE_TZ = True
 
 MAX_UPLOAD_SIZE = "52428800"
 
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 

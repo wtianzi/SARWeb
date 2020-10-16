@@ -341,22 +341,30 @@ class TaskassignmentFullView(TaskassignmentExperimentView):
 class ConsentFormView(TemplateView):
     template_name="app3/consentform.html"
     context={"participantid":0,"participantindex":0}
-    def FormToDB(request):
+    def GoToDemos(request):
         pflag=request.POST.get("check1")
         pid=request.POST.get("participantid")
         pname=request.POST.get("participantname")
         pindex=0
-        print(pflag,pid,pname)
-
+        
         queryset = ParticipantStatusModel.objects.exclude(participantindex=None).values().order_by('-participantindex')
         if queryset.count() > 0:
-            #print(queryset[0])
             pindex = (queryset[0]['participantindex']+1) % 36
 
         res=ParticipantStatusModel(participantid=pid,participantname=pname,participantindex=pindex)
         res.save()
-        #print(queryset)
-        #context={"participantid":pid}#,"participantindex":pindex
+        
+        context={"participantid":pid,"participantindex":pindex}
+        print(context)
+        return render(request,'app3/demographicsurvey.html',context)
+    
+    def FormToDB(request):
+        pid=request.POST.get("participantid")
+        pindex=request.POST.get("participantindex")
+        
+        pid=pid.rstrip('/')
+        pindex=pindex.rstrip('/')
+        print(pid,pindex)
         return redirect(reverse('experiment',kwargs={"participantid":pid,"participantindex":pindex}))
 
 class QuestionnaireFormView(TemplateView):

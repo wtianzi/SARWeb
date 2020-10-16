@@ -21,10 +21,12 @@ urlpatterns = [
     url(r'^experiment/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
 
     path('experiment/consentform',ConsentFormView.as_view(),name='consentform'),
-    path('experiment/consentform_action', ConsentFormView.FormToDB),
+    path('experiment/consentform_action', ConsentFormView.GoToDemos),
+    path('test',TemplateView.as_view(template_name="app3/demographicsurvey.html")),
     
     path('experiment/demos',TemplateView.as_view(template_name="app3/demographicsurvey.html")),
-
+    path('experiment/demographicsurvey_action', ConsentFormView.FormToDB),
+    
     path('downloaddata', DownloadDataView.as_view(),name='downloaddata'),
     path('downloaddatadetails',TemplateView.as_view(template_name="app3/downloaddata_details.html"),name='downloaddata'),
 

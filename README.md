@@ -16,8 +16,15 @@ http://sar.caslab.ece.vt.edu/experiment
 User interface demo: [https://sites.google.com/vt.edu/vacsesardemo](https://sites.google.com/vt.edu/vacsesardemo/home)
 
 # Experiment flow:
-- a demographic questionnaire
-
+- consent form remind (have a link to the qualtrics and check)
+- a demographic questionnaire (once)
+  - here we have an id for experiment and unixid for distinguish different users
+- training session
+- loop start (8)
+- task
+- post-task questionnaire
+- loop end
+- post experiment questionnaire
 
 
 Reference

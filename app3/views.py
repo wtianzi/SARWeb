@@ -342,9 +342,11 @@ class ConsentFormView(TemplateView):
     template_name="app3/consentform.html"
     context={"participantid":0,"participantindex":0}
     def FormToDB(request):
+        pflag=request.POST.get("check1")
         pid=request.POST.get("participantid")
         pname=request.POST.get("participantname")
         pindex=0
+        print(pflag,pid,pname)
 
         queryset = ParticipantStatusModel.objects.exclude(participantindex=None).values().order_by('-participantindex')
         if queryset.count() > 0:

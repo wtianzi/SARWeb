@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+  <head>
+    <title>Demographic Questionnaire</title>
+    <link href='//fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+      <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html">
+    <style>
+      </style>
+  </head>
+
+<body>
+    <div class="page-header mb-3">
+        <h1>Demographic Questionnaire</h1>
+        
+        <p> 
+        </p>
+      <div class="consent" >
+        <form action="demographicsurvey_action" method="post" id="quiz">
+          {% csrf_token %}
+            <div>
+                <label for="age">Age: </label>
+                <input type="text" id="age" name="age"/>
+            </div>
+            
+            <div>
+            <label for="gender">Gender:</label>
+                <select id="gender" name="gender">
+                    <option value="1">MALE</option>
+                    <option value="2">FEMALE</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="education">Highest level of education:</label>
+                <select id="education" name="education">
+                    <option value="1">High school</option>
+                    <option value="2">Associate Undergraduate</option>
+                    <option value="3">Graduate (Master’s)</option>
+                    <option value="4">Doctorate (Ph.D.)</option>
+                </select>
+            </div>
+          
+            <div>
+                <label for="sart">Search and Rescue Training:</label>
+                <select id="sart" name="sart">
+                    <option value="1">Management</option>
+                    <option value="2">Tracker</option>
+                    <option value="3">Team Leader</option>
+                    <option value="4">Searcher</option>
+                    <option value="5">Not applicable</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="q1">Have you worked on any Search and Rescue operations in the past year? </label>
+                <select id="q1" name="q1">
+                    <option value="1">Yes</option>
+                    <option value="2">No</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="q2">If yes, approximately how many?</label>
+                <input type="text" id="q2" name="q2"/>
+            </div>
+            
+            <div>
+                <label for="q3">How many Search and Rescue operations have you participated in total?</label>
+                <input type="text" id="q3" name="q3"/>
+            </div>
+
+
+If you have one, briefly describe your typical roll on a Search and Rescue Operation? (Ex: tracker, K9
+tracker, management, searcher, runner, etc)
+Do you have any medical certifications? (First Aid, Wilderness First Responder, EMT, etc.)
+Have you acted as management on any Search and Rescue operations? (circle one) Yes | No
+How many years of your employment/volunteering or education is associated with Search and Rescue?
+
+Have you used any Search and Rescue software? (circle one) Yes | No
+If so, please lost the software you have used.
+
+If you answered ‘Yes’ to the previous question, please briefly describe your experience:
+            
+            
+            <div style="float: left;">
+              <input type="checkbox" name="check1" value="False" id="mycheck" onclick="handleClick(this)">
+                <label for="mycheck">Please confirm that you have read the consent form and fully understand your rights.</label>
+            </div>
+            
+          <div style="float: right; width: 130px;">
+            <input type="submit" value="Start Experiment" id="agree" onclick="dismissAddAnotherPopup(this)" disabled/>
+          </div>
+        
+            <div style="display:none">
+                <input type="text" id="participantid" name="participantid" value={{participantid|safe}}/>
+                <label for="fname">Please enter your name:</label>
+                <input type="text" id="participantindex" name="participantindex" value={{participantindex|safe}}/>
+            </div>
+            
+        </form>
+
+          
+      </div>
+
+    </div>
+    <script>
+      function handleClick(cb){
+        bt = document.getElementById("agree");
+        if(cb.checked){
+          bt.disabled=false;
+            cb.value="Ture";
+          //document.getElementById("myBtn").disabled = true;
+        }
+        else{
+          bt.disabled=true;
+            cb.value="False";
+        }
+
+      }
+      function dismissAddAnotherPopup(win) {
+       window.close();
+      }
+
+      function myFunction(){
+        document.getElementById("participantid").value = Date.now().toString();
+      }
+    </script>
+  </body>
+</html>

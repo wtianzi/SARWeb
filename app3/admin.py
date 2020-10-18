@@ -54,7 +54,7 @@ admin.site.register(ExperimentDataStorage, ExperimentDataStorageAdmin)
 
 class QuestionnaireModelAdmin(admin.ModelAdmin):
     actions = ['download_csv']
-    list_display =['id','participantid','taskid','trust','transparency','workload',
+    list_display =['id','participantid','taskid','sceneid','trust','transparency','workload',
     'trans1','trans2','trans3','trans4','trans5',
     'trust1','trust2','trust3','trust4','trust5',
     'NASATLX1_mental','NASATLX2_physical','NASATLX3_temporal','NASATLX4_performance','NASATLX5_effort','NASATLX6_frustration',

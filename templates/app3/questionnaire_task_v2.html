@@ -32,6 +32,12 @@
         }
     </style>
     <script>
+                // function to calculate the result of the survey
+          function tabulateAnswers() {
+            //var answerbox = document.getElementById('answer');
+            //console.log("here");
+            //top.window.close();
+          }
 
           function resetAnswer() {
             var answerbox = document.getElementById('answer');
@@ -45,7 +51,7 @@
   </head>
   <body>
     <div id="wrapper" class="page-header mb-3">
-      <h1 class="text-center" id="scenetitle">Subjective Questionnaire (Scene {{title}})</h1>
+      <h1 class="text-center">Subjective Questionnaire (Scene {{scene_id}})</h1>
 
       <form action="questionnaire_action" method="post" target="_blank" id="quiz">
         {% csrf_token %}
@@ -55,14 +61,11 @@
 
           <label >Task ID:</label>
           <input type="text" class=".asd"  value={{task_id}} name="taskid" readonly/>
-            
-          <label >Scene ID:</label>
-          <input type="text" class=".asd"  value={{scene_id}} name="sceneid" readonly/>
         </div>
         <div class="container-fluid">
 
           <div class="row">
-        	<div class="col-sm-5">
+        		<div class="col-sm-5">
               {% for t_ms in measurement_left %}
                 <p>{{t_ms.question}}</p>
                 <div class="radiocontainer">
@@ -77,7 +80,7 @@
                 <br>
                 <br>
               {% endfor %}
-        	</div>
+        		</div>
             <div class="col-sm-1">
               <div class= "vertical">
               </div>

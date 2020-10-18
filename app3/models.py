@@ -162,6 +162,7 @@ class QuestionnaireModel(models.Model):
     id = models.AutoField(primary_key=True)
     participantid=models.CharField(max_length=100, blank=True, null=True)
     taskid=models.CharField(max_length=100, blank=True, null=True)
+    sceneid=models.CharField(max_length=100, blank=True, null=True)
     trust=models.IntegerField(blank=True,null=True)
     transparency=models.IntegerField(blank=True,null=True)
     workload=models.IntegerField(blank=True,null=True)

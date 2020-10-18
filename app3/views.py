@@ -339,7 +339,7 @@ class TaskassignmentFullView(TaskassignmentExperimentView):
     template_name='app3/Taskgeneration_full.html'
 
 class ConsentFormView(TemplateView):
-    template_name="app3/consentform.html"
+    template_name="app3/exp_survey_consentform.html"
     context={"participantid":0,"participantindex":0}
     def GoToDemos(request):
         pflag=request.POST.get("check1")
@@ -355,8 +355,8 @@ class ConsentFormView(TemplateView):
         res.save()
         
         context={"participantid":pid,"participantindex":pindex}
-        print(context)
-        return render(request,'app3/demographicsurvey.html',context)
+        #print(context)
+        return render(request,'app3/exp_survey_demographics.html',context)
     
     def FormToDB(request):
         pid=request.POST.get("participantid")
@@ -364,9 +364,39 @@ class ConsentFormView(TemplateView):
         
         pid=pid.rstrip('/')
         pindex=pindex.rstrip('/')
-        print(pid,pindex)
+        #print(pid,pindex)
+        '''
+        context={"participantid":0,"participantindex":0}
+        context["participantid"]=pid
+        context["participantindex"]=pindex
+        return render(request,'app3/Taskgeneration_exp_v4.html',context)
+        '''
+        
         return redirect(reverse('experiment',kwargs={"participantid":pid,"participantindex":pindex}))
+    
+class SurveyPostEFormView(TemplateView):
+    template_name="app3/exp_survey_postexp.html"
+    context={"form":{"participantid":"0"}}
 
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        '''
+        context["participant_id"] = kwargs['participant_id']
+        '''
+        return context
+
+    def FormToDB(request):
+        '''
+        form=SurveyPostEForm(request.POST or None)
+        
+        if form.is_valid():
+            form.save()
+        
+        context={'form': form,"flag":"success"}
+        '''
+        return redirect('exp_thanks')
+        #return render(request,'app3/exp_thanks.html')
+    
 class QuestionnaireFormView(TemplateView):
     template_name="app3/questionnaire_task.html"
     context={"form":{"participantid":"0"}}
@@ -375,8 +405,10 @@ class QuestionnaireFormView(TemplateView):
         context = super().get_context_data(*args, **kwargs)
         context["participant_id"] = kwargs['participant_id']
         context["task_id"] = kwargs['task_id']
-        context["scene_id"] = int(context["task_id"])+1
+        context["scene_id"] = kwargs['scene_id']
+        context["title"] = int(context["scene_id"])+1
         #context["measurements"]=["trust","transparency","workload"]
+        #print(context)
         context["measurement_left"]=[
             {"name":"trust","question":"Please select your trust of the system.","left":"not at all","right":"very strong"},
             {"name":"transparency","question":"Please select your transparency level.","left":"not at all","right":"very strong"},
@@ -405,10 +437,16 @@ class QuestionnaireFormView(TemplateView):
 
     def FormToDB(request):
         form=QuestionnaireForm(request.POST or None)
-        #print(request.POST)
         if form.is_valid():
             form.save()
-        #print(form)
+        sid=request.POST.get("sceneid")        
+        sid=sid.rstrip('/')
+        if int(sid)>=7:
+            pid=request.POST.get("participantid") 
+            #context={"participantid":pid}
+            #return render(request,'app3/exp_survey_postexp.html',context)
+            return redirect(reverse('survey_postexperiment',kwargs={"participantid":pid}))
+            
         context={'form': form,"flag":"success"}
         return  HttpResponse('''
    <script type="text/javascript">

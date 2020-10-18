@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
-from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView,ConsentFormView
+from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView,ConsentFormView,SurveyPostEFormView
 from app3.views import DownloadDataView
 from django.conf.urls import url
 from rest_framework import routers
@@ -16,20 +16,25 @@ router.register(r'gpshistoricaldata', views.GPShistoricalDataViewSet,basename="g
 urlpatterns = [
     path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
 
-    url(r'^experiment/$', TaskassignmentExperimentView.as_view(),name='experiment'),
-    url(r'^experiment/(?P<participantid>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
-    url(r'^experiment/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
+    url(r'^experiment/task/$', TaskassignmentExperimentView.as_view(),name='experiment'),
+    url(r'^experiment/task/(?P<participantid>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
+    url(r'^experiment/task/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
 
     path('experiment/consentform',ConsentFormView.as_view(),name='consentform'),
     path('experiment/consentform_action', ConsentFormView.GoToDemos),
-    path('test',TemplateView.as_view(template_name="app3/demographicsurvey.html")),
     
     path('experiment/demos',TemplateView.as_view(template_name="app3/demographicsurvey.html")),
     path('experiment/demographicsurvey_action', ConsentFormView.FormToDB),
     
+    path('experiment/survey_postexperiment',SurveyPostEFormView.as_view(),name="survey_postexperiment"),
+    url(r'^experiment/survey_postexperiment/\w+/action$', SurveyPostEFormView.FormToDB,name="survey_postexperiment"),
+    url(r'^experiment/survey_postexperiment/(?P<participantid>\w+)/$',SurveyPostEFormView.as_view(),name="survey_postexperiment"),
+    
+    path('experiment/exp_thanks',TemplateView.as_view(template_name="app3/exp_thanks.html"),name="exp_thanks"),
+    
     path('downloaddata', DownloadDataView.as_view(),name='downloaddata'),
     path('downloaddatadetails',TemplateView.as_view(template_name="app3/downloaddata_details.html"),name='downloaddata'),
-
+    
     url(r'^qndata/$',DownloadDataView.questionnairedata,name="qndata"),
     url(r'^viewqndata/$',DownloadDataView.questionnaireview,name="viewqndata"),
     url(r'^viewqnall/$',DownloadDataView.questionnaireviewall,name="viewqnall"),
@@ -55,9 +60,9 @@ urlpatterns = [
     url(r'^taskgenerationform/\w+/action_page$',TaskGenerationFormView.FormToDB,name="action_page"),
 
     path('questionnaireform',QuestionnaireFormView.as_view(),name="questionnaireform"),
-    url(r'^questionnaireform/(?P<participant_id>\w+)/(?P<task_id>\w+)/$',QuestionnaireFormView.as_view(),name="questionnaireform"),
+    url(r'^questionnaireform/(?P<participant_id>\w+)/(?P<task_id>\w+)/(?P<scene_id>\w+)/$',QuestionnaireFormView.as_view(),name="questionnaireform"),
     path('questionnaire_action', QuestionnaireFormView.FormToDB),
-    url(r'^questionnaireform/\w+/\w+/questionnaire_action$',QuestionnaireFormView.FormToDB,name="questionnaire_action"),
+    url(r'^questionnaireform/\w+/\w+/\w+/questionnaire_action$',QuestionnaireFormView.FormToDB,name="questionnaire_action"),
 
     path('offlinemapdemo',TemplateView.as_view(template_name="app3/offlinemapdemo.html")),
     url(r'^tasksave$',TaskGenerationView.tasksave,name='tasksave'),

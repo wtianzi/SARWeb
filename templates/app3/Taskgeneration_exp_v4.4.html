@@ -2111,19 +2111,13 @@
          });
 
          document.getElementById('q_scene').addEventListener('click',function(){
-             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"q_scene"});
-             // open a new page
-             DisableAllGraphicLayers();
-             
-             let participantid={{ participantid |safe }};
-                                                             
-             //let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/';
-                                                             
-             // use participantindex and task index
-             let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/'+m_exp_order.toString()+'/';
-           
-             
-                            
+           m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"q_scene"});
+
+           // open a new page
+           DisableAllGraphicLayers();
+
+           let participantid={{ participantid |safe }};
+           let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/';
            //console.log(task_url);
            let win = window.open(task_url, '_blank');
            win.focus();
@@ -2164,6 +2158,7 @@
 
            m_exp_assignlog.experimentindex=m_experimentlog.experimentindex;
            m_exp_assignlog.roundindex=m_tasktrials;
+           m_exp_assignlog.sceneindex=task;
 
            m_exp_e.sceneindex=task;
            m_exp_e.experimentindex=m_experimentlog.experimentindex;

@@ -2,9 +2,9 @@ from django.shortcuts import render,redirect
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 from django.http import HttpResponse,HttpResponseRedirect
-from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage,ParticipantStatusModel,QuestionnaireModel,DemographicsModel
+from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage,ParticipantStatusModel,QuestionnaireModel,DemographicsModel,PostExpSurveyModel
 import json
-from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm,ConsentForm,DemographicsForm
+from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm,ConsentForm,DemographicsForm,PostExpSurveyForm
 from django.urls import reverse
 from django.template import loader
 from django.core import serializers
@@ -403,14 +403,14 @@ class SurveyPostEFormView(TemplateView):
         return context
 
     def FormToDB(request):
-        '''
-        form=SurveyPostEForm(request.POST or None)
+        
+        form=PostExpSurveyForm(request.POST or None)
         
         if form.is_valid():
             form.save()
         
-        context={'form': form,"flag":"success"}
-        '''
+        #context={'form': form,"flag":"success"}
+        
         return redirect('exp_thanks')
         #return render(request,'app3/exp_thanks.html')
     

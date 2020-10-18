@@ -228,9 +228,33 @@ class DemographicsModel(models.Model):
     q8=models.TextField( blank=True,null=True)
     q9=models.TextField( blank=True,null=True)
     q10=models.TextField( blank=True,null=True)
+    
 
     created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
     def __str__(self):
         return str(self.id)
 
+
+class PostExpSurveyModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    participantid=models.CharField(max_length=100, blank=True, null=True) # a unix time
+    
+    q1=models.TextField(blank=True,null=True)
+    q2=models.TextField(max_length=100, blank=True, null=True)
+    q3=models.TextField(max_length=100, blank=True, null=True)
+    q4=models.TextField( blank=True,null=True)
+    q5=models.TextField( blank=True,null=True)
+    
+    q6=models.TextField( blank=True,null=True)
+    q7=models.TextField( blank=True,null=True)
+    q8=models.TextField( blank=True,null=True)
+    q9=models.TextField( blank=True,null=True)
+    q10=models.TextField( blank=True,null=True)
+    
+    q11=models.TextField( blank=True,null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
+    def __str__(self):
+        return str(self.id)

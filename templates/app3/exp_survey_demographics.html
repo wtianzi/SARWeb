@@ -37,7 +37,7 @@
             <h1>Demographic Questionnaire</h1>        
         </div>
       <div>
-        <form action="demographicsurvey_action" method="post" id="quiz">
+        <form action="action" method="post" id="quiz">
           {% csrf_token %}
             <div class="input-group">
                 <label for="age" class="col-md-4 input-group-addon my-auto">Age: </label>
@@ -146,10 +146,10 @@
                 </div>
             </div>
             
-            <div >
-                <input type="text" id="participantid" name="participantid" value={{ participantid|safe }}/>
-                <label for="fname">Please enter your name:</label>
-                <input type="text" id="participantindex" name="participantindex" value={{ participantindex|safe }}/>
+            <div hidden>
+                <input type="text" id="participantid" name="participantid" value={{participantid}} readonly/>
+                <label for="fname">Index:</label>
+                <input type="text" value={{participantindex}} name="participantindex" readonly/>
             </div>
                         
           <div class="text-center">
@@ -183,7 +183,7 @@
       }
 
       function myFunction(){
-        document.getElementById("participantid").value = Date.now().toString();
+        //document.getElementById("participantid").value = Date.now().toString();
       }
     </script>
   </body>

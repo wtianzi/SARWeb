@@ -348,11 +348,12 @@ class ConsentFormView(TemplateView):
         pindex=0
         
         queryset = ParticipantStatusModel.objects.exclude(participantindex=None).values().order_by('-participantindex')
-        if queryset.count() > 0:
-            pindex = (queryset[0]['participantindex']+1) % 36
-
+        
+        pindex = queryset[0]['participantindex']+1
         res=ParticipantStatusModel(participantid=pid,participantname=pname,participantindex=pindex)
         res.save()
+        
+        pindex = pindex % 36
         
         #context={"participantid":pid,"participantindex":pindex}
         
@@ -364,16 +365,14 @@ class DemogrphicsView(TemplateView):
     context={"participantid":0,"participantindex":0}
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        '''
-        context["participant_id"] = kwargs['participant_id']
-        '''
+        
+        #context["participantid"] = kwargs['participantid']
+        #context["participantindex"] = kwargs['participantindex']
+        #print(context)
         return context
     def FormToDB(request):
         pid=request.POST.get("participantid")
         pindex=request.POST.get("participantindex")
-        
-        pid=pid.rstrip('/')
-        pindex=pindex.rstrip('/')
         
         form=DemographicsForm(request.POST or None)
         print("form")

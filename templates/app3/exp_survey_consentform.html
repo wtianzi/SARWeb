@@ -4,6 +4,8 @@
   <head>
     <title> ConsentForm</title>
     <link href='//fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+      
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html">
     <style>
@@ -23,31 +25,34 @@
         width="500px";
         vertical-align: middle;
       }
+        div {
+            line-height:  2;
+            margin-top: 5px;
+        }
     </style>
 
   </head>
 
 <body onload="myFunction()">
-    <div id="wrapper" class="page-header mb-3">
+    <div id="wrapper" class="page-header mb-3 container">
         <h1>Before we start</h1>
         
         
         <form action="https://virginiatech.qualtrics.com/jfe/form/SV_cvjhA08jCrEvcDH" target="_blank">
-            <input type="submit" value="View Consent Form" />
+            <input type="submit" value="View Consent Form" class="col-md-7"/>
         </form>
-      <!--embed src="{% static 'files/consentform.pdf' %}" width="100%" height="800px"-->
+        
 
-      <div class="consent" >
+      <div>
         <form action="consentform_action" method="post" id="quiz">
           {% csrf_token %}
-            <div style="float: left;">
+            <div style="float: center;">
               <input type="checkbox" name="check1" value="False" id="mycheck" onclick="handleClick(this)">
                 <label for="mycheck">Please confirm that you have read the consent form and fully understand your rights.</label>
             </div>
             
-          <div style="float: right; width: 130px;">
-            <input type="submit" value="Start Experiment" id="agree"  disabled/>
-              <!--input type="submit" value="Start Experiment" id="agree" onclick="dismissAddAnotherPopup(this)" disabled/-->
+          <div>
+            <input type="submit" value="Start Experiment" id="agree" class="col-md-7" disabled/>
           </div>
         
             <div hidden>

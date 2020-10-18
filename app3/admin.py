@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import ClueMedia
-from .models import GPSData,DataStorage,WaypointsData,GPShistoricalData,ExperimentDataStorage,QuestionnaireModel,ParticipantStatusModel
+from .models import GPSData,DataStorage,WaypointsData,GPShistoricalData,ExperimentDataStorage,QuestionnaireModel,ParticipantStatusModel,DemographicsModel
 import csv
 from django.http import HttpResponse
 # Register your models here.
@@ -93,3 +93,26 @@ class ParticipantStatusModelAdmin(admin.ModelAdmin):
     download_csv.short_description = "Download CSV file for selected stats."
     pass
 admin.site.register(ParticipantStatusModel, ParticipantStatusModelAdmin)
+
+class DemographicsModelAdmin(admin.ModelAdmin):
+    actions = ['download_csv']
+    list_display =['id','participantid','participantindex','age','gender','education','sart','q1','q2','q3','q4','q5','q6','q7','q8','q9','q10','created_at','updated_at']
+    
+    def download_csv(self, request, queryset):
+        meta = self.model._meta
+        field_names = [field.name for field in meta.fields]
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename={}.csv'.format(meta)
+        writer = csv.writer(response)
+
+        writer.writerow(field_names)
+        for obj in queryset:
+            row = writer.writerow([getattr(obj, field) for field in field_names])
+
+        return response
+
+    download_csv.short_description = "Download CSV file for selected stats."
+    pass
+admin.site.register(DemographicsModel, DemographicsModelAdmin)
+

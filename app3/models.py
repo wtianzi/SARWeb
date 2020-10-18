@@ -205,3 +205,32 @@ class ParticipantStatusModel(models.Model):
     updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
     def __str__(self):
         return str(self.id)
+
+
+class DemographicsModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    participantid=models.CharField(max_length=100, blank=True, null=True) # a unix time
+    participantindex=models.IntegerField(blank=True, null=True) 
+
+    age=models.IntegerField(blank=True,null=True)
+    gender=models.IntegerField(blank=True,null=True)
+    education=models.IntegerField(blank=True,null=True)
+    sart=models.IntegerField(blank=True,null=True)
+    
+    q1=models.IntegerField(blank=True,null=True)
+    q2=models.CharField(max_length=100, blank=True, null=True)
+    q3=models.CharField(max_length=100, blank=True, null=True)
+    q4=models.TextField( blank=True,null=True)
+    q5=models.TextField( blank=True,null=True)
+    
+    q6=models.TextField( blank=True,null=True)
+    q7=models.TextField( blank=True,null=True)
+    q8=models.TextField( blank=True,null=True)
+    q9=models.TextField( blank=True,null=True)
+    q10=models.TextField( blank=True,null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
+    def __str__(self):
+        return str(self.id)
+

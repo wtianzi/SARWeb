@@ -146,17 +146,17 @@
                 </div>
             </div>
             
-            
+            <div >
+                <input type="text" id="participantid" name="participantid" value={{ participantid|safe }}/>
+                <label for="fname">Please enter your name:</label>
+                <input type="text" id="participantindex" name="participantindex" value={{ participantindex|safe }}/>
+            </div>
                         
           <div class="text-center">
               <input type="submit" value="Next step: Training" id="nextstep" onclick="dismissAddAnotherPopup(this)" class="col-md-4"/>            
           </div>
         
-            <div style="display:none">
-                <input type="text" id="participantid" name="participantid" value={{participantid|safe}}/>
-                <label for="fname">Please enter your name:</label>
-                <input type="text" id="participantindex" name="participantindex" value={{participantindex|safe}}/>
-            </div>
+            
             
         </form>
 

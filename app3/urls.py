@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
-from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView,ConsentFormView,SurveyPostEFormView
+from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView,ConsentFormView,SurveyPostEFormView,DemogrphicsView
 from app3.views import DownloadDataView
 from django.conf.urls import url
 from rest_framework import routers
@@ -21,10 +21,11 @@ urlpatterns = [
     url(r'^experiment/task/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
 
     path('experiment/consentform',ConsentFormView.as_view(),name='consentform'),
-    path('experiment/consentform_action', ConsentFormView.GoToDemos),
+    path('experiment/consentform_action', ConsentFormView.FormToDB),
     
-    path('experiment/demos',TemplateView.as_view(template_name="app3/demographicsurvey.html")),
-    path('experiment/demographicsurvey_action', ConsentFormView.FormToDB),
+    path('experiment/demos',DemogrphicsView.as_view(),name="demos"),
+    path('experiment/demographicsurvey_action', DemogrphicsView.FormToDB,name="demos"),
+    url(r'^experiment/demos/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',DemogrphicsView.as_view(),name="demos"),
     
     path('experiment/survey_postexperiment',SurveyPostEFormView.as_view(),name="survey_postexperiment"),
     url(r'^experiment/survey_postexperiment/\w+/action$', SurveyPostEFormView.FormToDB,name="survey_postexperiment"),

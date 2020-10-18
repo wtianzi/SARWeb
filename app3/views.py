@@ -2,9 +2,9 @@ from django.shortcuts import render,redirect
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 from django.http import HttpResponse,HttpResponseRedirect
-from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage,ParticipantStatusModel,QuestionnaireModel
+from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage,ParticipantStatusModel,QuestionnaireModel,DemographicsModel
 import json
-from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm,ConsentForm
+from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm,ConsentForm,DemographicsForm
 from django.urls import reverse
 from django.template import loader
 from django.core import serializers
@@ -341,7 +341,7 @@ class TaskassignmentFullView(TaskassignmentExperimentView):
 class ConsentFormView(TemplateView):
     template_name="app3/exp_survey_consentform.html"
     context={"participantid":0,"participantindex":0}
-    def GoToDemos(request):
+    def FormToDB(request):
         pflag=request.POST.get("check1")
         pid=request.POST.get("participantid")
         pname=request.POST.get("participantname")
@@ -354,16 +354,33 @@ class ConsentFormView(TemplateView):
         res=ParticipantStatusModel(participantid=pid,participantname=pname,participantindex=pindex)
         res.save()
         
-        context={"participantid":pid,"participantindex":pindex}
-        #print(context)
-        return render(request,'app3/exp_survey_demographics.html',context)
-    
+        #context={"participantid":pid,"participantindex":pindex}
+        
+        return redirect(reverse('demos',kwargs={"participantid":pid,"participantindex":str(pindex)}))
+        #return render(request,'app3/exp_survey_demographics.html',context)
+
+class DemogrphicsView(TemplateView):
+    template_name="app3/exp_survey_demographics.html"
+    context={"participantid":0,"participantindex":0}
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        '''
+        context["participant_id"] = kwargs['participant_id']
+        '''
+        return context
     def FormToDB(request):
         pid=request.POST.get("participantid")
         pindex=request.POST.get("participantindex")
         
         pid=pid.rstrip('/')
         pindex=pindex.rstrip('/')
+        
+        form=DemographicsForm(request.POST or None)
+        print("form")
+        if form.is_valid():
+            
+            form.save()
+        
         #print(pid,pindex)
         '''
         context={"participantid":0,"participantindex":0}
@@ -373,6 +390,7 @@ class ConsentFormView(TemplateView):
         '''
         
         return redirect(reverse('experiment',kwargs={"participantid":pid,"participantindex":pindex}))
+    
     
 class SurveyPostEFormView(TemplateView):
     template_name="app3/exp_survey_postexp.html"

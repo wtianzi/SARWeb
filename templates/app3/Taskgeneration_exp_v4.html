@@ -177,8 +177,7 @@
       "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":null,'photoid':1},
              {"clue_index":1,"status":"unfound","info":"drink","location":null,'photoid':2}]};
       let m_exp_visualization={"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"};
-      let m_exp_variables={"hour":0,"hourstep":2,"displaytype":true,"eacharea":500000,"zoomlevel":m_scale,"colormap":0};//"displaytype":"byhour" true or "bypath" false
-
+      let m_exp_variables={"hour":11,"hourstep":0,"displaytype":true,"eacharea":500000,"zoomlevel":m_scale,"colormap":0};//"displaytype":"byhour" true or "bypath" false
       // update to db every 5 rounds/ or task finished
       // information changed at initiation, task finished, round outofnumber
 
@@ -637,7 +636,7 @@
         //initialize for the next step
         m_teamassign=[null,null,null,null];
         m_taskstarttime=null;
-        m_exp_variables.hour+=2;
+        m_exp_variables.hour+=m_exp_variables.hourstep;
 
         //After five times, the experiment stops.
         UpdateVisualization();
@@ -1002,6 +1001,9 @@
 
                  if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
+                     
+                    document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+"(loaded)";
+                     
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                    SetTargetClues();
                    UpdateVisualization();
@@ -1076,6 +1078,7 @@
 
                 if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
                   document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
+                    document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+"(loaded)";
                   m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                   SetTargetClues();
                   UpdateVisualization();
@@ -1085,7 +1088,7 @@
             return true;
          }
          // Loading contour map
-         function LoadLPFromCSV_con(t_url,t_arr_count,t_hour=0,t_rank=0,t_type='byhour'){
+         function LoadLPFromCSV_con(t_url,t_arr_count,t_hour=0,t_type='byhour'){
            let t_data;
             $.ajax({
               type: "GET",
@@ -1096,11 +1099,12 @@
                  t_data = $.csv.toArrays(response).map(function(item){
                    return item.map(Number);
                  });
-                 m_lpdata_con.push({'type':t_type,'hour':t_hour,'rank':t_rank,'data':t_data});
+                 m_lpdata_con.push({'type':t_type,'hour':t_hour,'data':t_data});
 
                  if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
 
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
+                     document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+"(loaded)";
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
 
                    SetTargetClues();
@@ -1472,20 +1476,18 @@
              t_hour=m_exp_variables.hour;
            }
 
-           let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
            arr_heatpoints=[];
 
            let t_break=m_lpdata_con.length;
            let i=0;
            while(i<t_break){
-             if(m_lpdata_con[i]['type']==t_type){
-               if(m_lpdata_con[i]['hour']==t_hour && m_lpdata_con[i]['rank']==t_rank){
-                 arr_heatpoints=m_lpdata_con[i]['data'];
+             if(m_lpdata_con[i]['type']==t_type && m_lpdata_con[i]['hour']==t_hour){
+               arr_heatpoints=m_lpdata_con[i]['data'];
                  break;
-               }
              }
              i++;
            }
+        //console.log(arr_heatpoints);
 
            //loop to find rings
            let t_rings=[];//
@@ -1608,26 +1610,18 @@
            }
            //console.log(m_lpdata_con);
 
-
-           let t_rank=parseInt(document.getElementById("sel_rank").value)-1;
            arr_heatpoints=[];
 
            let t_break=m_lpdata_con.length;
            let i=0;
            while(i<t_break){
-             if(m_lpdata_con[i]['type']==t_type){
-               if(m_lpdata_con[i]['hour']==t_hour && m_lpdata_con[i]['rank']==t_rank){
-                 arr_heatpoints=m_lpdata_con[i]['data'];
-                 //console.log(m_lpdata_con[i]);
-                 break;
-               }
+             if(m_lpdata_con[i]['type']==t_type && m_lpdata_con[i]['hour']==t_hour){
+               arr_heatpoints=m_lpdata_con[i]['data'];
+                break;
              }
              i++;
            }
-           //console.log(m_lpdata_con);
-           //console.log(arr_heatpoints);
-           //console.log(t_type,t_hour,t_rank);
-           //loop to find rings
+             
            let t_rings=[];//
            let all_paths=[];
            let t_startprobability=arr_heatpoints[0][0];
@@ -1939,11 +1933,54 @@
                else{ alert(response); }
            });
          }
-         function LoadLPMData(){
-           if(document.getElementById("loadlpmcsv").value=="Load LPM Data (Loaded)"){
-             //clear everything before loading anything
+      
+      function LoadLPMData(){
+          
+            //draw initial condition centerpoints
+            m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"start loading"});
 
-           }
+            document.getElementById("lpmmodeldisplay").disabled=true;
+            document.getElementById("loadlpmcsv").value="Load LPM Data (Loading)";
+          
+          // spatial experiment, the heat map is not changing based on hours.
+          // set hour=11
+          let spatial_timeslot=m_exp_variables.hour;
+          
+          // number of clue files
+          let count_clues=4;
+          let count_trajectory=count_clues+1;
+
+          // number of contour map files
+          let totalfiles=1+count_clues+count_trajectory;
+
+          //folder of files
+          let lpmfolder="/static/data/LPMdata5/"+m_exp_location.name+"/"+m_exp_lostpersontype.type;
+          
+          // clue1:t1, clue2:t2, clue12:t3, final: t4, final is the overall
+          let cluenames=['final','clue1','clue2','clue12'];
+          for(let i=0;i<count_clues;i++){
+            let csvfilename= lpmfolder+"/clues/contour data csv/con_"+m_exp_lostpersontype.type+"_bf1_"+cluenames[i]+".csv";
+            LoadLPFromCSV_con(csvfilename,totalfiles,i,'byclue');
+          }
+
+          let csvfilename= lpmfolder+"/clues/traj_"+m_exp_lostpersontype.type+"_bf1.csv";
+          LoadLPFromCSV_Tra_All(csvfilename,totalfiles);
+          //console.log(csvfilename);
+
+          for(let i=0;i<count_clues;i++){
+            let csvfilename= lpmfolder+"/clues/"+cluenames[i]+"index_"+m_exp_lostpersontype.type+"_bf1.csv";
+            LoadLPFromCSV_Tra_Item(csvfilename,i,totalfiles);
+            //console.log(csvfilename);
+          }
+          
+          csvfilename=lpmfolder+"/best fits/contour data csv/con_"+m_exp_lostpersontype.type+"bf1"+"_t"+spatial_timeslot.toString()+".csv";
+          //console.log(csvfilename);
+          LoadLPFromCSV_con(csvfilename,totalfiles,spatial_timeslot,'byhour');
+          
+          document.getElementById("lpmmodeldisplay").disabled=false;
+         }
+      
+         function LoadLPMData_All(){
            //draw initial condition centerpoints
            m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"start loading"});
 
@@ -1971,7 +2008,6 @@
           for(let i=0;i<count_clues;i++){
             let csvfilename= lpmfolder+"/clues/contour data csv/con_"+m_exp_lostpersontype.type+"_bf1_"+cluenames[i]+".csv";
             LoadLPFromCSV_con(csvfilename,totalfiles,i,0,'byclue');
-            //console.log(csvfilename);
           }
 
           let csvfilename= lpmfolder+"/clues/traj_"+m_exp_lostpersontype.type+"_bf1.csv";
@@ -1985,11 +2021,10 @@
           }
 
           for(let i=ih_start;i<=ih_stop;i++){
-            for(let t_rank=1;t_rank<=1;t_rank++){
               // m_lpdata_con.push
-              let csvfilename=lpmfolder+"/best fits/contour data csv/con_"+m_exp_lostpersontype.type+"bf"+t_rank.toString()+"_t"+i.toString()+".csv";
-              LoadLPFromCSV_con(csvfilename,totalfiles,i-1,t_rank-1,'byhour');
-            }
+              let csvfilename=lpmfolder+"/best fits/contour data csv/con_"+m_exp_lostpersontype.type+"bf1"+"_t"+i.toString()+".csv";
+              LoadLPFromCSV_con(csvfilename,totalfiles,i-1,'byhour');
+           
           }
 
           document.getElementById("lpmmodeldisplay").disabled=false;
@@ -2020,12 +2055,15 @@
 
          document.getElementById("myRange").onchange=function(){
            //console.log("change");
-           m_exp_variables.hour=parseInt(document.getElementById("myRange").value);
+             /*
+             m_exp_variables.hour=parseInt(document.getElementById("myRange").value);
            m_experimentres["actions"].push({"id":"myRange","timestamp": Date.now(), "description":"Change hour to "+m_exp_variables.hour.toString()});
            let t_hour=m_exp_variables.hour+1;
            $("#lmyRange").text("Hour(1-12): "+t_hour);
            SetTargetpolygon();
            UpdateVisualization();
+             */
+           
          }
 
          document.getElementById("myClues").onchange=function(){
@@ -2152,7 +2190,7 @@
            m_exp_lostpersontype=m_expsetupobj.lostpersontype[t_expsetup.lpt];
            m_exp_location=m_expsetupobj.location[t_expsetup.loc];
            m_exp_visualization=m_expsetupobj.visualizationtype[t_expsetup.vt];
-           m_exp_variables.hour=0;
+           //m_exp_variables.hour=0;
            //console.log(m_exp_order,m_exp_variables);
 
            m_experimentlog.m_exp_variables=m_exp_variables;

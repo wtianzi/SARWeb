@@ -458,7 +458,7 @@ class QuestionnaireFormView(TemplateView):
             form.save()
         sid=request.POST.get("sceneid")        
         sid=sid.rstrip('/')
-        if int(sid)>=7:
+        if int(sid)>=8:
             pid=request.POST.get("participantid") 
             #context={"participantid":pid}
             #return render(request,'app3/exp_survey_postexp.html',context)

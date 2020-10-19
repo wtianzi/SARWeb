@@ -26,8 +26,7 @@ urlpatterns = [
     path('experiment/demos',DemogrphicsView.as_view(),name="demos"),
     url(r'^experiment/demos/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',DemogrphicsView.as_view(),name="demos"),
     url(r'^experiment/demos/\w+/\w+/action$', DemogrphicsView.FormToDB,name="demos"),
-    
-    
+        
     path('experiment/survey_postexperiment',SurveyPostEFormView.as_view(),name="survey_postexperiment"),
     url(r'^experiment/survey_postexperiment/\w+/action$', SurveyPostEFormView.FormToDB,name="survey_postexperiment"),
     url(r'^experiment/survey_postexperiment/(?P<participantid>\w+)/$',SurveyPostEFormView.as_view(),name="survey_postexperiment"),

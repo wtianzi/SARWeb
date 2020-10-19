@@ -1002,7 +1002,7 @@
                  if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
                      
-                    document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+" (Loaded)";
+                    document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+"(loaded)";
                      
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                    SetTargetClues();
@@ -1078,7 +1078,7 @@
 
                 if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
                   document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
-                    document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+" (Loaded)";
+                    document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+"(loaded)";
                   m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                   SetTargetClues();
                   UpdateVisualization();
@@ -1104,7 +1104,7 @@
                  if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
 
                    document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
-                     document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+" (Loaded)";
+                     document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+"(loaded)";
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
 
                    SetTargetClues();
@@ -2169,8 +2169,6 @@
            m_exp_order=m_exp_order+1;
            document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order+1).toString();
            document.getElementById("exp_scene").style.color="#0079c1";
-      
-          //console.log("here",m_exp_order);
          });
 
          function InitializeExperiment(task=0){
@@ -2226,6 +2224,33 @@
            window.open(URL+m_exp_participantid.toString()+"/"+m_exp_participantindex.toString()+"/");
 
          });
+      
+      // training
+        document.getElementById("dt_scene").addEventListener('click',function(){
+           m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_scene"});
+           InitializeExperiment(m_exp_order);            
+         })
+        document.getElementById("dt_endtrain").addEventListener('click',function(){
+           m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_endtrain"});
+            //object.style.visibility = "visible|hidden|collapse|initial|inherit"
+            
+            document.getElementById("dt_training").style.display='block'; 
+            document.getElementById("dt_training").style.visibility="hidden";
+            
+            document.getElementById("q_scene").style.display='block';
+            document.getElementById("dt_experiment").style.display="block";
+            
+            
+                      
+         })
+        document.getElementById("dt_retrain").addEventListener('click',function(){
+           m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_retrain"});
+           InitializeExperiment(m_exp_order);            
+         })
+      
+      
+      
+      
          function getResolution() {
            m_experimentres["resolution"]={"width":screen.width,"height":screen.height};
            var w = window.innerWidth;
@@ -2233,30 +2258,26 @@
            m_experimentlog.resolution={"width":screen.width,"height":screen.height,"innerwidth":w,"innerheight":h};
             //alert("Your screen resolution is: " + screen.width + "x" + screen.height);
           }
-      
-        document.getElementById("dt_retrain").addEventListener('click',function(){
-            m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_retrain"});
-            
-            m_lpdata_con=[];
-            m_lpdata_trajectory=[];
-            m_lpdata_tra_colormap=[];
 
-            ClearAll();
-            document.getElementById("dt_scene").value="Load Training Scene";
-            DisableAllGraphicLayers();         
-         })
-      
-        document.getElementById("dt_scene").addEventListener('click',function(){
-            m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_scene"});
-            InitializeExperiment(m_exp_order);
-         })
-      
-        document.getElementById("dt_endtrain").addEventListener('click',function(){
-              m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_endtrain"});
-              document.getElementById("dt_train").style.display="none";
-              document.getElementById("dt_experiment").style.display="block";
-         })
-      
+          // log
+          /*
+          $('body').on("click mousedown mouseup focus blur keydown change",function(e){
+
+            let tobj={
+              "type":e.type,
+              "clientX":e.clientX,
+              "clientY":e.clientY,
+              "offsetX":e.offsetX,
+              "offsetY":e.offsetY,
+              "screenX":e.screenX,
+              "screenY":e.screenY,
+              "target":{"localName":e.target.localName,"id":e.target.id,"defaultValue":e.target.defaultValue},
+              "timeStamp":e.timeStamp,
+              "toElement":e.toElement
+            };
+            m_exp_actionlog.push(tobj);
+            //console.log(e);
+          });*/
       //--------------------------------------------------
     });
 
@@ -2264,81 +2285,55 @@
 </head>
 
 <body>
-    <div id="editArea" class="editArea-container">
-        <div id="dt_train">
-            <h2 class="list-heading">Search & Rescue Tools</h2>
-            <h3 class="list-heading">Training Session</h3>
-            <input type="button" class="edit-button" value="Load Training Scene" id="dt_scene"/> 
-            <h3>Team location</h3>
-            <table>
-                <thead>
-                  <tr>
-                    <th>Team</th>
-                    <th>1</th>
-                    <th>2</th>
-                    <th>3</th>
-                    <th>4</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th>Cell</th>
-                    <th id="th_team1">SX</th>
-                    <th id="th_team2">SX</th>
-                    <th id="th_team3">SX</th>
-                    <th id="th_team4">SX</th>
-                  </tr>
-                </tbody>
-            </table>
-            <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"/>
-            <input type="button" class="edit-button" value="Retry the training" id="dt_retrain"/>
-            <input type="button" class="edit-button" value="End Training & Start Experiment" id="dt_endtrain"/>
-            
-        </div>
-          
-        
-        <div id="dt_experiment" style="display:none">
-            <h2 class="list-heading">Search & Rescue Tools</h2>
-            <div id="experimentpannel">
-                <h3 class="list-heading">Experiments</h3>
-                <input type="button" class="edit-button" value="Load Data for Scene 1" id="exp_scene"/>    
-            </div>
-            <h3>Team location</h3>
-            <table>
-                <thead>
-                  <tr>
-                    <th>Team</th>
-                    <th>1</th>
-                    <th>2</th>
-                    <th>3</th>
-                    <th>4</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th>Cell</th>
-                    <th id="th_team1">SX</th>
-                    <th id="th_team2">SX</th>
-                    <th id="th_team3">SX</th>
-                    <th id="th_team4">SX</th>
-                  </tr>
-                </tbody>
-            </table>
 
-            <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"/>
-            <input type="button" class="edit-button" value="Questionnaire" id="q_scene"/>
+
+  <div id="editArea" class="editArea-container">
+    <h2 class="list-heading">Search & Rescue Tools</h2>    
+                
+        <div id="dt_experiment" hidden>
+            <h3 class="list-heading">Training Session</h3>
+            <input type="button" class="edit-button" value="Load Training Scene" id="exp_scene"/>    
         </div>
-    </div>
-    
-    
-    
-    <div>
-      <input type="button" class="scenebutton" value="Post Experiment Questionnaire" id="exp_post" style="display:none"/>
+        
+      <div id="experimentpannel">
+        <div>
+          <h3>Team location</h3>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>1</th>
+                <th>2</th>
+                <th>3</th>
+                <th>4</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Cell</th>
+                <th id="th_team1">SX</th>
+                <th id="th_team2">SX</th>
+                <th id="th_team3">SX</th>
+                <th id="th_team4">SX</th>
+              </tr>
+            </tbody>
+          </table>
+            
+          <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"/>
+        </div>
+
+        <input type="button" class="edit-button" value="End Training & Start Experiment" id="q_scene"/>
+
+        <div>
+          <input type="button" class="scenebutton" value="Post Experiment Questionnaire" id="exp_post" style="display:none"/>
+        </div>
+      </div>
+      <hr>
+      <input type="button" class="edit-button" value="..." id="btmoreinfo"/>
     </div>
 
     <div id="menudetail" style="display:none">
-        <hr>
-      <input type="button" class="edit-button" value="..." id="btmoreinfo"/>
       <div>
         <h3 class="list-heading">Map Division</h3>
         <div>
@@ -2438,6 +2433,8 @@
       </div>
 
     </div>
+
+  </div>
 
   <div id="viewDiv">
     <div id="sidebar" class="esri-widget" style="display:none">

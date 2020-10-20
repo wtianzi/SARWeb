@@ -423,7 +423,7 @@ class QuestionnaireFormView(TemplateView):
         context["participant_id"] = kwargs['participant_id']
         context["task_id"] = kwargs['task_id']
         context["scene_id"] = kwargs['scene_id']
-        context["title"] = int(context["scene_id"])+1
+        context["title"] = int(context["scene_id"])
         #context["measurements"]=["trust","transparency","workload"]
         #print(context)
         context["measurement_left"]=[

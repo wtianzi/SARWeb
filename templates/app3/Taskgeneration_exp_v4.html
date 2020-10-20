@@ -1951,9 +1951,9 @@
 
           // number of contour map files
           let totalfiles=1+count_clues+count_trajectory;
-
+          
           //folder of files
-          let lpmfolder="/static/data/LPMdata5/"+m_exp_location.name+"/"+m_exp_lostpersontype.type;
+          let lpmfolder="/static/data/LPMExp/"+m_exp_location.name+"/"+m_exp_lostpersontype.type;
           
           // clue1:t1, clue2:t2, clue12:t3, final: t4, final is the overall
           let cluenames=['final','clue1','clue2','clue12'];
@@ -1972,7 +1972,7 @@
             //console.log(csvfilename);
           }
           
-          csvfilename=lpmfolder+"/best fits/contour data csv/con_"+m_exp_lostpersontype.type+"bf1"+"_t"+spatial_timeslot.toString()+".csv";
+          csvfilename=lpmfolder+"/con_"+m_exp_lostpersontype.type+"bf1_t"+spatial_timeslot.toString()+".csv";
           //console.log(csvfilename);
           LoadLPFromCSV_con(csvfilename,totalfiles,spatial_timeslot,'byhour');
           
@@ -2162,7 +2162,7 @@
            //console.log(task_url);
            let win = window.open(task_url, '_blank');
            win.focus();
-          if(m_exp_order<m_exp_variables.totalrounds){
+          if(m_exp_order< m_exp_variables.totalrounds){
               m_exp_order=m_exp_order+1;
            document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order+1).toString();
            document.getElementById("exp_scene").style.color="#0079c1";
@@ -2269,6 +2269,7 @@
             
             document.getElementById("dt_train").style.display="none";
             document.getElementById("dt_experiment").style.display="block";
+            m_exp_order=m_exp_order+1;
          })
       
       //--------------------------------------------------

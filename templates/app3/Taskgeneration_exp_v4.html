@@ -645,6 +645,7 @@
               // upload data to database
               m_tasktrials=0;
                 EnableBT("q_scene");
+                DisableBT("btntaskassignment");
                 //console.log(1);
             }
             else{
@@ -668,6 +669,7 @@
 
           m_tasktrials=0;
             EnableBT("q_scene");
+            DisableBT("btntaskassignment");
             //console.log(3);
         }
 
@@ -2181,7 +2183,7 @@
               m_exp_order=m_exp_order+1;
               document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order).toString();
               document.getElementById("exp_scene").style.color="#0079c1";
-              
+              EnableBT("btntaskassignment");
               document.getElementById("ScenarioDescriptionDiv").style.display="block";
           }
           else{
@@ -2193,6 +2195,7 @@
               DisableBT("exp_scene");
           }
           DisableBT("q_scene");
+      
          });
 
          function InitializeExperiment(task=0){

@@ -511,8 +511,8 @@
           view: view
         });
           
-          //view.ui.add("ScenarioDescriptionDiv", "manual");
-          view.ui.add("ScenarioDescriptionDiv", "bottom-right");
+          view.ui.add("ScenarioDescriptionDiv", "manual");
+          //view.ui.add("ScenarioDescriptionDiv", "bottom-right");
         view.ui.add(searchWidget, {
           position: "bottom-right",
           index: 5
@@ -526,6 +526,7 @@
       document.getElementById("btntaskassignment").onclick=function() {
         let t_stoptime=Date.now();
         let i_hr=m_exp_variables.hour;
+          let tflag=false;// visualiation changed
 
         m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"btntaskassignment"});
 
@@ -569,8 +570,8 @@
         SaveExperimentdatatoDB(m_exp_e);
         m_exp_actionlog=[];
           
-        console.log("m_teamassign",m_teamassign);
-        console.log("m_targetpolygon",m_targetpolygon);
+        //console.log("m_teamassign",m_teamassign);
+        //console.log("m_targetpolygon",m_targetpolygon);
           
           
         for(let i=0;i<m_teamassign.length;i++){
@@ -603,8 +604,10 @@
                 // change the clue status from "unfound" to "show"
                 m_exp_location.clue[j].status="show";
                 let t_contour_value=0;
+                  tflag=true;
                 if(m_exp_location.clue[0].status=="show" && m_exp_location.clue[1].status=="show"){
                   t_contour_value=3;
+                
                 }
                 else if(m_exp_location.clue[0].status=="show"){
                   t_contour_value=2;
@@ -612,6 +615,9 @@
                 else if(m_exp_location.clue[1].status=="show"){
                   t_contour_value=1;
                 }
+                  else{
+                      tflag=false;
+                  }
                 document.getElementById("myClues").value=t_contour_value;
                 $("#lmyClues").text("Clue(0-3): "+t_contour_value);
                 m_exp_assignlog.clueindex=t_contour_value;
@@ -638,11 +644,12 @@
               SaveExperimentdatatoDB(m_experimentlog);
               // upload data to database
               m_tasktrials=0;
-                console.log(1);
+                EnableBT("q_scene");
+                //console.log(1);
             }
             else{
               DrawPolygonToInitLayer(m_teamassign[i]);
-                console.log(2);
+                //console.log(2);
             }
           }
         }
@@ -660,6 +667,8 @@
           // upload data to database
 
           m_tasktrials=0;
+            EnableBT("q_scene");
+            //console.log(3);
         }
 
         //initialize for the next step
@@ -668,8 +677,13 @@
         m_exp_variables.hour+=m_exp_variables.hourstep;
 
         //After five times, the experiment stops.
-        UpdateVisualization();
+        if(tflag){
+            UpdateVisualization();
+        }
+        
       }
+      
+      
       function DrawcongratulationsToInitLayer(){
         let graphic = new Graphic({
           geometry: area_extent.center,//view.extent.center,
@@ -745,8 +759,8 @@
         graphicInitLayer.add(graphic);
       }
 
-      function DrawTextToInitLayer(inputtext){
-        graphicInitLayer.removeAll();
+      function DrawTextToSegmentLayer(inputtext){
+        //graphicInitLayer.removeAll();
         graphic = new Graphic({
           geometry: area_extent.center,//view.extent.center,
           symbol: {
@@ -763,7 +777,7 @@
             }
           }
         });
-        graphicInitLayer.add(graphic);
+        visualization_Segmentheat_Layer.add(graphic);
       }
 
 
@@ -1606,7 +1620,8 @@
            //console.log(contourring_arr);
 
            //show wait
-           DrawTextToInitLayer("Please wait for the visualization");
+             visualization_Segmentheat_Layer.visible=true;
+           DrawTextToSegmentLayer("Loading ...");
            let URL = "{% url 'getsegmentVal' %}";
            let data = {
              csrfmiddlewaretoken: '{{ csrf_token }}',
@@ -1640,8 +1655,9 @@
 
                }
                //console.log(arr_featureset);
+               visualization_Segmentheat_Layer.removeAll();
                visualization_Segmentheat_Layer.addMany(arr_featureset);
-               visualization_Segmentheat_Layer.visible=true;
+               //visualization_Segmentheat_Layer.visible=true;
                m_exp_assignlog.visostamp=Date.now();
               }
              else{ alert(response); }
@@ -2032,6 +2048,15 @@
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
 
+      function EnableBT(itemid="q_scene"){
+          document.getElementById(itemid).disabled=false;
+          document.getElementById(itemid).style.color="#0079c1";
+      }
+      function DisableBT(itemid="q_scene"){
+          document.getElementById(itemid).disabled=true;
+          document.getElementById(itemid).style.color="gray";
+      }
+      
          document.getElementById("sel_lpm").onchange=function(){
 
            m_lpdata_con=[];
@@ -2158,13 +2183,16 @@
               document.getElementById("exp_scene").style.color="#0079c1";
               
               document.getElementById("ScenarioDescriptionDiv").style.display="block";
-              //view.ui.add("ScenarioDescriptionDiv", "manual");
           }
           else{
-              document.getElementById("exp_scene").disabled = true
-              document.getElementById("btntaskassignment").disabled = true
-              document.getElementById("q_scene").disabled = true
+              //document.getElementById("exp_scene").disabled = true
+              //document.getElementById("btntaskassignment").disabled = true
+              //document.getElementById("q_scene").disabled = true
+              
+              DisableBT("btntaskassignment");
+              DisableBT("exp_scene");
           }
+          DisableBT("q_scene");
          });
 
          function InitializeExperiment(task=0){
@@ -2242,13 +2270,12 @@
       
         document.getElementById("dt_retrain").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_retrain"});
-            /*
+            
             m_lpdata_con=[];
             m_lpdata_trajectory=[];
             m_lpdata_tra_colormap=[];
-
             ClearAll();
-            */
+            
             document.getElementById("dt_scene").value="Load Training Scene";
             //DisableAllGraphicLayers();         
          })
@@ -2262,14 +2289,14 @@
         document.getElementById("dt_endtrain").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_endtrain"});
             
-            /*
+            
             // clear all data
             m_lpdata_con=[];
             m_lpdata_trajectory=[];
             m_lpdata_tra_colormap=[];
-
             ClearAll();
-            */
+            
+            
             document.getElementById("dt_scene").value="Load Training Scene";
             //DisableAllGraphicLayers(); 
             
@@ -2280,8 +2307,10 @@
             document.getElementById("dt_experiment_1").style.display="block";
             document.getElementById("dt_experiment_2").style.display="block";
             m_exp_order=m_exp_order+1;
-            //view.ui.add("ScenarioDescriptionDiv", "manual");
+            
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
+            
+            DisableBT("q_scene");
          })
       
       //--------------------------------------------------

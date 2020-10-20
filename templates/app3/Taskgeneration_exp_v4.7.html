@@ -273,10 +273,6 @@
       let m_tasktrials=0;//how many time the operator tried to assign teams
       let epsg4326_voronoiarr=[];
 
-      const visualization_Segmentheat_Layer = new GraphicsLayer({
-        opacity:0.5
-      });
-      
       const graphicInitLayer= new GraphicsLayer();
       const graphicsLayer = new GraphicsLayer({
         opacity:0.6//0.6
@@ -286,7 +282,9 @@
         opacity:0.8
       });
 
-      
+      const visualization_Segmentheat_Layer = new GraphicsLayer({
+        opacity:0.5
+      });
 
       const visualization_Trajectories_Layer = new GraphicsLayer({
         opacity:0.5
@@ -568,11 +566,7 @@
         m_exp_e["more"]=m_exp_actionlog;
         SaveExperimentdatatoDB(m_exp_e);
         m_exp_actionlog=[];
-          
-        console.log("m_teamassign",m_teamassign);
-        console.log("m_targetpolygon",m_targetpolygon);
-          
-          
+
         for(let i=0;i<m_teamassign.length;i++){
           //console.log(m_teamassign[i]);
           if(m_teamassign[i]){
@@ -638,11 +632,9 @@
               SaveExperimentdatatoDB(m_experimentlog);
               // upload data to database
               m_tasktrials=0;
-                console.log(1);
             }
             else{
               DrawPolygonToInitLayer(m_teamassign[i]);
-                console.log(2);
             }
           }
         }
@@ -777,7 +769,6 @@
             style: "backward-diagonal"
           }
         });
-          //console.log("graphic",graphic);
         graphicInitLayer.add(graphic);
       }
 
@@ -1162,7 +1153,6 @@
              let t_start=0.2*view.extent.xmax+0.8*view.extent.xmin;
              let t_stop=0.5*view.extent.xmax+0.5*view.extent.xmin;
              let t_steps=(t_stop-t_start)/teamcount;
-               
              for(let i=0;i<teamcount;i++){
                //console.log(view);
                let in_point=new Point({
@@ -1187,35 +1177,7 @@
                   }
                 });
                 m_teamiconlocation.push(t_graphic);
-                 $(t_graphic.attributes.htmlid).text("SX");
-                 /*
-                let t_point=new Point({
-                  x:0.9*view.extent.xmin+0.1*view.extent.xmax,
-                  y:0.07*view.extent.ymin+0.93*view.extent.ymax,
-                  spatialReference:view.spatialReference
-                });
-
-                let t_graphic1=new Graphic ({
-                  geometry:t_point,
-                  symbol:{
-                    type: "text",  // autocasts as new TextSymbol()
-                    color: [255,125,0],//"white",
-                    haloColor: "black",
-                    haloSize: "1px",
-                    text: "Teams: ",
-                    xoffset: 3,
-                    yoffset: 3,
-                    font: {  // autocast as new Font()
-                      size: 50,
-                      family: "sans-serif",
-                      weight: "bold"
-                    }
-                  }
-                });
-                 //console.log(t_graphic);
-                m_teamiconlocation.push(t_graphic1);
-                 */
-                
+                $(t_graphic.attributes.htmlid).text("SX");
              }
            }
            teamgraphicsLayer.addMany(m_teamiconlocation);
@@ -1642,6 +1604,7 @@
                //console.log(arr_featureset);
                visualization_Segmentheat_Layer.addMany(arr_featureset);
                visualization_Segmentheat_Layer.visible=true;
+               graphicInitLayer.removeAll();
                m_exp_assignlog.visostamp=Date.now();
               }
              else{ alert(response); }
@@ -1912,7 +1875,65 @@
              });
 
              t_feature.push(t_graphic);
-            }            
+            }
+            // draw team rectangle
+            //from x: 0.05-0.6
+            //from y: 0.1 - 0.3
+            let t_rect=new Polygon({
+              rings:[
+                [0.85*view.extent.xmin+0.15*view.extent.xmax,0.02*view.extent.ymin+0.98*view.extent.ymax],
+                [0.5*view.extent.xmin+0.5*view.extent.xmax,0.02*view.extent.ymin+0.98*view.extent.ymax],
+                [0.5*view.extent.xmin+0.5*view.extent.xmax,0.08*view.extent.ymin+0.92*view.extent.ymax],
+                [0.85*view.extent.xmin+0.15*view.extent.xmax,0.08*view.extent.ymin+0.92*view.extent.ymax],
+                [0.85*view.extent.xmin+0.15*view.extent.xmax,0.02*view.extent.ymin+0.98*view.extent.ymax],
+              ],
+              spatialReference:view.spatialReference
+            });
+
+            t_graphic =  new Graphic({
+              geometry: t_rect,//view.extent.center,
+              symbol:  {
+                   type: "simple-fill", // autocasts as new SimpleMarkerSymbol()
+                   style:"none",
+                   outline:{
+                     color:[255,125,0,1],
+                     width:2
+                   }
+                 },
+               attributes:{
+                 Name:"team group"
+               }
+            });
+            //t_feature.push(t_graphic);
+
+            let t_point=new Point({
+              x:0.9*view.extent.xmin+0.1*view.extent.xmax,
+              y:0.07*view.extent.ymin+0.93*view.extent.ymax,
+              spatialReference:view.spatialReference
+            });
+             
+            t_graphic=new Graphic ({
+              geometry:t_point,
+              symbol:{
+                type: "text",  // autocasts as new TextSymbol()
+                color: [255,125,0],//"white",
+                haloColor: "black",
+                haloSize: "1px",
+                text: "Teams: ",
+                xoffset: 3,
+                yoffset: 3,
+                font: {  // autocast as new Font()
+                  size: 50,
+                  family: "sans-serif",
+                  weight: "bold"
+                }
+              }
+            });
+             console.log(t_graphic);
+            t_feature.push(t_graphic);
+            //draw the polygon into graphicInitLayer
+            //console.log(m_searchedarea);
+            
 
            graphicInitLayer.addMany(t_feature);
          }
@@ -2242,13 +2263,12 @@
       
         document.getElementById("dt_retrain").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_retrain"});
-            /*
+            
             m_lpdata_con=[];
             m_lpdata_trajectory=[];
             m_lpdata_tra_colormap=[];
 
             ClearAll();
-            */
             document.getElementById("dt_scene").value="Load Training Scene";
             //DisableAllGraphicLayers();         
          })
@@ -2256,29 +2276,26 @@
         document.getElementById("dt_scene").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_scene"});
             InitializeExperiment(m_exp_order);
+            //view.ui.remove("ScenarioDescriptionDiv");
             document.getElementById("ScenarioDescriptionDiv").style.display="none";
          })
       
         document.getElementById("dt_endtrain").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_endtrain"});
             
-            /*
             // clear all data
             m_lpdata_con=[];
             m_lpdata_trajectory=[];
             m_lpdata_tra_colormap=[];
 
             ClearAll();
-            */
             document.getElementById("dt_scene").value="Load Training Scene";
-            //DisableAllGraphicLayers(); 
+            DisableAllGraphicLayers(); 
             
             document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order+1).toString();
             
-            document.getElementById("dt_train_1").style.display="none";
-            document.getElementById("dt_train_2").style.display="none";
-            document.getElementById("dt_experiment_1").style.display="block";
-            document.getElementById("dt_experiment_2").style.display="block";
+            document.getElementById("dt_train").style.display="none";
+            document.getElementById("dt_experiment").style.display="block";
             m_exp_order=m_exp_order+1;
             //view.ui.add("ScenarioDescriptionDiv", "manual");
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
@@ -2292,55 +2309,73 @@
 
 <body>
     <div id="editArea" class="editArea-container">
-        <div id="experimentpannel">
+        <div id="dt_train">
             <h2 class="list-heading">Search & Rescue Tools</h2>
-            <div id="dt_train_1">                
-                <h3 class="list-heading">Training Session</h3>
-                <input type="button" class="edit-button" value="Load Training Scene" id="dt_scene"/>
-            </div>
+            <h3 class="list-heading">Training Session</h3>
+            <input type="button" class="edit-button" value="Load Training Scene" id="dt_scene"/> 
+            <h3>Team location</h3>
+            <table>
+                <thead>
+                  <tr>
+                    <th>Team</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                    <th>4</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>Cell</th>
+                    <th id="th_team1">SX</th>
+                    <th id="th_team2">SX</th>
+                    <th id="th_team3">SX</th>
+                    <th id="th_team4">SX</th>
+                  </tr>
+                </tbody>
+            </table>
+            <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"/>
+            <input type="button" class="edit-button" value="Retry the training" id="dt_retrain"/>
+            <input type="button" class="edit-button" value="End Training & Start Experiment" id="dt_endtrain"/>
             
-            <div id="dt_experiment_1"  style="display:none">
+        </div>
+          
+        
+        <div id="dt_experiment" style="display:none">
+            <h2 class="list-heading">Search & Rescue Tools</h2>
+            <div id="experimentpannel">
                 <h3 class="list-heading">Experiments</h3>
-                <input type="button" class="edit-button" value="Load Data for Scene 1" id="exp_scene"/> 
+                <input type="button" class="edit-button" value="Load Data for Scene 1" id="exp_scene"/>    
             </div>
-            
-            <div>
-                <h3>Team location</h3>
-                <table>
-                    <thead>
-                      <tr>
-                        <th>Team</th>
-                        <th>1</th>
-                        <th>2</th>
-                        <th>3</th>
-                        <th>4</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <th>Cell</th>
-                        <th id="th_team1">SX</th>
-                        <th id="th_team2">SX</th>
-                        <th id="th_team3">SX</th>
-                        <th id="th_team4">SX</th>
-                      </tr>
-                    </tbody>
-                </table>
-                <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"/>
-            </div>
-            
-            <div id="dt_train_2">                
-                
-                <input type="button" class="edit-button" value="Retry the training" id="dt_retrain"/>
-                <input type="button" class="edit-button" value="End Training & Start Experiment" id="dt_endtrain"/>
-            </div>
-            
-            <div id="dt_experiment_2" style="display:none">
-                <input type="button" class="edit-button" value="Questionnaire" id="q_scene"/>
-                <label id="exp_status">Status</label>
-            </div>
+            <h3>Team location</h3>
+            <table>
+                <thead>
+                  <tr>
+                    <th>Team</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                    <th>4</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>Cell</th>
+                    <th id="th_team1">SX</th>
+                    <th id="th_team2">SX</th>
+                    <th id="th_team3">SX</th>
+                    <th id="th_team4">SX</th>
+                  </tr>
+                </tbody>
+            </table>
+
+            <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"/>
+            <input type="button" class="edit-button" value="Questionnaire" id="q_scene"/>
+            <label id="exp_status">Status</label>
         </div>
     </div>
+    
+    
     
     <div>
       <input type="button" class="scenebutton" value="Post Experiment Questionnaire" id="exp_post" style="display:none"/>

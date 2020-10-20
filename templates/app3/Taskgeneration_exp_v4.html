@@ -177,7 +177,7 @@
       "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":null,'photoid':1},
              {"clue_index":1,"status":"unfound","info":"drink","location":null,'photoid':2}]};
       let m_exp_visualization={"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"};
-      let m_exp_variables={"hour":11,"hourstep":0,"displaytype":true,"eacharea":500000,"zoomlevel":m_scale,"colormap":0};//"displaytype":"byhour" true or "bypath" false
+      let m_exp_variables={"hour":11,"hourstep":0,"displaytype":true,"eacharea":500000,"zoomlevel":m_scale,"colormap":0,"totalrounds":8};//"displaytype":"byhour" true or "bypath" false
       // update to db every 5 rounds/ or task finished
       // information changed at initiation, task finished, round outofnumber
 
@@ -1000,9 +1000,8 @@
                  m_lpdata_trajectory.push({'index':t_index,'notes':'clue','clue':t_index,'data':t_data});
 
                  if (m_lpdata_con.length +m_lpdata_trajectory.length == t_arr_count){
-                   document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
-                     
-                    document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+" (Loaded)";
+                     document.getElementById("loadlpmcsv").value="Load LPM Data (Loaded)";
+                     document.getElementById("exp_scene").value=document.getElementById("exp_scene").value+" (Loaded)";
                      
                    m_experimentres["actions"].push({"id":"loadlpmcsv","timestamp": Date.now(), "description":"loaded"});
                    SetTargetClues();
@@ -2158,19 +2157,21 @@
              //let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/';
                                                              
              // use participantindex and task index
-             let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/'+m_exp_order.toString()+'/';
-           
-             
+             let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/'+m_exp_order.toString()+'/'; 
                             
            //console.log(task_url);
            let win = window.open(task_url, '_blank');
            win.focus();
-
-           m_exp_order=m_exp_order+1;
+          if(m_exp_order<m_exp_variables.totalrounds){
+              m_exp_order=m_exp_order+1;
            document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order+1).toString();
            document.getElementById("exp_scene").style.color="#0079c1";
-      
-          //console.log("here",m_exp_order);
+          }
+          else{
+              document.getElementById("exp_scene").disabled = true
+              document.getElementById("btntaskassignment").disabled = true
+              document.getElementById("q_scene").disabled = true
+          }
          });
 
          function InitializeExperiment(task=0){
@@ -2210,7 +2211,8 @@
            // load data
            view.goTo([m_exp_location.center]);
            LoadLPMData();
-
+             //console.log(m_exp_visualization);
+             document.getElementById("exp_status").innerHTML=JSON.stringify(m_exp_visualization)+",hour:"+m_exp_variables.hour.toString();
          }
          document.getElementById("exp_scene").addEventListener('click',function(){
            m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"exp_scene"});
@@ -2252,9 +2254,21 @@
          })
       
         document.getElementById("dt_endtrain").addEventListener('click',function(){
-              m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_endtrain"});
-              document.getElementById("dt_train").style.display="none";
-              document.getElementById("dt_experiment").style.display="block";
+            m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_endtrain"});
+            
+            // clear all data
+            m_lpdata_con=[];
+            m_lpdata_trajectory=[];
+            m_lpdata_tra_colormap=[];
+
+            ClearAll();
+            document.getElementById("dt_scene").value="Load Training Scene";
+            DisableAllGraphicLayers(); 
+            
+            document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order+1).toString();
+            
+            document.getElementById("dt_train").style.display="none";
+            document.getElementById("dt_experiment").style.display="block";
          })
       
       //--------------------------------------------------
@@ -2327,6 +2341,7 @@
 
             <input type="button"  class="edit-button" id="btntaskassignment" value="Assign"/>
             <input type="button" class="edit-button" value="Questionnaire" id="q_scene"/>
+            <label id="exp_status">status</label>
         </div>
     </div>
     

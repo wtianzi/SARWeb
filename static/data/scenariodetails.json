@@ -117,7 +117,7 @@ var g_experiment={
     {'index':43,'taskorder':[0,169,170,171,172,173,174,175,176]}
   ],
   "experimentsetup":[
-    {"index":0,"loc":0,"lpt":0,"vt":0},
+    {"index":0,"loc":0,"lpt":0,"vt":2},
     {"index":1,"loc":0,"lpt":0,"vt":1},
     {"index":2,"loc":0,"lpt":0,"vt":2},
     {"index":3,"loc":0,"lpt":0,"vt":3},

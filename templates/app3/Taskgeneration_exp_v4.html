@@ -121,10 +121,10 @@
         width: 50%;
           padding: 20px;
           text-align: center;
-          background-color: rgba(255, 255, 255, 0.2);
-          border: 3px solid #0079c1;
+          background-color: rgba(0, 0, 0, 0.3);
+          border: 1px solid #0079c1;
           color: #fff;
-          font-size:90%;
+          font-size:150%;
         text-shadow: 2px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
       }
       
@@ -274,7 +274,7 @@
       let epsg4326_voronoiarr=[];
 
       const visualization_Segmentheat_Layer = new GraphicsLayer({
-        opacity:0.5
+        opacity:0.7
       });
       
       const graphicInitLayer= new GraphicsLayer();
@@ -283,13 +283,11 @@
       });
 
       const visualization_Contourmap_Layer = new GraphicsLayer({
-        opacity:0.8
-      });
-
-      
+        opacity:0.7
+      });      
 
       const visualization_Trajectories_Layer = new GraphicsLayer({
-        opacity:0.5
+        opacity:0.7
       });
 
       const teamgraphicsLayer=new GraphicsLayer({
@@ -306,10 +304,10 @@
         layers: [
           visualization_Contourmap_Layer,//
           visualization_Segmentheat_Layer,
+          visualization_Trajectories_Layer,
           graphicsLayer,//
           graphicInitLayer,//
           teamgraphicsLayer,//
-          visualization_Trajectories_Layer,//
           graphicInteractionLayer,//
           temperalgraphicLayer// temperal layer include target
         ]
@@ -586,6 +584,7 @@
                 spatialReference: view.spatialReference
               });
               if(geometryEngine.contains(m_teamassign[i].geometry,t_pt)){
+                  tflag=true;
                 m_visualizationtype='byclue';
 
                 let t_clueobj;
@@ -604,7 +603,7 @@
                 // change the clue status from "unfound" to "show"
                 m_exp_location.clue[j].status="show";
                 let t_contour_value=0;
-                  tflag=true;
+                  
                 if(m_exp_location.clue[0].status=="show" && m_exp_location.clue[1].status=="show"){
                   t_contour_value=3;
                 
@@ -615,9 +614,6 @@
                 else if(m_exp_location.clue[1].status=="show"){
                   t_contour_value=1;
                 }
-                  else{
-                      tflag=false;
-                  }
                 document.getElementById("myClues").value=t_contour_value;
                 $("#lmyClues").text("Clue(0-3): "+t_contour_value);
                 m_exp_assignlog.clueindex=t_contour_value;
@@ -627,23 +623,23 @@
             //check if the target is in the array
             //console.log(m_teamassign,m_targetpolygon);
             if(m_teamassign[i].attributes.cellindex==m_targetpolygon.attributes.cellindex){
-              //display the targetarea
+                //display the targetarea
+                tflag=false;
+                DrawPolygonToInitLayer(m_targetpolygon,"red");
+                DrawcongratulationsToInitLayer();
 
-              DrawPolygonToInitLayer(m_targetpolygon,"red");
-              DrawcongratulationsToInitLayer();
+                //name:unixtime_participantid_taskid
+                let filename=m_experimentres["participant_index"]+"_"+Date.now().toString();
+                m_experimentres["taskstop"]=Date.now();
+                m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
+                //download(filename+".txt",JSON.stringify(m_experimentres));
 
-              //name:unixtime_participantid_taskid
-              let filename=m_experimentres["participant_index"]+"_"+Date.now().toString();
-              m_experimentres["taskstop"]=Date.now();
-              m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
-              //download(filename+".txt",JSON.stringify(m_experimentres));
-
-              m_experimentlog.taskend=Date.now();
-              m_experimentlog.totalrounds=m_tasktrials;
-              m_experimentlog.duration=m_experimentlog.taskstart-m_experimentlog.taskend;
-              SaveExperimentdatatoDB(m_experimentlog);
-              // upload data to database
-              m_tasktrials=0;
+                m_experimentlog.taskend=Date.now();
+                m_experimentlog.totalrounds=m_tasktrials;
+                m_experimentlog.duration=m_experimentlog.taskstart-m_experimentlog.taskend;
+                SaveExperimentdatatoDB(m_experimentlog);
+                // upload data to database
+                m_tasktrials=0;
                 EnableBT("q_scene");
                 DisableBT("btntaskassignment");
                 //console.log(1);
@@ -655,21 +651,23 @@
           }
         }
         if(m_tasktrials==m_experimentres.totaltaskround){
-          DrawCompletTaskToInitLayer();
-          let filename=m_experimentres["participant_index"]+"_"+Date.now().toString();
-          m_experimentres["taskstop"]=Date.now();
-          m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
-          //download(filename+".txt",JSON.stringify(m_experimentres));
+            tflag=false;
+            DrawCompletTaskToInitLayer();
+            let filename=m_experimentres["participant_index"]+"_"+Date.now().toString();
+            m_experimentres["taskstop"]=Date.now();
+            m_experimentres["taskduration"]=m_experimentres["taskstop"]-m_experimentres["taskstart"];
+            //download(filename+".txt",JSON.stringify(m_experimentres));
 
-          m_experimentlog.taskend=Date.now();
-          m_experimentlog.totalrounds=m_tasktrials;
-          m_experimentlog.duration=m_experimentlog.taskstart-m_experimentlog.taskend;
-          SaveExperimentdatatoDB(m_experimentlog);
-          // upload data to database
+            m_experimentlog.taskend=Date.now();
+            m_experimentlog.totalrounds=m_tasktrials;
+            m_experimentlog.duration=m_experimentlog.taskstart-m_experimentlog.taskend;
+            SaveExperimentdatatoDB(m_experimentlog);
+            // upload data to database
 
-          m_tasktrials=0;
+            m_tasktrials=0;
             EnableBT("q_scene");
             DisableBT("btntaskassignment");
+            
             //console.log(3);
         }
 
@@ -1204,33 +1202,7 @@
                 });
                 m_teamiconlocation.push(t_graphic);
                  $(t_graphic.attributes.htmlid).text("SX");
-                 /*
-                let t_point=new Point({
-                  x:0.9*view.extent.xmin+0.1*view.extent.xmax,
-                  y:0.07*view.extent.ymin+0.93*view.extent.ymax,
-                  spatialReference:view.spatialReference
-                });
-
-                let t_graphic1=new Graphic ({
-                  geometry:t_point,
-                  symbol:{
-                    type: "text",  // autocasts as new TextSymbol()
-                    color: [255,125,0],//"white",
-                    haloColor: "black",
-                    haloSize: "1px",
-                    text: "Teams: ",
-                    xoffset: 3,
-                    yoffset: 3,
-                    font: {  // autocast as new Font()
-                      size: 50,
-                      family: "sans-serif",
-                      weight: "bold"
-                    }
-                  }
-                });
-                 //console.log(t_graphic);
-                m_teamiconlocation.push(t_graphic1);
-                 */
+                 
                 
              }
            }
@@ -1931,7 +1903,31 @@
 
              t_feature.push(t_graphic);
             }            
-
+             
+             let t_point=new Point({
+              x:0.9*view.extent.xmin+0.1*view.extent.xmax,
+              y:0.07*view.extent.ymin+0.93*view.extent.ymax,
+              spatialReference:view.spatialReference
+            });
+            t_graphic=new Graphic ({
+              geometry:t_point,
+              symbol:{
+                type: "text",  // autocasts as new TextSymbol()
+                color: [255,125,0],//"white",
+                haloColor: "black",
+                haloSize: "1px",
+                text: "Teams: ",
+                xoffset: 3,
+                yoffset: 3,
+                font: {  // autocast as new Font()
+                  size: 50,
+                  family: "sans-serif",
+                  weight: "bold"
+                }
+              }
+            });
+            t_feature.push(t_graphic);
+             
            graphicInitLayer.addMany(t_feature);
          }
 
@@ -2184,7 +2180,13 @@
               document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order).toString();
               document.getElementById("exp_scene").style.color="#0079c1";
               EnableBT("btntaskassignment");
+              ClearAll();
               document.getElementById("ScenarioDescriptionDiv").style.display="block";
+              // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
+             let tmp_log="Experiment Status: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
+             
+             document.getElementById("exp_status").innerHTML=tmp_log;
+              
           }
           else{
               //document.getElementById("exp_scene").disabled = true
@@ -2237,15 +2239,7 @@
            LoadLPMData();
              //console.log(m_exp_visualization);
              
-             // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
-             let tmp_log="";
-             if(task==0){
-                 tmp_log="Training\r\n";
-             }
-             else{
-                 tmp_log="Experiment Step: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
-             }
-             document.getElementById("exp_status").innerHTML=tmp_log;
+             
          }
          document.getElementById("exp_scene").addEventListener('click',function(){
              m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"exp_scene"});
@@ -2274,12 +2268,10 @@
         document.getElementById("dt_retrain").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_retrain"});
             
-            m_lpdata_con=[];
-            m_lpdata_trajectory=[];
-            m_lpdata_tra_colormap=[];
             ClearAll();
             
             document.getElementById("dt_scene").value="Load Training Scene";
+            EnableBT("btntaskassignment");
             //DisableAllGraphicLayers();         
          })
       
@@ -2292,13 +2284,7 @@
         document.getElementById("dt_endtrain").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_endtrain"});
             
-            
-            // clear all data
-            m_lpdata_con=[];
-            m_lpdata_trajectory=[];
-            m_lpdata_tra_colormap=[];
-            ClearAll();
-            
+            ClearAll();            
             
             document.getElementById("dt_scene").value="Load Training Scene";
             //DisableAllGraphicLayers(); 
@@ -2313,6 +2299,10 @@
             
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
             
+            let tmp_log="Experiment Status: 1/"+m_exp_variables.totalrounds.toString()+"\r\n";             
+            document.getElementById("exp_status").innerHTML=tmp_log;
+            
+            EnableBT("btntaskassignment");
             DisableBT("q_scene");
          })
       

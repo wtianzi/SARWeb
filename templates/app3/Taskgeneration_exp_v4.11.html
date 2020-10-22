@@ -1812,35 +1812,32 @@
            visualization_Contourmap_Layer.visible=true;
            m_exp_assignlog.visostamp=Date.now();
          }
-        function SetTargetClues(){
-            let tflag=false;
-            if(tflag){
-                let t_plitphase=0.618;
-                let t_targetarr=m_lpdata_trajectory.filter(obj=>{ return obj.index === -1;});
-                // pick two point from t_targetarr
-                let t_cluearr=m_lpdata_trajectory.filter(obj=>{ return obj.index === 3;});
-                let tcluedata_len=t_cluearr[0].data.length;
-
-                let tlen_target=0;
-                let tlen_clue=tcluedata_len-1;
-                //let tlen_clue2=Math.floor(tcluedata_len * t_plitphase);
-
-                let index_tar=Math.floor(t_targetarr[0].data[tlen_target].length * t_plitphase);
-                if(index_tar==0 || index_tar==4){
-                    index_tar==3;
-                }
-                let index_clue1=0;
-                let index_clue2=4;
-
-                m_exp_location.target=t_targetarr[0].data[tlen_target][index_tar];
-                m_exp_location.clue=[{"clue_index":0,"status":"unfound","info":"cloth","location":t_targetarr[0].data[tlen_clue][index_clue1],'photoid':1},
-              {"clue_index":1,"status":"unfound","info":"drink","location":t_targetarr[0].data[tlen_clue][index_clue2],'photoid':2}];
-            }
+         function SetTargetClues(){
            // need m_lpdata_trajectory
            //console.log(m_exp_location,m_exp_lostpersontype);
            //console.log(m_lpdata_trajectory);
-             
-            TaskGenerateArea();
+           let t_plitphase=0.618;
+           let t_targetarr=m_lpdata_trajectory.filter(obj=>{ return obj.index === -1;});
+           // pick two point from t_targetarr
+           let t_cluearr=m_lpdata_trajectory.filter(obj=>{ return obj.index === 3;});
+           let tcluedata_len=t_cluearr[0].data.length;
+
+           let tlen_target=0;
+           let tlen_clue=tcluedata_len-1;
+           //let tlen_clue2=Math.floor(tcluedata_len * t_plitphase);
+
+           let index_tar=Math.floor(t_targetarr[0].data[tlen_target].length * t_plitphase);
+           if(index_tar==0 || index_tar==4){
+             index_tar==3;
+           }
+           let index_clue1=0;
+           let index_clue2=4;
+
+           m_exp_location.target=t_targetarr[0].data[tlen_target][index_tar];
+           m_exp_location.clue=[{"clue_index":0,"status":"unfound","info":"cloth","location":t_targetarr[0].data[tlen_clue][index_clue1],'photoid':1},
+                  {"clue_index":1,"status":"unfound","info":"drink","location":t_targetarr[0].data[tlen_clue][index_clue2],'photoid':2}];
+
+          TaskGenerateArea();
          }
 
          function DisplayLostPersonInfo(){
@@ -2364,11 +2361,6 @@
                 <input type="button" class="edit-button" value="Questionnaire" id="q_scene"/>
                 <label id="exp_status">Status</label>
             </div>
-        </div>
-        
-        <div style="display:none">
-            <h4>Testing</h4>
-            <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"/>
         </div>
     </div>
     

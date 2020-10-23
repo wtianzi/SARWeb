@@ -120,12 +120,12 @@
         margin-right: 10%;
         width: 50%;
           padding: 20px;
-          text-align: center;
-          background-color: rgba(0, 0, 0, 0.3);
+          text-align: left;
+          background-color: rgba(255, 255, 255, 0.8);
           border: 1px solid #0079c1;
-          color: #fff;
+          color: #000;
           font-size:150%;
-        text-shadow: 2px 0 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000;
+       
       }
       
   </style>
@@ -195,6 +195,7 @@
              {"clue_index":1,"status":"unfound","info":"drink","location":null,'photoid':2}]};
       let m_exp_visualization={"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"};
       let m_exp_variables={"hour":11,"hourstep":0,"displaytype":true,"eacharea":500000,"zoomlevel":m_scale,"colormap":0,"totalrounds":8};//"displaytype":"byhour" true or "bypath" false
+      let m_exp_discription={"name":"ic1","mark":"#","discription":"Mission Debriefing"};
       // update to db every 5 rounds/ or task finished
       // information changed at initiation, task finished, round outofnumber
 
@@ -2184,6 +2185,9 @@
               document.getElementById("exp_scene").style.color="#0079c1";
               EnableBT("btntaskassignment");
               ClearAll();
+              
+              
+              document.getElementById("p_discription").innerHTML=m_exp_discription.discription;
               document.getElementById("ScenarioDescriptionDiv").style.display="block";
               // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
              let tmp_log="Experiment Status: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
@@ -2222,6 +2226,9 @@
            m_exp_lostpersontype=m_expsetupobj.lostpersontype[t_expsetup.lpt];
            m_exp_location=m_expsetupobj.location[t_expsetup.loc];
            m_exp_visualization=m_expsetupobj.visualizationtype[t_expsetup.vt];
+             
+             //debug---
+           m_exp_discription=m_expsetupobj.scenariodiscription[t_expsetup.loc];
            //m_exp_variables.hour=0;
            //console.log(m_exp_order,m_exp_variables);
 
@@ -2300,6 +2307,7 @@
             document.getElementById("dt_experiment_2").style.display="block";
             m_exp_order=m_exp_order+1;
             
+            document.getElementById("p_discription").innerHTML=m_exp_discription.discription;
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
             
             let tmp_log="Experiment Status: 1/"+m_exp_variables.totalrounds.toString()+"\r\n";             
@@ -2483,13 +2491,20 @@
     <div id="sidebar" class="esri-widget" style="display:none">
     </div>
     <div id="ScenarioDescriptionDiv" class="esri-widget">
-        <h2>Scenario Demo</h2>
+        <h2>Debriefing</h2>
       <div id="smalldiv">
-          <p id="p_discription">A 30 year old woman left for a hike at approximately 10:00am on Tuesday. She informed her fiancé that she would do a 3.5 mile hike in and then back out the same way. Her car was found in the parking lot at the trailhead when her fiancé began to worry about her whereabouts around 3:30pm. She is an experienced hiker and was carrying a backpack containing water, bug spray, a flashlight, a lighter and a light purple jacket. She has short brown hair and is wearing nike shorts and a grey shirt. The probability rings for a hiker are as follows: 25%: 1100m, 50%: 3100m, 75%: 5800m, 95%: 18300m.
+          <p id="p_discription">A 30 year old woman left for a hike at approximately 10:00am on Tuesday. She informed her fiancé that she would do a 3.5 mile hike in and then back out the same way. Her car was found in the parking lot at the trailhead when her fiancé began to worry about her whereabouts around 3:30pm. She is an experienced hiker and was carrying a backpack containing water, bug spray, a flashlight, a lighter and a light purple jacket. She has short brown hair and is wearing nike shorts and a grey shirt.
           </p>
           <p>
-              Please load scene and start the assignment task ->
+              Please use the search and rescue tools to assign teams: 
           </p>
+          <ul>
+              <li>Step 1: Load data</li>
+              <li>Step 2: Drag team icon to cell</li>
+              <li>Step 3: Assign</li>
+              <li>Step 4: Repeat step 2 and 3 until task is finished</li>
+              <li>Step 5: Take Questionnaire</li>
+          </ul>
       </div>
     </div>
   </div>

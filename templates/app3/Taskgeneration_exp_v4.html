@@ -511,8 +511,8 @@
         });
           
           view.ui.add("ScenarioDescriptionDiv", "manual");
-          //view.ui.add("ScenarioDescriptionDiv", "bottom-right");
-        view.ui.add(searchWidget, {
+          view.ui.add("ScenarioInstructionDiv", "bottom-right");
+          view.ui.add(searchWidget, {
           position: "bottom-right",
           index: 5
         });
@@ -2165,45 +2165,50 @@
          });
 
          document.getElementById('q_scene').addEventListener('click',function(){
-             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"q_scene"});
-             // open a new page
-             DisableAllGraphicLayers();
-             
-             let participantid={{ participantid |safe }};
-                                                             
-             //let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/';
-                                                             
-             // use participantindex and task index
-             let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/'+m_exp_order.toString()+'/'; 
-                            
-           //console.log(task_url);
-           let win = window.open(task_url, '_blank');
-           win.focus();
-          if(m_exp_order< m_exp_variables.totalrounds){
-              m_exp_order=m_exp_order+1;
-              document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order).toString();
-              document.getElementById("exp_scene").style.color="#0079c1";
-              EnableBT("btntaskassignment");
-              ClearAll();
-              
-              
-              document.getElementById("p_discription").innerHTML=m_exp_discription.discription;
-              document.getElementById("ScenarioDescriptionDiv").style.display="block";
-              // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
-             let tmp_log="Experiment Status: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
-             
-             document.getElementById("exp_status").innerHTML=tmp_log;
-              
-          }
-          else{
+            m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"q_scene"});
+            // open a new page
+            DisableAllGraphicLayers();
+
+            let participantid={{ participantid |safe }};
+
+            //let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/';
+
+            // use participantindex and task index
+            let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/'+m_exp_order.toString()+'/'; 
+
+            //console.log(task_url);
+            let win = window.open(task_url, '_blank');
+            win.focus();
+            if(m_exp_order< m_exp_variables.totalrounds){
+                m_exp_order=m_exp_order+1;
+                document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order).toString();
+                document.getElementById("exp_scene").style.color="#0079c1";
+                EnableBT("btntaskassignment");
+                ClearAll();
+
+                //console.log(m_exp_order);
+                let t_experimentsetupindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[m_exp_order];
+                let t_experimentsetup=m_expsetupobj.experimentsetup[t_experimentsetupindex];
+                m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
+                
+                document.getElementById("p_discription").innerHTML=JSON.stringify(m_exp_discription);//m_exp_discription.discription;
+                document.getElementById("ScenarioDescriptionDiv").style.display="block";
+                // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
+                let tmp_log="Experiment Status: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
+
+                document.getElementById("exp_status").innerHTML=tmp_log;
+                
+                
+            }
+            else{
               //document.getElementById("exp_scene").disabled = true
               //document.getElementById("btntaskassignment").disabled = true
               //document.getElementById("q_scene").disabled = true
-              
+
               DisableBT("btntaskassignment");
               DisableBT("exp_scene");
-          }
-          DisableBT("q_scene");
+            }
+            DisableBT("q_scene");
       
          });
 
@@ -2227,8 +2232,6 @@
            m_exp_location=m_expsetupobj.location[t_expsetup.loc];
            m_exp_visualization=m_expsetupobj.visualizationtype[t_expsetup.vt];
              
-             //debug---
-           m_exp_discription=m_expsetupobj.scenariodiscription[t_expsetup.loc];
            //m_exp_variables.hour=0;
            //console.log(m_exp_order,m_exp_variables);
 
@@ -2307,7 +2310,12 @@
             document.getElementById("dt_experiment_2").style.display="block";
             m_exp_order=m_exp_order+1;
             
-            document.getElementById("p_discription").innerHTML=m_exp_discription.discription;
+            //console.log(m_exp_order);
+            let t_experimentsetupindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[m_exp_order];
+            let t_experimentsetup=m_expsetupobj.experimentsetup[t_experimentsetupindex];
+            m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
+            
+            document.getElementById("p_discription").innerHTML=JSON.stringify(m_exp_discription);//m_exp_discription.discription;
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
             
             let tmp_log="Experiment Status: 1/"+m_exp_variables.totalrounds.toString()+"\r\n";             
@@ -2490,23 +2498,46 @@
   <div id="viewDiv">
     <div id="sidebar" class="esri-widget" style="display:none">
     </div>
+    
     <div id="ScenarioDescriptionDiv" class="esri-widget">
         <h2>Debriefing</h2>
-      <div id="smalldiv">
-          <p id="p_discription">A 30 year old woman left for a hike at approximately 10:00am on Tuesday. She informed her fiancé that she would do a 3.5 mile hike in and then back out the same way. Her car was found in the parking lot at the trailhead when her fiancé began to worry about her whereabouts around 3:30pm. She is an experienced hiker and was carrying a backpack containing water, bug spray, a flashlight, a lighter and a light purple jacket. She has short brown hair and is wearing nike shorts and a grey shirt.
-          </p>
-          <p>
-              Please use the search and rescue tools to assign teams: 
-          </p>
-          <ul>
-              <li>Step 1: Load data</li>
-              <li>Step 2: Drag team icon to cell</li>
-              <li>Step 3: Assign</li>
-              <li>Step 4: Repeat step 2 and 3 until task is finished</li>
-              <li>Step 5: Take Questionnaire</li>
-          </ul>
-      </div>
+          <div id="smalldiv">
+              <p id="p_discription">A 30 year old woman left for a hike at approximately 10:00am on Tuesday. She informed her fiancé that she would do a 3.5 mile hike in and then back out the same way. Her car was found in the parking lot at the trailhead when her fiancé began to worry about her whereabouts around 3:30pm. She is an experienced hiker and was carrying a backpack containing water, bug spray, a flashlight, a lighter and a light purple jacket. She has short brown hair and is wearing nike shorts and a grey shirt.
+              </p>
+              <p>
+                  Please use the search and rescue tools to assign teams: 
+              </p>
+              <ul>
+                  <li>Step 1: Load data</li>
+                  <li>Step 2: Drag team icon to cell</li>
+                  <li>Step 3: Assign</li>
+                  <li>Step 4: Repeat step 2 and 3 until task is finished</li>
+                  <li>Step 5: Take Questionnaire</li>
+              </ul>
+          </div>
     </div>
+      
+    <div id="ScenarioInstructionDiv" class="esri-widget">
+        <h2>Instruction</h2>
+        <p>
+            Visualization means:
+        </p>
+        
+        <p id="instruction">
+            5 tries for each assignment
+        </p>
+        
+        <ul>
+          <li>Step 1: Load data</li>
+          <li>Step 2: Drag team icon to cell</li>
+          <li>Step 3: Assign</li>
+          <li>Step 4: Repeat step 2 and 3 until task is finished</li>
+          <li>Step 5: Take Questionnaire</li>
+        </ul>
+        
+    </div>
+      
   </div>
+    
 </body>
 </html>

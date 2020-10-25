@@ -426,23 +426,22 @@ class QuestionnaireFormView(TemplateView):
         context["title"] = int(context["scene_id"])
         #context["measurements"]=["trust","transparency","workload"]
         #print(context)
-        context["measurement_left"]=[
-            {"name":"trust","question":"Please select your trust of the system.","left":"not at all","right":"very strong"},
+        context["measurement_left"]=[            
             {"name":"transparency","question":"Please select your transparency level.","left":"not at all","right":"very strong"},
-            {"name":"workload","question":"Please select your workload level.","left":"not at all","right":"very strong"},
             {"name":"trans1","question":"I understand what the model shows by this visualization.","left":"not at all","right":"very strong"},
             {"name":"trans2","question":"It is easy to notice the distribution of the lost person in the area by this visualization.","left":"not at all","right":"very strong"},
             {"name":"trans3","question":"I understand why the model looks like this.","left":"not at all","right":"very strong"},
             {"name":"trans4","question":"I’m confident my choice is the best under the circumstances.","left":"not at all","right":"very strong"},
             {"name":"trans5","question":"I understand how the system will assist me with decisions I have to make.","left":"Not agree","right":"Agree"},
+            {"name":"trust","question":"Please select your trust of the system.","left":"not at all","right":"very strong"},
             {"name":"trust1","question":"To what extent does the model predict lost person location properly?","left":"not at all","right":"very strong"},
-            {"name":"trust2","question":"To what extent can the model’s behavior be predicted from moment to moment?","left":"not at all","right":"very strong"}
+            {"name":"trust2","question":"To what extent can the model’s behavior be predicted from moment to moment?","left":"not at all","right":"very strong"},
+            {"name":"trust3","question":"To what extent can you count on the model to do its job?","left":"not at all","right":"very strong"}
             ]
         context["measurement_right"]=[
-
-            {"name":"trust3","question":"To what extent can you count on the model to do its job?","left":"not at all","right":"very strong"},
             {"name":"trust4","question":"Your degree of trust in the model?","left":"not at all","right":"very strong"},
             {"name":"trust5","question":"I can rely on the system to function properly","left":"not at all","right":"very strong"},
+            {"name":"workload","question":"Please select your workload level.","left":"not at all","right":"very strong"},
             {"name":"NASATLX1_mental","question":"How mentally demanding was the task?","left":"Very low","right":"Very high"},
             {"name":"NASATLX2_physical","question":"How physically demanding was the task?","left":"Very low","right":"Very high"},
             {"name":"NASATLX3_temporal","question":"How hurried or rushed was the pace of the task?","left":"Very low","right":"Very high"},

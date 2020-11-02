@@ -119,13 +119,23 @@
         margin-left: 10%;
         margin-right: 10%;
         width: 50%;
-          padding: 20px;
-          text-align: left;
-          background-color: rgba(255, 255, 255, 0.8);
-          border: 1px solid #0079c1;
-          color: #000;
-          font-size:150%;
-       
+        padding: 20px;
+        text-align: left;
+        background-color: rgba(255, 255, 255, 0.8);
+        border: 1px solid #0079c1;
+        color: #000;
+        font-size:150%;
+      }
+      #ScenarioInstructionDiv{
+        padding: 5px;
+        width: 350px;
+        word-wrap: break-word;
+        background-color: rgba(255, 255, 255, 0.8);
+        
+      }
+      #vinstruction{
+          line-height:10px;
+          margin-left: 5%;
       }
       
   </style>
@@ -512,10 +522,11 @@
           
           view.ui.add("ScenarioDescriptionDiv", "manual");
           view.ui.add("ScenarioInstructionDiv", "bottom-right");
+          /*
           view.ui.add(searchWidget, {
           position: "bottom-right",
           index: 5
-        });
+        });*/
           
         setupEditing();
         validSymbol = createSymbol([212,221,222, 0.2], "solid", 2, [255,255, 255]);//task generation
@@ -523,6 +534,8 @@
       }
 
       document.getElementById("btntaskassignment").onclick=function() {
+        document.getElementById("instruction").innerHTML="Current round: "+(m_tasktrials+1).toString()+"/5";
+          
         let t_stoptime=Date.now();
         let i_hr=m_exp_variables.hour;
           let tflag=false;// visualiation changed
@@ -627,6 +640,7 @@
                 //display the targetarea
                 tflag=false;
                 DrawPolygonToInitLayer(m_targetpolygon,"red");
+                document.getElementById("searchres").innerHTML="Search result: mission complete.";
                 DrawcongratulationsToInitLayer();
 
                 //name:unixtime_participantid_taskid
@@ -646,7 +660,9 @@
                 //console.log(1);
             }
             else{
-              DrawPolygonToInitLayer(m_teamassign[i]);
+                DrawPolygonToInitLayer(m_teamassign[i]);
+                document.getElementById("searchres").innerHTML="Search result: no clue or person in these areas";
+            
                 //console.log(2);
             }
           }
@@ -668,7 +684,7 @@
             m_tasktrials=0;
             EnableBT("q_scene");
             DisableBT("btntaskassignment");
-            
+            document.getElementById("searchres").innerHTML="Search result: mission complete.";
             //console.log(3);
         }
 
@@ -894,13 +910,14 @@
         // Listen to the feature form's submit event.
         // Expand widget for the editArea div.
         const editExpand = new Expand({
-          expandIconClass: "esri-icon-edit",
-          expandTooltip: "Expand Edit",
-          expanded: true,
-          view: view,
-          content: editArea
+            expandIconClass: "esri-icon-edit",
+            expandTooltip: "Expand Edit",
+            expanded: true,
+            view: view,
+            content: editArea
         });
         view.ui.add(editExpand, "top-right");
+
       }
 
       let ccWidget = new CoordinateConversion({
@@ -2193,8 +2210,14 @@
                 
                 document.getElementById("p_discription").innerHTML=JSON.stringify(m_exp_discription);//m_exp_discription.discription;
                 document.getElementById("ScenarioDescriptionDiv").style.display="block";
+                
+                document.getElementById("visualizationinfo").innerHTML="Next visualization"+m_expsetupobj.visualizationtype[t_experimentsetup.vt];
+                //document.getElementById("ScenarioInstructionDiv").style.display="none";
+                document.getElementById("instruction").innerHTML="Current rounds: 0/5";
+                document.getElementById("visualizationinfo").innerHTML="Visualization: ...";
+                
                 // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
-                let tmp_log="Experiment Status: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
+                let tmp_log="Current task: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
 
                 document.getElementById("exp_status").innerHTML=tmp_log;
                 
@@ -2250,16 +2273,19 @@
            // load data
            view.goTo([m_exp_location.center]);
            LoadLPMData();
-             //console.log(m_exp_visualization);
-             
+            //console.log(m_exp_visualization);
+            document.getElementById("visualizationinfo").innerHTML=JSON.stringify(m_exp_visualization);
              
          }
          document.getElementById("exp_scene").addEventListener('click',function(){
              m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"exp_scene"});
              InitializeExperiment(m_exp_order);
              document.getElementById("exp_scene").style.color='gray';
-             //view.ui.remove("ScenarioDescriptionDiv");
              document.getElementById("ScenarioDescriptionDiv").style.display="none";
+             
+             console.log(m_exp_visualization);
+             document.getElementById("visualizationinfo").innerHTML="Visualization: "+m_exp_visualization.innerHTML;
+             //document.getElementById("ScenarioInstructionDiv").style.display="block";
          })
       
          document.getElementById("btsetptindex").addEventListener('click',function(){
@@ -2292,6 +2318,10 @@
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_scene"});
             InitializeExperiment(m_exp_order);
             document.getElementById("ScenarioDescriptionDiv").style.display="none";
+            
+            console.log(m_exp_visualization);
+            document.getElementById("visualizationinfo").innerHTML="Visualization: "+m_exp_visualization.innerHTML;
+            //document.getElementById("ScenarioInstructionDiv").style.display="block";
          })
       
         document.getElementById("dt_endtrain").addEventListener('click',function(){
@@ -2317,8 +2347,11 @@
             
             document.getElementById("p_discription").innerHTML=JSON.stringify(m_exp_discription);//m_exp_discription.discription;
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
+            //document.getElementById("ScenarioInstructionDiv").style.display="none";
+            document.getElementById("instruction").innerHTML="Current rounds: 0/5";
+            document.getElementById("visualizationinfo").innerHTML="Visualization: ...";
             
-            let tmp_log="Experiment Status: 1/"+m_exp_variables.totalrounds.toString()+"\r\n";             
+            let tmp_log="Current task: 1/"+m_exp_variables.totalrounds.toString()+"\r\n";             
             document.getElementById("exp_status").innerHTML=tmp_log;
             
             EnableBT("btntaskassignment");
@@ -2378,7 +2411,7 @@
             
             <div id="dt_experiment_2" style="display:none">
                 <input type="button" class="edit-button" value="Questionnaire" id="q_scene"/>
-                <label id="exp_status">Status</label>
+                
             </div>
         </div>
         
@@ -2505,9 +2538,9 @@
               <p id="p_discription">A 30 year old woman left for a hike at approximately 10:00am on Tuesday. She informed her fiancé that she would do a 3.5 mile hike in and then back out the same way. Her car was found in the parking lot at the trailhead when her fiancé began to worry about her whereabouts around 3:30pm. She is an experienced hiker and was carrying a backpack containing water, bug spray, a flashlight, a lighter and a light purple jacket. She has short brown hair and is wearing nike shorts and a grey shirt.
               </p>
               <p>
-                  Please use the search and rescue tools to assign teams: 
+                  Please read the tips on the buttom right and try to finish the assignment task: 
               </p>
-              <ul>
+              <ul hidden>
                   <li>Step 1: Load data</li>
                   <li>Step 2: Drag team icon to cell</li>
                   <li>Step 3: Assign</li>
@@ -2518,15 +2551,16 @@
     </div>
       
     <div id="ScenarioInstructionDiv" class="esri-widget">
-        <h2>Instruction</h2>
-        <p>
-            Visualization means:
-        </p>
-        
-        <p id="instruction">
-            5 tries for each assignment
-        </p>
-        
+        <h4>Task tips:</h4>
+        <div id="vinstruction">
+            <p id="visualizationinfo">
+                Visualization: ...
+            </p>
+            <p id="searchres">Search result: pending</p>
+            <p id="instruction">Current round: 0/5</p>
+            <p id="exp_status">Current task: Training</p>
+        </div>
+        <h4>Steps:</h4>
         <ul>
           <li>Step 1: Load data</li>
           <li>Step 2: Drag team icon to cell</li>

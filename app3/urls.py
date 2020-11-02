@@ -79,7 +79,8 @@ urlpatterns = [
     url(r'^readfile$',TemplateView.as_view(template_name="app3/readfile.html"), name="readfile"),
     path('api-auth/', include('rest_framework.urls')),
     path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),
-    path('watershed',TemplateView.as_view(template_name="app3/watershed_getlinearfeature.html"),name='watershed'),
+    
+    url(r'^watershed/$',TemplateView.as_view(template_name="app3/watershed_segmentation.html"),name="watershed"),
     url(r'^watershed/(?P<bobid>\w+)/$',TemplateView.as_view(template_name="app3/watershed_getlinearfeature.html"),name="watershed"),
     path('heatmapringdownload',TemplateView.as_view(template_name="app3/Taskgeneration_download.html")),
     path('videostream',TemplateView.as_view(template_name="app3/UAVVideostream.html")),

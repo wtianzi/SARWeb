@@ -14,10 +14,10 @@ var g_experiment={
   },
   "variables":{"hour":0,"hourstep":2,"displaytype":true,"eacharea":500000,"colormap":0},
   "visualizationtype":[
-    {"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"},
-    {"index":1,"name":"choroplethmap","type":"segmentheat","description":"Weighted map"},
-    {"index":2,"name":"heatmap","type":"contour","description":"Contour map"},
-    {"index":3,"name":"trajectory","type":"trajectories","description":"Trajectories"}
+    {"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings","innerHTML":"The red ring means there are 25% percent probability that the lost person can be found in the circled area."},
+    {"index":1,"name":"choroplethmap","type":"segmentheat","description":"Weighted map","innerHTML":"The probability of the lost person distribution is marked as different color depth, the more darker, the more possiblility the lost person could be in the cell area."},
+    {"index":2,"name":"heatmap","type":"contour","description":"Contour map","innerHTML":"The distribution of a lost person possibility over an area. The center presents the most possible area."},
+    {"index":3,"name":"trajectory","type":"trajectories","description":"Trajectories","innerHTML":"Each trajectory presents a simulated path that a lost person might walk along with."}
   ],
   "lostpersontype":[
     {"index":0,"type":"child10to12","name":"child", "ring":[800,1600,3200,9000]},

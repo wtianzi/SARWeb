@@ -134,7 +134,7 @@
         
       }
       #vinstruction{
-          line-height:10px;
+          line-height:12px;
           margin-left: 5%;
       }
       
@@ -661,7 +661,7 @@
             }
             else{
                 DrawPolygonToInitLayer(m_teamassign[i]);
-                document.getElementById("searchres").innerHTML="Search result: no clue or person in these areas";
+                document.getElementById("searchres").innerHTML="Search result: no person in these areas";
             
                 //console.log(2);
             }
@@ -764,7 +764,7 @@
             color: [255,125,0],
             haloColor: "black",
             haloSize: "1px",
-            text: "Take the questionnaire",
+            text: "Next: questionnaire ->",
             xoffset: 0,
             yoffset: 0,
             font: { // autocast as Font
@@ -798,7 +798,8 @@
       }
 
 
-      function DrawPolygonToInitLayer(t_obj,t_color=[0, 102, 255, 0.8]){
+       //blue: t_color=[0, 102, 255, 0.8]
+      function DrawPolygonToInitLayer(t_obj,t_color=[150, 150, 150, 0.8]){
         //draw the polygon into graphicInitLayer
         let graphic = new Graphic({
           geometry: t_obj.geometry,
@@ -812,7 +813,6 @@
         graphicInitLayer.add(graphic);
       }
 
-      // DrawClueToInitLayer
       function DrawClueToInitLayer(t_pt,t_clueobj,t_color=[0, 102, 255, 0.8]){
         let graphic = new Graphic({
           geometry: t_pt,
@@ -1397,8 +1397,9 @@
            // display all 100 trajectories
            let arr_visual=[];
 
-           let t_case = document.getElementById("displaytype").checked;  // default unchecked: bypath, checked: byhour
-
+           //let t_case = document.getElementById("displaytype").checked;  // default checked: byhour, unchecked: bypath
+           let t_case=m_exp_variables.displaytype;
+             
            if(t_case){ //byhour
              let mid_data=[];//13 items
 
@@ -1408,29 +1409,31 @@
              for(let i=0;i<t_data.length;i++){
                for (let j=1;j< t_data[i].length;j++){
                  mid_data[j-1].push([ [t_data[i][j][0],t_data[i][j][1]],[t_data[i][j-1][0],t_data[i][j-1][1]] ]);
-                 // color map
-
                }
              }
              //t_data=mid_data;
              //console.log(m_lpdata_tra_colormap);
-             for(let i=0;i<mid_data.length;i++){
-               let polyline = {
+            for(let i=0;i<mid_data.length;i++){
+                let polyline = {
                    type:'polyline',
                   paths: mid_data[i],
                   spatialReference: { wkid: 4326 }
                 };
+                let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9];
+
+                t_color.push(0.063*i+0.4);//occupacity
+                console.log(t_color);
+
                 let polylineGraphic=new Graphic({
                   geometry: polyline,
                   symbol:{
                           type: "simple-line", // autocasts as new SimpleLineSymbol()
-                          color: m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9], // RGB color values as an array
+                          color: t_color, // RGB color values as an array
                           width: 1
                         }
                 });
-                                //console.log(polylineGraphic);
                 arr_visual.push(polylineGraphic);
-             }
+            }
              for(let i=0;i<mid_data[i_hr].length;i++){
                let t_color= m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i_hr)*9];
                if (i_hr>=t_data.length){
@@ -1990,29 +1993,32 @@
           // number of contour map files
           let totalfiles=1+count_clues+count_trajectory;
           
-          //folder of files
-          let lpmfolder="/static/data/LPMExp/"+m_exp_location.name+"/"+m_exp_lostpersontype.type;
+          //folder of files, SAR EXPERIMENT SPATIAL
+          let lpmfolder="/static/data/LPMEXPS/"+m_exp_location.name;
           
           // clue1:t1, clue2:t2, clue12:t3, final: t4, final is the overall
           let cluenames=['final','clue1','clue2','clue12'];
+          let csvfilename=lpmfolder;
+          
+          // contour map at time 11
+          csvfilename=lpmfolder+"/con_t"+spatial_timeslot.toString()+".csv";
+          LoadLPFromCSV_con(csvfilename,totalfiles,spatial_timeslot,'byhour');
+          
+          // clue contour map
           for(let i=0;i<count_clues;i++){
-            let csvfilename= lpmfolder+"/clues/contour data csv/con_"+m_exp_lostpersontype.type+"_bf1_"+cluenames[i]+".csv";
+            csvfilename= lpmfolder+"/con_"+cluenames[i]+".csv";
             LoadLPFromCSV_con(csvfilename,totalfiles,i,'byclue');
           }
 
-          let csvfilename= lpmfolder+"/clues/traj_"+m_exp_lostpersontype.type+"_bf1.csv";
+          // trajectory all
+          csvfilename= lpmfolder+"/traj.csv";
           LoadLPFromCSV_Tra_All(csvfilename,totalfiles);
-          //console.log(csvfilename);
 
+          // clue trajectory 
           for(let i=0;i<count_clues;i++){
-            let csvfilename= lpmfolder+"/clues/"+cluenames[i]+"index_"+m_exp_lostpersontype.type+"_bf1.csv";
+            csvfilename= lpmfolder+"/traj_"+cluenames[i]+".csv";
             LoadLPFromCSV_Tra_Item(csvfilename,i,totalfiles);
-            //console.log(csvfilename);
           }
-          
-          csvfilename=lpmfolder+"/con_"+m_exp_lostpersontype.type+"bf1_t"+spatial_timeslot.toString()+".csv";
-          //console.log(csvfilename);
-          LoadLPFromCSV_con(csvfilename,totalfiles,spatial_timeslot,'byhour');
           
           document.getElementById("lpmmodeldisplay").disabled=false;
          }
@@ -2113,7 +2119,11 @@
            m_lpdata_tra_colormap=[];
 
            ClearAll();
-           view.goTo([m_exp_location.center]);
+           //view.goTo([m_exp_location.center]);
+             view.goTo({
+                 center:[m_exp_location.center[0]+m_exp_location.offset[0],m_exp_location.center[1]+m_exp_location.offset[1]],
+                 zoom:m_scale
+             });
 
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
@@ -2271,7 +2281,11 @@
            m_exp_e.sceneindex=task;
            m_exp_e.experimentindex=m_experimentlog.experimentindex;
            // load data
-           view.goTo([m_exp_location.center]);
+           //view.goTo([m_exp_location.center]);
+             view.goTo({
+                 center:[m_exp_location.center[0]+m_exp_location.offset[0],m_exp_location.center[1]+m_exp_location.offset[1]],//[m_exp_location.center],
+                 zoom:m_scale
+             });
            LoadLPMData();
             //console.log(m_exp_visualization);
             document.getElementById("visualizationinfo").innerHTML=JSON.stringify(m_exp_visualization);
@@ -2283,7 +2297,7 @@
              document.getElementById("exp_scene").style.color='gray';
              document.getElementById("ScenarioDescriptionDiv").style.display="none";
              
-             console.log(m_exp_visualization);
+             //console.log(m_exp_visualization);
              document.getElementById("visualizationinfo").innerHTML="Visualization: "+m_exp_visualization.innerHTML;
              //document.getElementById("ScenarioInstructionDiv").style.display="block";
          })
@@ -2319,7 +2333,7 @@
             InitializeExperiment(m_exp_order);
             document.getElementById("ScenarioDescriptionDiv").style.display="none";
             
-            console.log(m_exp_visualization);
+            //console.log(m_exp_visualization);
             document.getElementById("visualizationinfo").innerHTML="Visualization: "+m_exp_visualization.innerHTML;
             //document.getElementById("ScenarioInstructionDiv").style.display="block";
          })
@@ -2505,7 +2519,7 @@
             <option value=3>Trajectories</option>
           </select>
           <input type="button" id="lpmmodeldisplay" value="Display" disabled/>
-          <input type="checkbox" id="displaytype" name="displaytype" value="byhour"/>
+          <input type="checkbox" id="displaytype" name="displaytype" checked/>
           <label for="displaytype">Groupbyhr</label>
         </div>
       </div>

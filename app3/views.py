@@ -353,7 +353,7 @@ class ConsentFormView(TemplateView):
         res=ParticipantStatusModel(participantid=pid,participantname=pname,participantindex=pindex)
         res.save()
         
-        pindex = pindex % 36
+        pindex = pindex % 28
         
         #context={"participantid":pid,"participantindex":pindex}
         

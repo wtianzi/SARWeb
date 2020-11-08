@@ -21,3 +21,16 @@ Clue trajectory:
 8. clue2index_hiker_bf1.csv		-> traj_clue2.csv
 9. clue12index_hiker_bf1.csv		-> traj_clue12.csv
 10. finalindex_hiker_bf1.csv		-> traj_final.csv
+
+
+We have 1 training scenario, 8 experiment scenario
+28 participants
+each participants have 8 scenario
+each participants have 4 visualization*2 duplicate
+
+We need to counterbalance 8 scenario
+we also need to counterbalance the 4 visualizations
+
+4 8x8 latin square: pick 28 out of 32 scenario
+14 4x4 latin square: 28 2x4 visualization
+

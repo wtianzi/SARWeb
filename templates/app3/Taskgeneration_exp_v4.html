@@ -2218,7 +2218,9 @@
                 let t_experimentsetup=m_expsetupobj.experimentsetup[t_experimentsetupindex];
                 m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
                 
-                document.getElementById("p_discription").innerHTML=JSON.stringify(m_exp_discription);//m_exp_discription.discription;
+                //JSON.stringify(m_exp_discription);//m_exp_discription.discription;
+                document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
+                
                 document.getElementById("ScenarioDescriptionDiv").style.display="block";
                 
                 document.getElementById("visualizationinfo").innerHTML="Next visualization"+m_expsetupobj.visualizationtype[t_experimentsetup.vt];
@@ -2359,7 +2361,8 @@
             let t_experimentsetup=m_expsetupobj.experimentsetup[t_experimentsetupindex];
             m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
             
-            document.getElementById("p_discription").innerHTML=JSON.stringify(m_exp_discription);//m_exp_discription.discription;
+            //document.getElementById("p_discription").innerHTML=JSON.stringify(m_exp_discription);//m_exp_discription.discription;
+            document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
             //document.getElementById("ScenarioInstructionDiv").style.display="none";
             document.getElementById("instruction").innerHTML="Current rounds: 0/5";
@@ -2429,7 +2432,7 @@
             </div>
         </div>
         
-        <div style="display:none">
+        <div>
             <h4>Testing</h4>
             <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"/>
         </div>

@@ -348,8 +348,10 @@ class ConsentFormView(TemplateView):
         pindex=0
         
         queryset = ParticipantStatusModel.objects.exclude(participantindex=None).values().order_by('-participantindex')
-        
-        pindex = queryset[0]['participantindex']+1
+        if not queryset:
+            pindex=0
+        else:
+            pindex = queryset[0]['participantindex']+1
         res=ParticipantStatusModel(participantid=pid,participantname=pname,participantindex=pindex)
         res.save()
         

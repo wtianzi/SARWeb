@@ -24,7 +24,7 @@ SECRET_KEY = '$e4kcn&@+((q03-@wbak^br%bzvv&gtf$v=16*mm98^u-u0a@@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
+USE_TZ = True
 ALLOWED_HOSTS = [
     '127.0.0.1',
     '172.29.85.39',
@@ -93,18 +93,25 @@ WSGI_APPLICATION = 'VACSETEST.wsgi.application'
 
 DATABASES = {
     'default': {
+        'ENGINE':'django.db.backends.mysql',
+        'NAME':'exp_sarweb',
+        'USER': 'sarusr',
+        'PASSWORD':'saradmin',
+        'HOST':'0.0.0.0',
+        'PORT':'3306', 
+    },
+    'sqlite3': {
+        
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
-    'sqlite3': {
-        #'ENGINE':'django.db.backends.mysql',
-        #'NAME':'saruser',
-        #'USER': 'VACSE',
-        #'PASSWORD':'VACSE529',
-        #'HOST':'127.0.0.1',
-        #'PORT':'3306',
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    'mysql':{
+        'ENGINE':'django.db.backends.mysql',
+        'NAME':'exp_sarweb',
+        'USER': 'sarusr',
+        'PASSWORD':'saradmin',
+        'HOST':'127.0.0.1',
+        'PORT':'3306',             
     }
 }
 

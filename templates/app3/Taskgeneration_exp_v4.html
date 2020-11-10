@@ -296,9 +296,10 @@
       const visualization_Contourmap_Layer = new GraphicsLayer({
         opacity:0.7
       });      
-
+    
+      //0.7
       const visualization_Trajectories_Layer = new GraphicsLayer({
-        opacity:0.7
+        opacity:0.95
       });
 
       const teamgraphicsLayer=new GraphicsLayer({
@@ -600,20 +601,24 @@
               if(geometryEngine.contains(m_teamassign[i].geometry,t_pt)){
                   tflag=true;
                 m_visualizationtype='byclue';
-
+                DrawClueToInitLayer(t_pt,[0, 102, 255, 0.8]);
+                
+                  /*
                 let t_clueobj;
                 let URL = "{% url 'getcluemedia' %}";
                 let data = {
-                 csrfmiddlewaretoken: '{{ csrf_token }}',
-                 'photoid': m_exp_location.clue[j].photoid.toString()
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    'photoid': m_exp_location.clue[j].photoid.toString()
                 };
                 $.post(URL, data, function(response){
-                  t_clueobj=JSON.parse(response);
-                  if(t_clueobj.flag == 'success'){
-                     DrawClueToInitLayer(t_pt,t_clueobj,[0, 102, 255, 0.8]);
-                  }
-                  else{ alert(response); }
+                    t_clueobj=JSON.parse(response);
+                    if(t_clueobj.flag == 'success'){
+                     DrawClueToInitLayer_photo(t_pt,t_clueobj,[0, 102, 255, 0.8]);
+                    }
+                    else{ alert(response); }
                 });
+                  */
+                
                 // change the clue status from "unfound" to "show"
                 m_exp_location.clue[j].status="show";
                 let t_contour_value=0;
@@ -813,7 +818,7 @@
         graphicInitLayer.add(graphic);
       }
 
-      function DrawClueToInitLayer(t_pt,t_clueobj,t_color=[0, 102, 255, 0.8]){
+      function DrawClueToInitLayer_photo(t_pt,t_clueobj,t_color=[0, 102, 255, 0.8]){
         let graphic = new Graphic({
           geometry: t_pt,
           symbol:  {
@@ -834,6 +839,19 @@
                 }]
               }]
           }
+        });
+        graphicInitLayer.add(graphic);
+      }
+      
+      function DrawClueToInitLayer(t_pt,t_color=[0, 102, 255, 0.8]){
+        let graphic = new Graphic({
+          geometry: t_pt,
+          symbol:  {
+            type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
+            url: "{% static 'img/clue2.png' %}",//user.png
+            width: "32px",
+            height: "32px"
+             }
         });
         graphicInitLayer.add(graphic);
       }
@@ -1300,60 +1318,24 @@
                 }
              });
              temperalgraphicLayer.add(t_graphic1);
-             let t_clue=m_exp_location;
+             
              for (let i=0;i<m_exp_location.clue.length;i++){
                let in_point=new Point({
                  longitude:m_exp_location.clue[i].location[0],
                  latitude:m_exp_location.clue[i].location[1],
                  spatialReference:view.spatialReference
                });
-
-               let t_clueobj;
-
-               let URL = "{% url 'getcluemedia' %}";
-               let data = {
-                 csrfmiddlewaretoken: '{{ csrf_token }}',
-                 'photoid': m_exp_location.clue[i].photoid.toString()
-               };
-               $.post(URL, data, function(response){
-                 t_clueobj=JSON.parse(response);
-                 if(t_clueobj.flag == 'success'){
-
-                   let t_graphic =  new Graphic({
-                     geometry: in_point,
-                     symbol:  {
-                       type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
-                       url: "{% static 'img/clue2.png' %}",//user.png
-                       width: "32px",
-                       height: "32px"
-                        },
-                      attributes:{
-                        Name:"Clue",
-                        Hour:0,
-                        Rank:1
-                      },
-                      popupTemplate:{
-                          title: "Clue_"+t_clueobj.cluephotoid+", ("+ t_clueobj.lon +","+t_clueobj.lat+")",
-                          content:[{
-                            type: "media",
-                            mediaInfos: [{
-                              title: t_clueobj.name,
-                              type: "image",
-                              caption: t_clueobj.detail,
-                              value: {
-                                sourceURL: t_clueobj.url
-                              }
-                            }]
-                          }
-                        ]
-                      }
-                   });
-                   temperalgraphicLayer.add(t_graphic);
-                  }
-                 else{ alert(response); }
+                 
+              let t_graphic =  new Graphic({
+                 geometry: in_point,
+                 symbol:  {
+                   type: "picture-marker",  // autocasts as new PictureMarkerSymbol()
+                   url: "{% static 'img/clue2.png' %}",//user.png
+                   width: "32px",
+                   height: "32px"
+                   }
                });
-
-
+               temperalgraphicLayer.add(t_graphic);
              }
            }
 
@@ -1422,7 +1404,7 @@
                 let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9];
 
                 t_color.push(0.063*i+0.4);//occupacity
-                console.log(t_color);
+                //console.log(t_color);
 
                 let polylineGraphic=new Graphic({
                   geometry: polyline,
@@ -2432,7 +2414,7 @@
             </div>
         </div>
         
-        <div style="display:none">
+        <div>
             <h4>Testing</h4>
             <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"/>
         </div>

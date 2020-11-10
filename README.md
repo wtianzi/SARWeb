@@ -16,6 +16,8 @@ http://sar.caslab.ece.vt.edu/experiment
 User interface demo: [https://sites.google.com/vt.edu/vacsesardemo](https://sites.google.com/vt.edu/vacsesardemo/home)
 
 # Experiment flow:
+http://localhost:8000/experiment/consentform
+
 - consent form remind (have a link to the qualtrics and check)
 - a demographic questionnaire (once)
   - here we have an id for experiment and unixid for distinguish different users
@@ -26,6 +28,11 @@ User interface demo: [https://sites.google.com/vt.edu/vacsesardemo](https://site
 - loop end
 - post experiment questionnaire
 
+Windows setup
+- db: change __init__.py -> use pymysql
+
+Linux setup
+- db: change __init__.py -> use mysqlclient
 
 Reference
 [ESRI Javascript API](https://developers.arcgis.com/javascript/latest/api-reference/esri-views-View.html#width)

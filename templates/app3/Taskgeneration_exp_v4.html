@@ -521,6 +521,9 @@
           view: view
         });
           
+          view.ui.add("showtarget", "top-left");
+          
+          
           view.ui.add("ScenarioDescriptionDiv", "manual");
           view.ui.add("ScenarioInstructionDiv", "bottom-right");
           /*
@@ -857,6 +860,7 @@
       }
 
       document.getElementById("btndisplaytarget").onclick=function() {
+          console.log("btndisplaytarget");
         DrawToTemperalGraphicLayer(m_exp_location.target,type="point");
         m_experimentres["actions"].push({"id":"btndisplaytarget","timestamp": Date.now(), "description":"click dislpay"});
 
@@ -2366,7 +2370,7 @@
 <body>
     <div id="editArea" class="editArea-container">
         <div id="experimentpannel">
-            <h2 class="list-heading">Search & Rescue Tools</h2>
+            <h3 class="list-heading center">Search & Rescue Experiment</h3>
             <div id="dt_train_1">                
                 <h3 class="list-heading">Training Session</h3>
                 <input type="button" class="edit-button" value="Load Training Scene" id="dt_scene"/>
@@ -2414,16 +2418,16 @@
             </div>
         </div>
         
-        <div>
-            <h4>Testing</h4>
-            <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"/>
-        </div>
     </div>
     
     <div>
       <input type="button" class="scenebutton" value="Post Experiment Questionnaire" id="exp_post" style="display:none"/>
     </div>
-
+    
+    <div id="showtarget">
+         <input type="button" id="btndisplaytarget" value="T"/>
+    </div>
+    
     <div id="menudetail" style="display:none">
         <hr>
       <input type="button" class="edit-button" value="..." id="btmoreinfo"/>

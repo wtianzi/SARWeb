@@ -137,6 +137,9 @@
           line-height:12px;
           margin-left: 5%;
       }
+      #showtarget{
+          padding: 5px;
+      }
       
   </style>
   <script>
@@ -859,12 +862,32 @@
         graphicInitLayer.add(graphic);
       }
 
-      document.getElementById("btndisplaytarget").onclick=function() {
-          console.log("btndisplaytarget");
+      document.getElementById("btndisplaytarget").onclick=function() {       
         DrawToTemperalGraphicLayer(m_exp_location.target,type="point");
         m_experimentres["actions"].push({"id":"btndisplaytarget","timestamp": Date.now(), "description":"click dislpay"});
 
       }
+      document.getElementById("btnshowhideexptoolpannel").onclick=function() {      
+        document.getElementById("toolpannel").style.display="block";        
+        m_experimentres["actions"].push({"id":"btnshowhideexptoolpannel","timestamp": Date.now(), "description":"open exp tool"});
+
+      }
+      document.getElementById("btskipback").onclick=function() {
+          //console.log(m_exp_order);
+        if(m_exp_order>1){
+            NextStepSetup(m_exp_order-1);
+            m_experimentres["actions"].push({"id":"btskipback","timestamp": Date.now(), "description":"skip scenarios backward"});
+        }
+      }
+      document.getElementById("btskip").onclick=function() {       
+        // skip participant scenarios by adding index of m_exp        
+        if(m_exp_order<8){
+            if(m_exp_order==0) EndTraining();
+            else NextStepSetup(m_exp_order+1);
+            m_experimentres["actions"].push({"id":"btskip","timestamp": Date.now(), "description":"skip scenarios"});
+          }
+      }
+      
         //generate voronoi
       document.getElementById("btngeneratearea").onclick=function() {
         TaskGenerateArea();
@@ -2176,6 +2199,49 @@
                  m_visualizationtype='byhour';
                }
          });
+        function NextStepSetup(in_exp_order=0){
+            m_exp_order=in_exp_order;
+              if(m_exp_order<= m_exp_variables.totalrounds){
+                  
+                    document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order).toString();
+                    document.getElementById("exp_scene").style.color="#0079c1";
+                    EnableBT("btntaskassignment");
+                    ClearAll();
+
+                    //console.log(m_exp_order);
+                    let t_experimentsetupindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[m_exp_order];
+                      //console.log(t_experimentsetupindex);
+
+                    let t_experimentsetup=m_expsetupobj.experimentsetup[t_experimentsetupindex];
+                      //console.log(m_expsetupobj.experimentsetup,t_experimentsetup);
+
+                    m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
+
+                    //JSON.stringify(m_exp_discription);//m_exp_discription.discription;
+                    document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
+
+                    document.getElementById("ScenarioDescriptionDiv").style.display="block";
+
+                    document.getElementById("visualizationinfo").innerHTML="Next visualization"+m_expsetupobj.visualizationtype[t_experimentsetup.vt];
+                    //document.getElementById("ScenarioInstructionDiv").style.display="none";
+                    document.getElementById("instruction").innerHTML="Current round: 0/5";
+                    document.getElementById("visualizationinfo").innerHTML="Visualization: ...";
+
+                    // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
+                    let tmp_log="Current task: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
+                    document.getElementById("exp_status").innerHTML=tmp_log;  
+                  
+                
+            }
+            else{
+              //document.getElementById("exp_scene").disabled = true
+              //document.getElementById("btntaskassignment").disabled = true
+              //document.getElementById("q_scene").disabled = true
+
+              DisableBT("btntaskassignment");
+              DisableBT("exp_scene");
+            }
+        }
 
          document.getElementById('q_scene').addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"q_scene"});
@@ -2192,43 +2258,7 @@
             //console.log(task_url);
             let win = window.open(task_url, '_blank');
             win.focus();
-            if(m_exp_order< m_exp_variables.totalrounds){
-                m_exp_order=m_exp_order+1;
-                document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order).toString();
-                document.getElementById("exp_scene").style.color="#0079c1";
-                EnableBT("btntaskassignment");
-                ClearAll();
-
-                //console.log(m_exp_order);
-                let t_experimentsetupindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[m_exp_order];
-                let t_experimentsetup=m_expsetupobj.experimentsetup[t_experimentsetupindex];
-                m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
-                
-                //JSON.stringify(m_exp_discription);//m_exp_discription.discription;
-                document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
-                
-                document.getElementById("ScenarioDescriptionDiv").style.display="block";
-                
-                document.getElementById("visualizationinfo").innerHTML="Next visualization"+m_expsetupobj.visualizationtype[t_experimentsetup.vt];
-                //document.getElementById("ScenarioInstructionDiv").style.display="none";
-                document.getElementById("instruction").innerHTML="Current rounds: 0/5";
-                document.getElementById("visualizationinfo").innerHTML="Visualization: ...";
-                
-                // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
-                let tmp_log="Current task: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
-
-                document.getElementById("exp_status").innerHTML=tmp_log;
-                
-                
-            }
-            else{
-              //document.getElementById("exp_scene").disabled = true
-              //document.getElementById("btntaskassignment").disabled = true
-              //document.getElementById("q_scene").disabled = true
-
-              DisableBT("btntaskassignment");
-              DisableBT("exp_scene");
-            }
+            NextStepSetup(m_exp_order+1);
             DisableBT("q_scene");
       
          });
@@ -2318,15 +2348,18 @@
       
         document.getElementById("dt_scene").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_scene"});
+            
             InitializeExperiment(m_exp_order);
+            console.log(m_expsetupobj.participantsetup[m_exp_participantindex].taskorder);
+            
             document.getElementById("ScenarioDescriptionDiv").style.display="none";
             
             //console.log(m_exp_visualization);
             document.getElementById("visualizationinfo").innerHTML="Visualization: "+m_exp_visualization.innerHTML;
             //document.getElementById("ScenarioInstructionDiv").style.display="block";
          })
-      
-        document.getElementById("dt_endtrain").addEventListener('click',function(){
+      function EndTraining(){
+          
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_endtrain"});
             
             ClearAll();            
@@ -2351,7 +2384,7 @@
             document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
             //document.getElementById("ScenarioInstructionDiv").style.display="none";
-            document.getElementById("instruction").innerHTML="Current rounds: 0/5";
+            document.getElementById("instruction").innerHTML="Current round: 0/5";
             document.getElementById("visualizationinfo").innerHTML="Visualization: ...";
             
             let tmp_log="Current task: 1/"+m_exp_variables.totalrounds.toString()+"\r\n";             
@@ -2359,7 +2392,8 @@
             
             EnableBT("btntaskassignment");
             DisableBT("q_scene");
-         })
+      }
+        document.getElementById("dt_endtrain").addEventListener('click',EndTraining);
       
       //--------------------------------------------------
     });
@@ -2425,7 +2459,14 @@
     </div>
     
     <div id="showtarget">
-         <input type="button" id="btndisplaytarget" value="T"/>
+        <input type="button" id="btnshowhideexptoolpannel" value="E"/>
+        <div id="toolpannel" style="display:none">
+            <input type="button" id="btndisplaytarget" value="T"/>
+            <br>
+            <input type="button" id="btskipback" value="<"/>
+            <br>        
+            <input type="button" id="btskip" value=">"/>
+        </div>        
     </div>
     
     <div id="menudetail" style="display:none">
@@ -2524,7 +2565,7 @@
           <label for="myClues" id="lmyClue">Clue(0-3): 0</label>
           <input type="range" min="0" max="3" value="0" class="slider" id="myClues">
         </div>
-        <input type="button"  class="edit-button" id="btndisplaytarget" value="Show Target"/>
+        
         <div><input type="button" class="edit-button" value="Clear All" id="clearall"/></div>
         <p id="daytime"></p>
       </div>

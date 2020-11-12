@@ -207,11 +207,7 @@
       "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":null,'photoid':1},
              {"clue_index":1,"status":"unfound","info":"drink","location":null,'photoid':2}]};
       let m_exp_visualization={"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"};
-      let m_exp_variables=Object.assign({},m_expsetupobj.variables);
-          //{"hour":11,"hourstep":0,"displaytype":true,"eacharea":500000,"zoomlevel":m_scale,"colormap":0,"totalrounds":8};//"displaytype":"byhour" true or "bypath" false
-      //m_exp_variables.totalrounds=m_expsetupobj.variables.totalrounds;
-      //m_exp_variables.zoomlevel=m_expsetupobj.variables.zoomlevel;
-      
+      let m_exp_variables={"hour":11,"hourstep":0,"displaytype":true,"eacharea":500000,"zoomlevel":m_scale,"colormap":0,"totalrounds":8};//"displaytype":"byhour" true or "bypath" false
       let m_exp_discription={"name":"ic1","mark":"#","discription":"Mission Debriefing"};
       // update to db every 5 rounds/ or task finished
       // information changed at initiation, task finished, round outofnumber
@@ -877,19 +873,13 @@
 
       }
       document.getElementById("btskipback").onclick=function() {
-          //console.log(m_exp_order);
-        if(m_exp_order>1){
-            NextStepSetup(m_exp_order-1);
-            m_experimentres["actions"].push({"id":"btskipback","timestamp": Date.now(), "description":"skip scenarios backward"});
-        }
+        NextStepSetup("backward");
+        m_experimentres["actions"].push({"id":"btskipback","timestamp": Date.now(), "description":"skip scenarios backward"});
       }
       document.getElementById("btskip").onclick=function() {       
         // skip participant scenarios by adding index of m_exp        
-        if(m_exp_order<m_exp_variables.totalrounds){
-            if(m_exp_order==0) EndTraining();
-            else NextStepSetup(m_exp_order+1);
-            m_experimentres["actions"].push({"id":"btskip","timestamp": Date.now(), "description":"skip scenarios"});
-          }
+        NextStepSetup("forward");          
+        m_experimentres["actions"].push({"id":"btskip","timestamp": Date.now(), "description":"skip scenarios"});
       }
       
         //generate voronoi
@@ -2203,39 +2193,41 @@
                  m_visualizationtype='byhour';
                }
          });
-        function NextStepSetup(in_exp_order=0){
-            m_exp_order=in_exp_order;
-              if(m_exp_order<= m_exp_variables.totalrounds){
+            function NextStepSetup(inputcase="forward"){
+              if(m_exp_order< m_exp_variables.totalrounds){
+                if(inputcase=="backward"){
+                    if(m_exp_order>0) m_exp_order=m_exp_order-1;
+                }                 
+                else{
+                    if(m_exp_order<m_exp_variables.totalrounds) m_exp_order=m_exp_order+1;
+                }
+                document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order).toString();
+                document.getElementById("exp_scene").style.color="#0079c1";
+                EnableBT("btntaskassignment");
+                ClearAll();
+
+                console.log(m_exp_order);
+                let t_experimentsetupindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[m_exp_order];
+                  console.log(t_experimentsetupindex);
                   
-                    document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order).toString();
-                    document.getElementById("exp_scene").style.color="#0079c1";
-                    EnableBT("btntaskassignment");
-                    ClearAll();
-
-                    //console.log(m_exp_order);
-                    let t_experimentsetupindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[m_exp_order];
-                      //console.log(t_experimentsetupindex);
-
-                    let t_experimentsetup=m_expsetupobj.experimentsetup[t_experimentsetupindex];
-                      //console.log(m_expsetupobj.experimentsetup,t_experimentsetup);
-
-                    m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
-
-                    //JSON.stringify(m_exp_discription);//m_exp_discription.discription;
-                    document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
-
-                    document.getElementById("ScenarioDescriptionDiv").style.display="block";
-
-                    document.getElementById("visualizationinfo").innerHTML="Next visualization"+m_expsetupobj.visualizationtype[t_experimentsetup.vt];
-                    //document.getElementById("ScenarioInstructionDiv").style.display="none";
-                    document.getElementById("instruction").innerHTML="Current round: 0/5";
-                    document.getElementById("visualizationinfo").innerHTML="Visualization: ...";
-
-                    // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
-                    let tmp_log="Current task: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
-                    document.getElementById("exp_status").innerHTML=tmp_log;  
+                let t_experimentsetup=m_expsetupobj.experimentsetup[t_experimentsetupindex];
+                  console.log(m_expsetupobj.experimentsetup,t_experimentsetup);
                   
-                
+                m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
+
+                //JSON.stringify(m_exp_discription);//m_exp_discription.discription;
+                document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
+
+                document.getElementById("ScenarioDescriptionDiv").style.display="block";
+
+                document.getElementById("visualizationinfo").innerHTML="Next visualization"+m_expsetupobj.visualizationtype[t_experimentsetup.vt];
+                //document.getElementById("ScenarioInstructionDiv").style.display="none";
+                document.getElementById("instruction").innerHTML="Current round: 0/5";
+                document.getElementById("visualizationinfo").innerHTML="Visualization: ...";
+
+                // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
+                let tmp_log="Current task: "+m_exp_order.toString()+"/"+m_exp_variables.totalrounds.toString()+"\r\n";
+                document.getElementById("exp_status").innerHTML=tmp_log;
             }
             else{
               //document.getElementById("exp_scene").disabled = true
@@ -2262,7 +2254,7 @@
             //console.log(task_url);
             let win = window.open(task_url, '_blank');
             win.focus();
-            NextStepSetup(m_exp_order+1);
+            NextStepSetup();
             DisableBT("q_scene");
       
          });
@@ -2354,7 +2346,7 @@
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_scene"});
             
             InitializeExperiment(m_exp_order);
-            //console.log(m_expsetupobj.participantsetup[m_exp_participantindex].taskorder);
+            console.log(m_expsetupobj.participantsetup[m_exp_participantindex].taskorder);
             
             document.getElementById("ScenarioDescriptionDiv").style.display="none";
             
@@ -2362,8 +2354,8 @@
             document.getElementById("visualizationinfo").innerHTML="Visualization: "+m_exp_visualization.innerHTML;
             //document.getElementById("ScenarioInstructionDiv").style.display="block";
          })
-      function EndTraining(){
-          
+      
+        document.getElementById("dt_endtrain").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_endtrain"});
             
             ClearAll();            
@@ -2396,8 +2388,7 @@
             
             EnableBT("btntaskassignment");
             DisableBT("q_scene");
-      }
-        document.getElementById("dt_endtrain").addEventListener('click',EndTraining);
+         })
       
       //--------------------------------------------------
     });

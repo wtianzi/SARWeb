@@ -56,24 +56,33 @@ var g_experiment={
     "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-73.72287385,43.42091745],'photoid':1},
             {"clue_index":1,"status":"unfound","info":"drink","location":[-73.72449493,43.42530038],'photoid':2}]},
       
-    {"index":8,"name":"ic9","center":[-80.4757389347337, 37.2040570285143],"target":[-80.476, 37.20],"offset":[0.001,0],
-    "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-80.46, 37.205],'photoid':1},
-            {"clue_index":1,"status":"unfound","info":"drink","location":[-80.47, 37.20],'photoid':2}]},
-      
-    {"index":9,"name":"ic1","center":[-111.71108, 35.33068333],"target":[-111.6975, 35.334233],"offset":[0.016,0],
-      "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-111.7019239, 35.33167399],'photoid':1},
-              {"clue_index":1,"status":"unfound","info":"drink","location":[-111.7000026, 35.33431576],'photoid':2}]},
-    {"index":10,"name":"ic2","center":[-110.78933,32.43543332],"target":[-110.79433,32.428833],"offset":[0.02,0],
-    "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-110.7861179,32.43198102],'photoid':1},
-            {"clue_index":1,"status":"unfound","info":"drink","location":[-110.7791532,32.42591697],'photoid':2}]},
-      
-    {"index":11,"name":"ic3","center":[-110.29328,31.42903334],"target":[-110.30412,31.429517],"offset":[0.015,0],
+    {"index":8,"name":"ic9","center":[-110.29328,31.42903334],"target":[-110.30412,31.429517],"offset":[0.01,0],
     "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-110.2921092,31.4321254],'photoid':1},
             {"clue_index":1,"status":"unfound","info":"drink","location":[-110.2959518,31.43608805],'photoid':2}]},
       
-    {"index":12,"name":"ic4","center":[-74.61429,44.28656],"target":[-74.60208,44.28923],"offset":[0.001,0],
+    {"index":9,"name":"ic10","center":[-111.71108, 35.33068333],"target":[-111.6975, 35.334233],"offset":[0.016,0],
+      "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-111.7019239, 35.33167399],'photoid':1},
+              {"clue_index":1,"status":"unfound","info":"drink","location":[-111.7000026, 35.33431576],'photoid':2}]},
+      
+    {"index":10,"name":"ic11","center":[-110.78933,32.43543332],"target":[-110.79433,32.428833],"offset":[0.02,0],
+    "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-110.7861179,32.43198102],'photoid':1},
+            {"clue_index":1,"status":"unfound","info":"drink","location":[-110.7791532,32.42591697],'photoid':2}]},
+      
+    {"index":11,"name":"ic12","center":[-110.29328,31.42903334],"target":[-110.30412,31.429517],"offset":[0.015,0],
+    "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-110.2921092,31.4321254],'photoid':1},
+            {"clue_index":1,"status":"unfound","info":"drink","location":[-110.2959518,31.43608805],'photoid':2}]},
+      
+    {"index":12,"name":"ic13","center":[-74.61429,44.28656],"target":[-74.60208,44.28923],"offset":[0.001,0],
     "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-74.60033068,44.2834079],'photoid':1},
-            {"clue_index":1,"status":"unfound","info":"drink","location":[-74.60213188,44.29535587],'photoid':2}]}
+            {"clue_index":1,"status":"unfound","info":"drink","location":[-74.60213188,44.29535587],'photoid':2}]},
+      
+      {"index":13,"name":"ic14","center":[-110.29328,31.42903334],"target":[-110.30412,31.429517],"offset":[0.015,0],
+    "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-110.2921092,31.4321254],'photoid':1},
+            {"clue_index":1,"status":"unfound","info":"drink","location":[-110.2959518,31.43608805],'photoid':2}]},
+      
+      {"index":14,"name":"ic15","center":[-110.29328,31.42903334],"target":[-110.30412,31.429517],"offset":[0.015,0],
+    "clue":[{"clue_index":0,"status":"unfound","info":"cloth","location":[-110.2921092,31.4321254],'photoid':1},
+            {"clue_index":1,"status":"unfound","info":"drink","location":[-110.2959518,31.43608805],'photoid':2}]}
       
   ],
   "taskstatus":[

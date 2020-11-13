@@ -17,6 +17,7 @@
   <script src="{% static 'js/jquery.csv.js' %}"></script>
   <script src="{% static 'js/sarfunctions.js' %}"></script>
   <script type="text/javascript" src="{% static 'data/scenariodetails_testing.json' %}"></script>
+  <link rel="stylesheet" type="text/css" href="{% static 'taskgeneration.css' %}"  />
   <style>
   html,
   body,
@@ -70,50 +71,18 @@
       tr:nth-child(even) {
         background-color: #dddddd;
       }
-      .SARP-container {
-          z-index: 99;
-          position: absolute;
-          top: 0;
-          right: 0;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.5);
-          width: 320px;
-        }
-
-        .editArea-container {
-          background: #fff;
-          font-family: "Avenir Next W00", "Helvetica Neue", Helvetica, Arial, sans-serif;
-          line-height: 1.5em;
-          overflow: auto;
-          padding: 12px 15px;
-          width: 300px;
-        }
-        .edit-button:hover,
-        .edit-button:focus {
-          background-color: #e4e4e4;
-        }
-        .edit-button {
-          font-size: 14px;
-          height: 32px;
-          margin-top: 10px;
-          width: 100%;
-          background-color: transparent;
-          border: 1px solid #0079c1;
-          color: #0079c1;
-        }
-
-        .bt_save{
-          padding: 8px;
-          text-decoration: none;
-          margin: 2px;
-          cursor: pointer;
-          font-size: 14px;
-          height: 32px;
-          margin-top: 10px;
-          background-color: transparent;
-          border: 1px solid #0079c1;
-          color: #0079c1;
-        }
+      .bt_save{
+        padding: 8px;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 14px;
+        height: 32px;
+        margin-top: 10px;
+        background-color: transparent;
+        border: 1px solid #0079c1;
+        color: #0079c1;
+        width:30%;
+      }
       .bt_save_edit{
         padding: 8px;
         text-decoration: none;
@@ -2287,6 +2256,10 @@
                 
             }
             else{
+              //document.getElementById("exp_scene").disabled = true
+              //document.getElementById("btntaskassignment").disabled = true
+              //document.getElementById("q_scene").disabled = true
+
               DisableBT("btntaskassignment");
               DisableBT("exp_scene");
             }
@@ -2294,8 +2267,6 @@
 
          document.getElementById('q_scene').addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"q_scene"});
-             SaveExperimentdatatoDB(m_exp_e);
-             m_exp_e.details=[];
             // open a new page
             DisableAllGraphicLayers();
 

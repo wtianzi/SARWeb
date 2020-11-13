@@ -240,7 +240,6 @@
       let m_exp_assignlog={
         "logtype":"assignment",
         "participantid":m_exp_participantid,
-        "participantindex":m_exp_participantindex,
         "experimentindex":0,
         "sceneindex":0,
         "firstmovets":Date.now(),
@@ -254,7 +253,6 @@
       let m_exp_e={
         "logtype":"action",
         "participantid":m_exp_participantid,
-        "participantindex":m_exp_participantindex,
         "experimentindex":0,
         "sceneindex":0,
         "details":[]
@@ -666,7 +664,7 @@
 
                 m_experimentlog.taskend=Date.now();
                 m_experimentlog.totalrounds=m_tasktrials;
-                m_experimentlog.duration=m_experimentlog.taskend-m_experimentlog.taskstart;
+                m_experimentlog.duration=m_experimentlog.taskstart-m_experimentlog.taskend;
                 SaveExperimentdatatoDB(m_experimentlog);
                 // upload data to database
                 m_tasktrials=0;
@@ -692,7 +690,7 @@
 
             m_experimentlog.taskend=Date.now();
             m_experimentlog.totalrounds=m_tasktrials;
-            m_experimentlog.duration=m_experimentlog.taskend-m_experimentlog.taskstart;
+            m_experimentlog.duration=m_experimentlog.taskstart-m_experimentlog.taskend;
             SaveExperimentdatatoDB(m_experimentlog);
             // upload data to database
 
@@ -925,7 +923,6 @@
         let t_polylog={
         "logtype":"polygon",
         "participantid":m_exp_participantid,
-        "participantindex":m_exp_participantindex,
         "sceneindex":m_experimentlog.sceneindex,
         "details":allpolygons
         }

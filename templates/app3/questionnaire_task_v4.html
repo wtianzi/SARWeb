@@ -87,14 +87,14 @@
                     <label class="shortlabel col-sm-2">{{t_ms.left}}</label>
                     <div class="radiocontainer col-sm-7">
                         <div class="row">
-                            {% with ''|center:7 as range %}
-                            {% for i in range %}
+                          {% with ''|center:7 as range %}
+                          {% for i in range %}
                             <div class="shortlabel">
-                               <input type="radio" name={{t_ms.name}}  value={{forloop.counter}}>
-                                <label >{{ forloop.counter }}</label>
-                            </div>
-                            {% endfor %}
-                            {% endwith %}   
+                                <input type="radio" id={{t_ms.name}}  name={{t_ms.name}} value={{ forloop.counter }}/>
+                                <label for={{t_ms.name}}>{{ forloop.counter }}</label>
+                            </div>                            
+                          {% endfor %}
+                          {% endwith %}    
                         </div>                        
                     </div>
                     <label class="shortlabel col-sm-3">{{t_ms.right}}</label>
@@ -118,8 +118,8 @@
                           {% with ''|center:7 as range %}
                           {% for i in range %}
                             <div class="shortlabel">
-                               <input type="radio" name={{t_ms.name}}  value={{forloop.counter}}>
-                                <label >{{ forloop.counter }}</label>
+                               <input type="radio" id={{t_ms.name}}  name={{t_ms.name}} value={{ forloop.counter }}/>
+                                <label for={{t_ms.name}}>{{ forloop.counter }}</label>
                             </div>
                           {% endfor %}
                           {% endwith %}    

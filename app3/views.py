@@ -429,7 +429,7 @@ class QuestionnaireFormView(TemplateView):
         #context["measurements"]=["trust","transparency","workload"]
         #print(context)
         context["measurement_left"]=[            
-            {"name":"transparency","question":"Please select your transparency level.","left":"not at all","right":"very strong"},
+            {"name":"transparency","question":"How do you think the model transparent to you.","left":"not at all","right":"very strong"},
             {"name":"trans1","question":"I understand what the model shows by this visualization.","left":"not at all","right":"very strong"},
             {"name":"trans2","question":"It is easy to notice the distribution of the lost person in the area by this visualization.","left":"not at all","right":"very strong"},
             {"name":"trans3","question":"I understand why the model looks like this.","left":"not at all","right":"very strong"},
@@ -455,7 +455,10 @@ class QuestionnaireFormView(TemplateView):
 
     def FormToDB(request):
         form=QuestionnaireForm(request.POST or None)
+        #print(form)
+        #print(form.errors)
         if form.is_valid():
+            #print(form)
             form.save()
         sid=request.POST.get("sceneid")        
         sid=sid.rstrip('/')

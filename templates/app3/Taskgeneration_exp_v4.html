@@ -16,7 +16,7 @@
   <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
   <script src="{% static 'js/jquery.csv.js' %}"></script>
   <script src="{% static 'js/sarfunctions.js' %}"></script>
-  <script type="text/javascript" src="{% static 'data/scenariodetails.json' %}"></script>
+  <script type="text/javascript" src="{% static 'data/scenariodetails_testing.json' %}"></script>
   <link rel="stylesheet" type="text/css" href="{% static 'taskgeneration.css' %}"  />
   <style>
   html,
@@ -871,8 +871,16 @@
         m_experimentres["actions"].push({"id":"btndisplaytarget","timestamp": Date.now(), "description":"click dislpay"});
 
       }
-      document.getElementById("btnshowhideexptoolpannel").onclick=function() {      
-        document.getElementById("toolpannel").style.display="block";        
+      document.getElementById("btnshowhideexptoolpannel").onclick=function() {  
+          if(document.getElementById("btnshowhideexptoolpannel").value=='E'){
+              document.getElementById("toolpannel").style.display="block";
+              document.getElementById("btnshowhideexptoolpannel").value='H';
+          }
+          else{
+              document.getElementById("toolpannel").style.display="none";
+              document.getElementById("btnshowhideexptoolpannel").value='E';
+          }
+                
         m_experimentres["actions"].push({"id":"btnshowhideexptoolpannel","timestamp": Date.now(), "description":"open exp tool"});
 
       }
@@ -880,6 +888,7 @@
           //console.log(m_exp_order);
         if(m_exp_order>1){
             NextStepSetup(m_exp_order-1);
+            document.getElementById("btic").value=m_exp_discription.name+":"+m_exp_discription.mark;
             m_experimentres["actions"].push({"id":"btskipback","timestamp": Date.now(), "description":"skip scenarios backward"});
         }
       }
@@ -888,6 +897,7 @@
         if(m_exp_order<m_exp_variables.totalrounds){
             if(m_exp_order==0) EndTraining();
             else NextStepSetup(m_exp_order+1);
+            document.getElementById("btic").value=m_exp_discription.name+":"+m_exp_discription.mark;
             m_experimentres["actions"].push({"id":"btskip","timestamp": Date.now(), "description":"skip scenarios"});
           }
       }
@@ -1642,21 +1652,28 @@
              if(t_obj.flag == 'success'){
                //console.log(t_obj);
                let colorarr=t_obj.segmentval;
+                 let cmax=Math.max(...colorarr);
+                 let cmin=Math.min(...colorarr);
+                 let cscale=cmax-cmin;
+                 console.log(cmax,cmin);
+                 
                let updatevoronoiarr=t_obj.updatevoronoi;
                if (updatevoronoiarr.length>0){
                  epsg4326_voronoiarr=updatevoronoiarr;
                }
 
                for(let j=0;j<allpolygons.length;j++){
-                 let polygonGraphic = new Graphic({
-                   geometry: allpolygons[j].geometry,
-                   symbol: {
+                   let tocu=colorarr[j]/cscale;
+                   let tcolor=hslToRgb(0.6*(1-tocu), 1, 0.5);// 0:red, 200: blue                
+                   tcolor.push(tocu);
+                   
+                   let polygonGraphic = new Graphic({
+                    geometry: allpolygons[j].geometry,
+                    symbol: {
                            type: "simple-fill",
-                           color: [0, 0, 255,colorarr[j]/150],//[0, 0, colorarr[j]*0.5+125,colorarr[j]/255],
-                           outline: {
-                             style:"none"
-                           }
-                         }
+                           color: tcolor, //[0, 0, 255,colorarr[j]/150],
+                           outline: {style:"none"}
+                             }
                  });
                  //console.log(colorarr[j]);
                  arr_featureset.push(polygonGraphic);//t_graphic
@@ -2470,6 +2487,8 @@
             <input type="button" id="btskipback" value="<"/>
             <br>        
             <input type="button" id="btskip" value=">"/>
+            <br>
+            <input type="button" id="btic" value="ic"/>
         </div>        
     </div>
     

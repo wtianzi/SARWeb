@@ -355,7 +355,7 @@ class ConsentFormView(TemplateView):
         res=ParticipantStatusModel(participantid=pid,participantname=pname,participantindex=pindex)
         res.save()
         
-        pindex = pindex % 28
+        pindex = pindex % 29
         
         #context={"participantid":pid,"participantindex":pindex}
         
@@ -429,7 +429,7 @@ class QuestionnaireFormView(TemplateView):
         #context["measurements"]=["trust","transparency","workload"]
         #print(context)
         context["measurement_left"]=[            
-            {"name":"transparency","question":"How do you think the model transparent to you.","left":"not at all","right":"very strong"},
+            {"name":"transparency","question":"Model transparency: Do you know in general how the model works?","left":"not at all","right":"very strong"},
             {"name":"trans1","question":"I understand what the model shows by this visualization.","left":"not at all","right":"very strong"},
             {"name":"trans2","question":"It is easy to notice the distribution of the lost person in the area by this visualization.","left":"not at all","right":"very strong"},
             {"name":"trans3","question":"I understand why the model looks like this.","left":"not at all","right":"very strong"},

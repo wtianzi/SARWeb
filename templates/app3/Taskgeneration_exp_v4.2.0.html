@@ -2258,7 +2258,7 @@
                   
                     document.getElementById("exp_scene").value="Load Data for Scene "+(m_exp_order).toString();
                     document.getElementById("exp_scene").style.color="#0079c1";
-                    
+                    EnableBT("btntaskassignment");
                     ClearAll();
 
                     //console.log(m_exp_order);
@@ -2366,8 +2366,9 @@
              document.getElementById("exp_scene").style.color='gray';
              document.getElementById("ScenarioDescriptionDiv").style.display="none";
              
+             //console.log(m_exp_visualization);
              document.getElementById("visualizationinfo").innerHTML="Visualization: "+m_exp_visualization.innerHTML;
-             EnableBT("btntaskassignment");
+             //document.getElementById("ScenarioInstructionDiv").style.display="block";
          })
       
          document.getElementById("btsetptindex").addEventListener('click',function(){
@@ -2392,7 +2393,7 @@
             ClearAll();
             
             document.getElementById("dt_scene").value="Load Training Scene";
-            
+            EnableBT("btntaskassignment");
             //DisableAllGraphicLayers();         
          })
       
@@ -2400,9 +2401,13 @@
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_scene"});
             
             InitializeExperiment(m_exp_order);
-            document.getElementById("ScenarioDescriptionDiv").style.display="none";            
+            //console.log(m_expsetupobj.participantsetup[m_exp_participantindex].taskorder);
+            
+            document.getElementById("ScenarioDescriptionDiv").style.display="none";
+            
+            //console.log(m_exp_visualization);
             document.getElementById("visualizationinfo").innerHTML="Visualization: "+m_exp_visualization.innerHTML;
-            EnableBT("btntaskassignment");
+            //document.getElementById("ScenarioInstructionDiv").style.display="block";
          })
       function EndTraining(){
           
@@ -2435,7 +2440,8 @@
             
             let tmp_log="Current task: 1/"+m_exp_variables.totalrounds.toString()+"\r\n";             
             document.getElementById("exp_status").innerHTML=tmp_log;
-            DisableBT("btntaskassignment");
+            
+            EnableBT("btntaskassignment");
             DisableBT("q_scene");
       }
         document.getElementById("dt_endtrain").addEventListener('click',EndTraining);

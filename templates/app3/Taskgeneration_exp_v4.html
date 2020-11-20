@@ -240,8 +240,6 @@
       let m_exp_visualization={"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings"};
       let m_exp_variables=Object.assign({},m_expsetupobj.variables);
           //{"hour":11,"hourstep":0,"displaytype":true,"eacharea":500000,"zoomlevel":m_scale,"colormap":0,"totalrounds":8};//"displaytype":"byhour" true or "bypath" false
-      //m_exp_variables.totalrounds=m_expsetupobj.variables.totalrounds;
-      //m_exp_variables.zoomlevel=m_expsetupobj.variables.zoomlevel;
       
       let m_exp_discription={"name":"ic1","mark":"#","discription":"Mission Debriefing"};
       // update to db every 5 rounds/ or task finished
@@ -576,7 +574,7 @@
       }
 
       document.getElementById("btntaskassignment").onclick=function() {
-        document.getElementById("instruction").innerHTML="Current round: "+(m_tasktrials+1).toString()+"/5";
+        document.getElementById("instruction").innerHTML="Current round: "+(m_tasktrials+1).toString()+"/"+m_exp_variables.roundpertask.toString();
           
         let t_stoptime=Date.now();
         let i_hr=m_exp_variables.hour;
@@ -596,7 +594,6 @@
 
         m_experimentres["actions"].push({"id":"btntaskassignment","timestamp": Date.now(), "description":"click task assign", 'trial':m_tasktrials,'hourslide':i_hr});
 
-        //console.log(m_experimentres);
         //save to the database
         AddTeams();
 
@@ -713,7 +710,7 @@
             }
           }
         }
-        if(m_tasktrials==m_experimentres.totaltaskround){
+        if(m_tasktrials==m_exp_variables.roundpertask){
             tflag=false;
             DrawCompletTaskToInitLayer();
             let filename=m_experimentres["participant_index"]+"_"+Date.now().toString();
@@ -1474,9 +1471,10 @@
                   paths: mid_data[i],
                   spatialReference: { wkid: 4326 }
                 };
+                //let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9];
+                //t_color.push(0.063*i+0.4);//occupacity
                 let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9];
-
-                t_color.push(0.063*i+0.4);//occupacity
+                t_color.push(0.8*i+0.2);   
                 //console.log(t_color);
 
                 let polylineGraphic=new Graphic({
@@ -2277,7 +2275,7 @@
 
                     document.getElementById("visualizationinfo").innerHTML="Next visualization"+m_expsetupobj.visualizationtype[t_experimentsetup.vt];
                     //document.getElementById("ScenarioInstructionDiv").style.display="none";
-                    document.getElementById("instruction").innerHTML="Current round: 0/5";
+                    document.getElementById("instruction").innerHTML="Current round: 0/"+m_exp_variables.roundpertask.toString();
                     document.getElementById("visualizationinfo").innerHTML="Visualization: ...";
 
                     // status includes: session(training or experiment), step: m_exp_order/m_exp_variables.totalrounds, Target:(assign teams,take questionnaire)
@@ -2430,7 +2428,7 @@
             document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
             //document.getElementById("ScenarioInstructionDiv").style.display="none";
-            document.getElementById("instruction").innerHTML="Current round: 0/5";
+            document.getElementById("instruction").innerHTML="Current round: 0/"+m_exp_variables.roundpertask.toString();
             document.getElementById("visualizationinfo").innerHTML="Visualization: ...";
             
             let tmp_log="Current task: 1/"+m_exp_variables.totalrounds.toString()+"\r\n";             
@@ -2648,7 +2646,7 @@
                 Visualization: ...
             </p>
             <p id="searchres">Search result: pending</p>
-            <p id="instruction">Current round: 0/5</p>
+            <p id="instruction">Current round:</p>
             <p id="exp_status">Current task: Training</p>
         </div>
         <h4>Steps:</h4>

@@ -1,6 +1,6 @@
 var g_experiment={
   "experimentparameters":{
-    "hour":0,"hourstep":2,
+    "hour":11,"hourstep":0,
     "displaytype":[
       {"index":0,"value":true,"name":"byhour"},
       {"index":1,"value":false,"name":"bypath"}
@@ -12,7 +12,7 @@ var g_experiment={
       {"index":2,"value":2,"name":"blue-red","uivalue":"o_br"}
     ]
   },
-  "variables":{"hour":11,"hourstep":0,"displaytype":true,"eacharea":500000,"colormap":0,"zoomlevel":15,"colormap":0,"totalrounds":8},
+  "variables":{"hour":11,"hourstep":0,"displaytype":true,"eacharea":500000,"colormap":0,"zoomlevel":15,"colormap":0,"totalrounds":8,"trainingtask":1,"roundpertask":5},
   "visualizationtype":[
     {"index":0,"name":"ring","type":"clueipp","description":"IPP & Rings","innerHTML":"The red ring means there are 25% percent probability that the lost person can be found in the circled area."},
     {"index":1,"name":"choroplethmap","type":"segmentheat","description":"Weighted map","innerHTML":"The probability of the lost person distribution is marked as different color depth, the more darker, the more possiblility the lost person could be in the cell area."},

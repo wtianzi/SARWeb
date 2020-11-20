@@ -241,9 +241,9 @@ function GetSites2(n,t_extent){
     let t_wscale=t_extent.width/(2*arr.length);
     let t_hscale=t_extent.height/(2*arr.length);
 
-    for(let i=0;i<n+minout;i++){
-    res_points[i][0]=res_points[i][0]*t_wscale+t_extent.center.x;
-    res_points[i][1]=res_points[i][1]*t_hscale+t_extent.center.y;
+    for(let i=0;i<res_points.length;i++){
+        res_points[i][0]=res_points[i][0]*t_wscale+t_extent.center.x;
+        res_points[i][1]=res_points[i][1]*t_hscale+t_extent.center.y;
     }
     //console.log(res_points);
     return res_points;

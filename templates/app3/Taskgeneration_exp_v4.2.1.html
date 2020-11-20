@@ -166,7 +166,7 @@
       }
       #vinstruction{
           line-height:normal;
-          margin-left: 1%;
+          margin-left: 5%;
       }
       #showtarget{
           padding: 5px;
@@ -452,7 +452,6 @@
           spatialReference:view.spatialReference
         });
 
-        console.log(textent);
         sites = GetSites2(npoints,textent);
         //console.log(sites);
           
@@ -2646,16 +2645,23 @@
     </div>
       
     <div id="ScenarioInstructionDiv" class="esri-widget">
-        
+        <h4>Task tips:</h4>
         <div id="vinstruction">
-            <p>Experiment Status:</p>
+            <p>Steps:</p>
             <ul>
-                <li id="visualizationinfo" >Visualization: ...</li>
-                <li id="searchres" >Search result: ...</li>
-                <li id="instruction" >Current round: ...</li>
-                <li id="exp_status" >Current task: Training</li>
+              <li>Step 1: Load data</li>
+              <li>Step 2: Drag team icon to cell</li>
+              <li>Step 3: Assign</li>
+              <li>Step 4: Repeat step 2 and 3 until finished</li>
+              <li>Step 5: Take Questionnaire</li>
             </ul>
             
+            <p id="visualizationinfo">
+                Visualization: ...
+            </p>
+            <p id="searchres">Search result: pending</p>
+            <p id="instruction">Current round:</p>
+            <p id="exp_status">Current task: Training</p>
             
             <p>Steps:</p>
             <ul>

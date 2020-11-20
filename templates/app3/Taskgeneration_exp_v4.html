@@ -16,7 +16,7 @@
   <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
   <script src="{% static 'js/jquery.csv.js' %}"></script>
   <script src="{% static 'js/sarfunctions.js' %}"></script>
-  <script type="text/javascript" src="{% static 'data/scenariodetails_testing.json' %}"></script>
+  <script type="text/javascript" src="{% static 'data/scenariodetails.json' %}"></script>
   <style>
   html,
   body,
@@ -433,7 +433,10 @@
           area_extent=textent;
           wholearea=geometryEngine.planarArea(Polygon.fromExtent(textent));
         }
-        let npoints=2*Math.round(wholearea/m_exp_variables.eacharea+0.5);      //wholearea=wholetask.area;//metric   240  : acre  60
+        //let npoints=2*Math.round(wholearea/m_exp_variables.eacharea+0.5);          
+        //wholearea=wholetask.area;//metric   240  : acre  60
+          
+        let npoints=80;
         let lbx=textent.xmin,
             lby=textent.ymin,
             rtx=textent.xmax,
@@ -449,7 +452,7 @@
           spatialReference:view.spatialReference
         });
 
-        sites = GetSites(npoints,textent);
+        sites = GetSites2(npoints,textent);
         let voronoi = d3.voronoi().extent([[lbx,lby], [rtx,rty]]);
         let diagram = voronoi(sites),
             links = diagram.links(),
@@ -703,7 +706,7 @@
                 //console.log(1);
             }
             else{
-                DrawPolygonToInitLayer(m_teamassign[i]);
+                DrawPolygonToInitLayer(m_teamassign[i],[0,0,0,0.8]);
                 document.getElementById("searchres").innerHTML="Search result: no person in these areas";
             
                 //console.log(2);
@@ -787,7 +790,7 @@
           geometry: area_extent.center,//view.extent.center,
           symbol: {
             type: "text",
-            color: [255,125,0],
+            color: [255,125,0],//[255,125,0]
             haloColor: "black",
             haloSize: "2px",
             text: "This scene is finished",

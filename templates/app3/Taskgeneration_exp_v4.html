@@ -16,7 +16,7 @@
   <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
   <script src="{% static 'js/jquery.csv.js' %}"></script>
   <script src="{% static 'js/sarfunctions.js' %}"></script>
-  <script type="text/javascript" src="{% static 'data/scenariodetails.json' %}"></script>
+  <script type="text/javascript" src="{% static 'data/scenariodetails_testing.json' %}"></script>
   <style>
   html,
   body,
@@ -1484,7 +1484,7 @@
                   symbol:{
                           type: "simple-line", // autocasts as new SimpleLineSymbol()
                           color: t_color, // RGB color values as an array
-                          width: 1
+                          width: 2
                         }
                 });
                 arr_visual.push(polylineGraphic);
@@ -1535,7 +1535,7 @@
                   symbol:{
                           type: "simple-line", // autocasts as new SimpleLineSymbol()
                           color: m_lpdata_tra_colormap[m_exp_variables.colormap][i], // RGB color values as an array
-                          width: 1
+                          width: 2
                         }
                 });
                 //console.log(polylineGraphic);
@@ -2056,7 +2056,7 @@
           let totalfiles=1+count_clues+count_trajectory;
           
           //folder of files, SAR EXPERIMENT SPATIAL
-          let lpmfolder="/static/data/LPMEXPS/"+m_exp_location.name;
+          let lpmfolder="/static/data/LPMEXPS2/"+m_exp_location.name;
           
           // clue1:t1, clue2:t2, clue12:t3, final: t4, final is the overall
           let cluenames=['final','clue1','clue2','clue12'];

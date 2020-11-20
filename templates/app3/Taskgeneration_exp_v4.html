@@ -433,10 +433,10 @@
           area_extent=textent;
           wholearea=geometryEngine.planarArea(Polygon.fromExtent(textent));
         }
-        //let npoints=2*Math.round(wholearea/m_exp_variables.eacharea+0.5);          
+        let npoints=2*Math.round(wholearea/m_exp_variables.eacharea+0.5);          
         //wholearea=wholetask.area;//metric   240  : acre  60
           
-        let npoints=80;
+        //let npoints=80;
         let lbx=textent.xmin,
             lby=textent.ymin,
             rtx=textent.xmax,
@@ -453,6 +453,8 @@
         });
 
         sites = GetSites2(npoints,textent);
+        //console.log(sites);
+          
         let voronoi = d3.voronoi().extent([[lbx,lby], [rtx,rty]]);
         let diagram = voronoi(sites),
             links = diagram.links(),

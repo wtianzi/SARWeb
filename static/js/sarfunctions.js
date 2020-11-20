@@ -149,7 +149,7 @@ function GetSites(n,t_extent){
 }
 
 //sites = GetSites(npoints,textent);
-function GetSites2(n,t_extent){
+function GetSites3(n,t_extent){
   let res_points=[];
   //center point [0,0]
   //first round radius:1, second:2,third:3
@@ -200,4 +200,52 @@ function GetSites2(n,t_extent){
     res_points[i][1]=res_points[i][1]*t_hscale+t_extent.center.y;
   }
   return res_points;
+}
+
+
+//sites = GetSites(npoints,textent);
+function GetSites2(n,t_extent){
+    let res_points=[];
+    //center point [0,0]
+    //first round radius:1, second:2,third:3
+    // area: 1: 3: 5:7:9
+
+    let t_firstround=6;
+    let arr=[];
+    let i=0;
+    let npt=0;
+    let minout=3;
+    while(npt<n){
+        let ncircle=2*i+1;
+        
+        if(npt+ncircle*t_firstround<=n){
+            arr.push(ncircle*t_firstround);
+            npt = npt+ncircle*t_firstround;
+        }
+        else{
+            arr.push(n-npt+minout);
+            npt = n+minout;
+        }
+        ++i;
+    }
+    //console.log(n,arr);
+    for(i=0;i<arr.length;++i){
+        let subdeg=1/arr[i];
+        for(let j=0;j<arr[i];++j){
+            res_points.push([(i+0.5)*Math.sin(2*Math.PI*subdeg*j),(i+0.5)*Math.cos(2*Math.PI*subdeg*j)]);
+        }
+        
+    }
+    
+    //standrized from 1:1 into width and height ratio
+    let t_wscale=t_extent.width/(2*arr.length);
+    let t_hscale=t_extent.height/(2*arr.length);
+
+    for(let i=0;i<n+minout;i++){
+    res_points[i][0]=res_points[i][0]*t_wscale+t_extent.center.x;
+    res_points[i][1]=res_points[i][1]*t_hscale+t_extent.center.y;
+    }
+    //console.log(res_points);
+    return res_points;
+    
 }

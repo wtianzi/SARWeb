@@ -16,7 +16,7 @@
   <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
   <script src="{% static 'js/jquery.csv.js' %}"></script>
   <script src="{% static 'js/sarfunctions.js' %}"></script>
-  <script type="text/javascript" src="{% static 'data/scenariodetails.json' %}"></script>
+  <script type="text/javascript" src="{% static 'data/scenariodetails_testing.json' %}"></script>
   <style>
   html,
   body,
@@ -275,9 +275,14 @@
         "firstmovets":Date.now(),
         "stopts":Date.now(),
         "visostamp":Date.now(),
+        "duration":0,
+        "actduration":0,
         "roundindex":0,
         "teaminfo":{"t1":null,"t2":null,"t3":null,"t4":null},
-        "clueindex":0//(0: no clue, 1: clue1, 2: clue 2, 3: clue 1 and 2)
+        "clueindex":0, //(0: no clue, 1: clue1, 2: clue 2, 3: clue 1 and 2)
+        "clueareaindex":[],
+        "nclue":0,
+        "res":"pending" //target/none/pending
       };
 
       let m_exp_e={
@@ -452,7 +457,7 @@
           spatialReference:view.spatialReference
         });
 
-        console.log(textent);
+        //console.log(textent);
         sites = GetSites2(npoints,textent);
         //console.log(sites);
           
@@ -589,10 +594,15 @@
         
         m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"btntaskassignment"});
 
-        m_exp_assignlog.firstmovets=m_taskstarttime;
-        m_exp_assignlog.stopts=t_stoptime;
+        m_exp_assignlog.firstmovets=m_taskstarttime;        
         m_exp_assignlog.roundindex=m_tasktrials;
-        m_exp_assignlog.duration=t_stoptime-m_taskstarttime;
+        m_exp_assignlog.actduration=t_stoptime-m_exp_assignlog.firstmovets;
+          
+        m_exp_assignlog.duration=t_stoptime-m_exp_assignlog.stopts
+        m_exp_assignlog.stopts=t_stoptime;
+          
+        m_exp_assignlog.nclue=0;
+        m_exp_assignlog.res="pending";
 
         m_tasktrials=m_tasktrials+1;
         m_experimentres["step_number"]=m_tasktrials;
@@ -619,20 +629,21 @@
           "team_cell":team_detail,//m_teamassign,
           "starttime":m_taskstarttime,
           "stoptime":t_stoptime,
-          "duration":t_stoptime-m_taskstarttime
+          "duration":t_stoptime-m_taskstarttime            
         });
 
         //log into db
-        SaveExperimentdatatoDB(m_exp_assignlog);
+        
         SaveExperimentdatatoDB(m_exp_e);
         m_exp_e.details=[];          
           
         //console.log("m_teamassign",m_teamassign);
         //console.log("m_targetpolygon",m_targetpolygon);
           
-          
+        m_exp_assignlog.clueareaindex=[];
         for(let i=0;i<m_teamassign.length;i++){
           //console.log(m_teamassign[i]);
+            
           if(m_teamassign[i]){
             //check if the clue are in the assigned area
             for(let j=0;j<m_exp_location.clue.length;j++){
@@ -645,23 +656,7 @@
               if(geometryEngine.contains(m_teamassign[i].geometry,t_pt)){
                   tflag=true;
                 m_visualizationtype='byclue';
-                DrawClueToInitLayer(t_pt,[0, 102, 255, 0.8]);
-                
-                  /*
-                let t_clueobj;
-                let URL = "{% url 'getcluemedia' %}";
-                let data = {
-                    csrfmiddlewaretoken: '{{ csrf_token }}',
-                    'photoid': m_exp_location.clue[j].photoid.toString()
-                };
-                $.post(URL, data, function(response){
-                    t_clueobj=JSON.parse(response);
-                    if(t_clueobj.flag == 'success'){
-                     DrawClueToInitLayer_photo(t_pt,t_clueobj,[0, 102, 255, 0.8]);
-                    }
-                    else{ alert(response); }
-                });
-                  */
+                DrawClueToInitLayer(t_pt,[0, 102, 255, 0.8]);                
                 
                 // change the clue status from "unfound" to "show"
                 m_exp_location.clue[j].status="show";
@@ -680,6 +675,8 @@
                 document.getElementById("myClues").value=t_contour_value;
                 $("#lmyClues").text("Clue(0-3): "+t_contour_value);
                 m_exp_assignlog.clueindex=t_contour_value;
+                m_exp_assignlog.clueareaindex.push(m_teamassign[i].attributes.cellindex);
+                m_exp_assignlog.nclue+=1;
               }
             }
 
@@ -706,6 +703,7 @@
                 m_tasktrials=0;
                 EnableBT("q_scene");
                 DisableBT("btntaskassignment");
+                m_exp_assignlog.res="target";
                 //console.log(1);
             }
             else{
@@ -735,8 +733,10 @@
             DisableBT("btntaskassignment");
             document.getElementById("searchres").innerHTML="Search result: mission complete.";
             //console.log(3);
+            m_exp_assignlog.res="none";
         }
-
+        
+        SaveExperimentdatatoDB(m_exp_assignlog);
         //initialize for the next step
         m_teamassign=[null,null,null,null];
         m_taskstarttime=null;
@@ -1031,6 +1031,9 @@
             }
           }
           else if(event.toolEventInfo.type=="move"){
+              if(m_taskstarttime ==null){
+              m_taskstarttime=Date.now();
+            }
           }
           else if(event.toolEventInfo.type=="move-stop"){
             //console.log(mover);
@@ -1479,8 +1482,9 @@
                 };
                 //let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9];
                 //t_color.push(0.063*i+0.4);//occupacity
-                let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9];
-                t_color.push(0.8*i+0.2);   
+                //let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9];
+                let t_color= [0,0,255];
+                t_color.push(1-0.5*i);   
                 //console.log(t_color);
 
                 let polylineGraphic=new Graphic({
@@ -1584,7 +1588,53 @@
            visualization_Trajectories_Layer.visible=true;
            m_exp_assignlog.visostamp=Date.now();
          }
+        function GetSites2(n,t_extent){
+            let res_points=[];
+            //center point [0,0]
+            //first round radius:1, second:2,third:3
+            // area: 1: 3: 5:7:9
 
+            let t_firstround=6;
+            let arr=[];
+            let i=0;
+            let npt=0;
+            let minout=3;
+            while(npt<n){
+                let ncircle=2*i+1;
+
+                if(npt+ncircle*t_firstround<=n){
+                    arr.push(ncircle*t_firstround);
+                    npt = npt+ncircle*t_firstround;
+                }
+                else{
+                    arr.push(n-npt+minout);
+                    npt = n+minout;
+                }
+                ++i;
+            }
+            //console.log(n,arr);
+            let tr=0.8;//0.5;
+            for(i=0;i<arr.length;++i){
+                let subdeg=1/arr[i];
+                for(let j=0;j<arr[i];++j){
+                    //let tsin=Math.abs(Math.sin(2*Math.PI*subdeg*j));
+                    //res_points.push([(i+tr)*Math.sin(2*Math.PI*subdeg*j),(i+tr)*Math.cos(2*Math.PI*subdeg*j)]);
+                    res_points.push([(i+tr)*Math.sin(2*Math.PI*subdeg*j),(i+tr)*Math.cos(2*Math.PI*subdeg*j)]);
+                }        
+            }
+
+            //standrized from 1:1 into width and height ratio
+            let t_wscale=t_extent.width/(2*arr.length);
+            let t_hscale=t_extent.height/(2*arr.length);
+
+            for(let i=0;i<res_points.length;i++){
+                res_points[i][0]=res_points[i][0]*t_wscale+t_extent.center.x;
+                res_points[i][1]=res_points[i][1]*t_hscale+t_extent.center.y;
+            }
+            //console.log(res_points);
+            return res_points;
+
+        }
          function AddLPDataToSegmentheatlayer(t_type = "byhour"){
            visualization_Segmentheat_Layer.removeAll();
            contourring_arr=[]
@@ -1674,7 +1724,7 @@
            //console.log(contourring_arr);
 
            //show wait
-             visualization_Segmentheat_Layer.visible=true;
+           visualization_Segmentheat_Layer.visible=true;
            DrawTextToSegmentLayer("Loading ...");
            let URL = "{% url 'getsegmentVal' %}";
            let data = {
@@ -1691,7 +1741,6 @@
                  let cmax=Math.max(...colorarr);
                  let cmin=Math.min(...colorarr);
                  let cscale=cmax-cmin;
-                 console.log(cmax,cmin);
                  
                let updatevoronoiarr=t_obj.updatevoronoi;
                if (updatevoronoiarr.length>0){
@@ -1699,15 +1748,15 @@
                }
 
                for(let j=0;j<allpolygons.length;j++){
-                   let tocu=colorarr[j]/cscale;
-                   let tcolor=hslToRgb(0.6*(1-tocu), 1, 0.5);// 0:red, 200: blue                
-                   tcolor.push(tocu);
+                   //let tocu=colorarr[j]/cscale;
+                   //let tcolor=hslToRgb(0.6*(1-tocu), 1, 0.5);// 0:red, 200: blue                
+                   //tcolor.push(tocu);
                    
                    let polygonGraphic = new Graphic({
                     geometry: allpolygons[j].geometry,
                     symbol: {
                            type: "simple-fill",
-                           color: tcolor, //[0, 0, 255,colorarr[j]/150],
+                           color: [0, 0, 255,colorarr[j]/cscale],//[0, 0, 255,colorarr[j]/150],//tcolor
                            outline: {style:"none"}
                              }
                  });
@@ -2025,20 +2074,21 @@
            LoadLPMData();
          }
 
-         function SaveExperimentdatatoDB(tobj={}){
-           let URL = "{% url 'updateexperimentdata' %}";
-           let data = {
+        function SaveExperimentdatatoDB(tobj={}){
+            tobj["ts"]=Date.now();
+            let URL = "{% url 'updateexperimentdata' %}";
+            let data = {
                    csrfmiddlewaretoken: '{{ csrf_token }}',
                    'resarr': JSON.stringify(tobj)
                   };
-           $.post(URL, data, function(response){
+            $.post(URL, data, function(response){
              let res=JSON.parse(response);
                if(res.flag == 'success'){
                  //console.log(res);
                 }
                else{ alert(response); }
-           });
-         }
+            });
+        }
       
       function LoadLPMData(){
           
@@ -2275,7 +2325,7 @@
                     m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
 
                     //JSON.stringify(m_exp_discription);//m_exp_discription.discription;
-                    document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
+                    document.getElementById("p_discription").innerHTML=m_exp_discription.discription;//+"("+m_exp_discription.name+")";
 
                     document.getElementById("ScenarioDescriptionDiv").style.display="block";
 
@@ -2298,19 +2348,14 @@
 
          document.getElementById('q_scene').addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"q_scene"});
-             SaveExperimentdatatoDB(m_exp_e);
-             m_exp_e.details=[];
+            SaveExperimentdatatoDB(m_exp_e);
+            m_exp_e.details=[];
             // open a new page
             DisableAllGraphicLayers();
 
             let participantid={{ participantid |safe }};
-
-            //let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/';
-
-            // use participantindex and task index
             let task_url="{% url 'questionnaireform' %}"+"/"+participantid+'/'+m_experimentlog.experimentindex.toString()+'/'+m_exp_order.toString()+'/'; 
 
-            //console.log(task_url);
             let win = window.open(task_url, '_blank');
             win.focus();
             NextStepSetup(m_exp_order+1);
@@ -2327,11 +2372,12 @@
            m_tasktrials=0;
            ClearAll();
 
-
            document.getElementById("loadlpmcsv").value="Load LPM Data";
            DisableAllGraphicLayers();
            m_experimentlog.experimentindex=m_expsetupobj.participantsetup[m_exp_participantindex].taskorder[task];
            m_experimentlog.sceneindex=task;
+           m_exp_assignlog.sceneindex=m_experimentlog.sceneindex;
+           m_exp_assignlog.stopts=Date.now();
            //{"index":0,"loc":0,"lpt":0,"vt":0},
            let t_expsetup=m_expsetupobj.experimentsetup[m_experimentlog.experimentindex];
            m_exp_lostpersontype=m_expsetupobj.lostpersontype[t_expsetup.lpt];
@@ -2402,6 +2448,8 @@
       
         document.getElementById("dt_scene").addEventListener('click',function(){
             m_exp_e.details.push({"timestamp":Date.now(),"text":null,"hour":m_exp_variables.hour,"id":"dt_scene"});
+            SaveExperimentdatatoDB(m_exp_e);
+            m_exp_e.details=[];
             
             InitializeExperiment(m_exp_order);
             document.getElementById("ScenarioDescriptionDiv").style.display="none";            
@@ -2431,7 +2479,7 @@
             m_exp_discription=m_expsetupobj.scenariodiscription[t_experimentsetup.loc];
             
             //document.getElementById("p_discription").innerHTML=JSON.stringify(m_exp_discription);//m_exp_discription.discription;
-            document.getElementById("p_discription").innerHTML=m_exp_discription.discription+"("+m_exp_discription.name+")";
+            document.getElementById("p_discription").innerHTML=m_exp_discription.discription;//+"("+m_exp_discription.name+")";
             document.getElementById("ScenarioDescriptionDiv").style.display="block";
             //document.getElementById("ScenarioInstructionDiv").style.display="none";
             document.getElementById("instruction").innerHTML="Current round: 0/"+m_exp_variables.roundpertask.toString();

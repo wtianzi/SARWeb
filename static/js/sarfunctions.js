@@ -204,7 +204,7 @@ function GetSites3(n,t_extent){
 
 
 //sites = GetSites(npoints,textent);
-function GetSites2(n,t_extent){
+function GetSites4(n,t_extent){
     let res_points=[];
     //center point [0,0]
     //first round radius:1, second:2,third:3
@@ -229,12 +229,14 @@ function GetSites2(n,t_extent){
         ++i;
     }
     //console.log(n,arr);
+    let tr=0.5;//0.5;
     for(i=0;i<arr.length;++i){
         let subdeg=1/arr[i];
         for(let j=0;j<arr[i];++j){
-            res_points.push([(i+0.5)*Math.sin(2*Math.PI*subdeg*j),(i+0.5)*Math.cos(2*Math.PI*subdeg*j)]);
-        }
-        
+            let tsin=Math.sin(2*Math.PI*subdeg*j);
+            //res_points.push([(i+tr)*Math.sin(2*Math.PI*subdeg*j),(i+tr)*Math.cos(2*Math.PI*subdeg*j)]);
+            res_points.push([(i+tr*(tsin+0.5))*tsin,(i+tr*(tsin+0.5))*Math.cos(2*Math.PI*subdeg*j)]);
+        }        
     }
     
     //standrized from 1:1 into width and height ratio

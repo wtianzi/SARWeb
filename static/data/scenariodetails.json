@@ -25,24 +25,29 @@ var g_experiment={
     {"index":2,"type":"hiker","name":"hiker", "ring":[1100,3100,5800,18300]}
   ],
   "location":[
-        {'index':0,'name':'ic5','center':[-74.55927,43.63354],'target':[-74.55836,43.63926],'offset':[0.001,0],'mark':'[US-NY2249]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-74.55443677,43.6351911],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-74.54897313,43.63350998],'photoid':2}]},
+        {'index':0,'name':'ic5','center':[-74.55927,43.63354],'target':[-74.55836,43.63926],'offset':[0.001,0],'mark':'[US-NY2249]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-74.55443677,43.6351911],'photoid':1},
+    {'clue_index':1,'status':'unfound','info':'drink','location':[-74.54897313,43.63350998],'photoid':2}]},
+            
+    {'index':1,'name':'ic1','center':[-111.71108,35.33068333],'target':[-111.6975,35.334233],'offset':[0.016,0],'mark':'[US-AZ0135]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-111.6894956,35.33623704],'photoid':1},
+    {'clue_index':1,'status':'unfound','info':'drink','location':[-111.6774876,35.33575672],'photoid':2}]},
+      
+    {'index':2,'name':'ic3','center':[-112.6892,36.23878333],'target':[-112.70008,36.246433],'offset':[0.001,0],'mark':'[US-AZ0277]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-112.6921119,36.24073463],'photoid':1},
+    {'clue_index':1,'status':'unfound','info':'drink','location':[-112.6959545,36.23935371],'photoid':2}]},
+      
+    {'index':3,'name':'ic4','center':[-74.61429,44.28656],'target':[-74.60208,44.28923],'offset':[0.01,0],'mark':'[US-NY2295]','type':'hiker',
+    'clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-74.59804916,44.28382818],'photoid':1},
+    {'clue_index':1,'status':'unfound','info':'drink','location':[-74.60195176,44.29289423],'photoid':2}]},
+          
+    {'index':5,'name':'ic6','center':[-111.80667,34.82166665],'target':[-111.79833,34.818333],'offset':[0.005,0],'mark':'[US-AZ0042]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-111.7965532,34.81779406],'photoid':1},           
+    {'clue_index':1,'status':'unfound','info':'drink','location':[-111.8029,34.81957],'photoid':2}]},
+      
+    {'index':9,'name':'ic10','center':[-79.08191,37.8252],'target':[-79.07037,37.8261],'offset':[0.001,0],'mark':'[Priest_hiker]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-79.07826,37.82544],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-79.07513,37.82479],'photoid':2}]},
+          
+    {'index':11,'name':'ic12','center':[-78.46993,38.44706],'target':[-78.46384,38.45421],'offset':[0.001,0],'mark':'[DevilsDitch_hikers]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-78.46646,38.44655],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-78.46654,38.45036],'photoid':2}]},
 
-        {'index':1,'name':'ic1','center':[-111.71108,35.33068333],'target':[-111.6975,35.334233],'offset':[0.016,0],'mark':'[US-AZ0135]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-111.6894956,35.33623704],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-111.6774876,35.33575672],'photoid':2}]},
-
-        {'index':2,'name':'ic3','center':[-112.6892,36.23878333],'target':[-112.70008,36.246433],'offset':[0.001,0],'mark':'[US-AZ0277]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-112.6921119,36.24073463],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-112.6959545,36.23935371],'photoid':2}]},
-
-        {'index':3,'name':'ic4','center':[-74.61429,44.28656],'target':[-74.60208,44.28923],'offset':[0.01,0],'mark':'[US-NY2295]','type':'hiker',
-        'clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-74.61065,44.283],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-74.60195176,44.29289423],'photoid':2}]},
-
-        {'index':5,'name':'ic6','center':[-111.80667,34.82166665],'target':[-111.79833,34.818333],'offset':[0.005,0],'mark':'[US-AZ0042]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-111.7965532,34.81779406],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-111.8029,34.81957],'photoid':2}]},
-
-        {'index':9,'name':'ic10','center':[-79.08191,37.8252],'target':[-79.07037,37.8261],'offset':[0.001,0],'mark':'[Priest_hiker]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-79.07826,37.82544],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-79.07513,37.82479],'photoid':2}]},
-
-        {'index':11,'name':'ic12','center':[-78.46993,38.44706],'target':[-78.46384,38.45421],'offset':[0.001,0],'mark':'[DevilsDitch_hikers]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-78.47071,38.439682],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-78.466461,38.440926],'photoid':2}]},
-
-        {'index':12,'name':'ic13','center':[-79.33887,37.67752],'target':[-79.34203,37.67097],'offset':[0.001,0],'mark':'[Punchbowl_hiker]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-79.34058,37.67462],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-79.34123,37.67315],'photoid':2}]},
-
-        {'index':13,'name':'ic14','center':[-78.52798,37.99092],'target':[-78.52562,37.98698],'offset':[0.001,0],'mark':'[BiscuitRun_hikers]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-78.53077,37.98882],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-78.52777,37.98644],'photoid':2}]}
+    {'index':12,'name':'ic13','center':[-79.33887,37.67752],'target':[-79.34203,37.67097],'offset':[0.001,0],'mark':'[Punchbowl_hiker]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-79.34058,37.67462],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-79.34123,37.67315],'photoid':2}]},
+      
+    {'index':13,'name':'ic14','center':[-78.52798,37.99092],'target':[-78.52562,37.98698],'offset':[0.001,0],'mark':'[BiscuitRun_hikers]','type':'hiker','clue':[{'clue_index':0,'status':'unfound','info':'cloth','location':[-78.53077,37.98882],'photoid':1},{'clue_index':1,'status':'unfound','info':'drink','location':[-78.52777,37.98644],'photoid':2}]}
   ],
   "taskstatus":[
     {"index":0,"name":"unsigned"},

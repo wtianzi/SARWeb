@@ -1483,16 +1483,21 @@
                 //let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9];
                 //t_color.push(0.063*i+0.4);//occupacity
                 //let t_color=m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i)*9];
+                
+                let tlen=mid_data.length;
                 let t_color= [0,0,255];
-                t_color.push(1-0.5*i);   
-                //console.log(t_color);
+                //t_color.push(0.9-0.8*i/tlen); 
+                
+                t_color.push(1.3-Math.log10(i+1));
+                
+                console.log(t_color);
 
                 let polylineGraphic=new Graphic({
                   geometry: polyline,
                   symbol:{
                           type: "simple-line", // autocasts as new SimpleLineSymbol()
                           color: t_color, // RGB color values as an array
-                          width: 2
+                          width: 1
                         }
                 });
                 arr_visual.push(polylineGraphic);
@@ -2681,7 +2686,7 @@
               <p id="p_discription">A 30 year old woman left for a hike at approximately 10:00am on Tuesday. She informed her fiancé that she would do a 3.5 mile hike in and then back out the same way. Her car was found in the parking lot at the trailhead when her fiancé began to worry about her whereabouts around 3:30pm. She is an experienced hiker and was carrying a backpack containing water, bug spray, a flashlight, a lighter and a light purple jacket. She has short brown hair and is wearing nike shorts and a grey shirt.
               </p>
               <p>
-                  Please read the tips on the buttom right and try to finish the assignment task: 
+                  Please read the tips on the buttom right and try to finish the assignment task. 
               </p>
               <ul hidden>
                   <li>Step 1: Load data</li>

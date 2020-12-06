@@ -241,8 +241,8 @@ class PostExpSurveyModel(models.Model):
     participantid=models.CharField(max_length=100, blank=True, null=True) # a unix time
     
     q1=models.TextField(blank=True,null=True)
-    q2=models.TextField(max_length=100, blank=True, null=True)
-    q3=models.TextField(max_length=100, blank=True, null=True)
+    q2=models.TextField(blank=True, null=True)
+    q3=models.TextField(blank=True, null=True)
     q4=models.TextField( blank=True,null=True)
     q5=models.TextField( blank=True,null=True)
     

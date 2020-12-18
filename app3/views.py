@@ -354,8 +354,8 @@ class ConsentFormView(TemplateView):
             pindex = queryset[0]['participantindex']+1
         res=ParticipantStatusModel(participantid=pid,participantname=pname,participantindex=pindex)
         res.save()
-        
-        pindex = pindex % 29
+            
+        pindex = pindex % 38
         
         #context={"participantid":pid,"participantindex":pindex}
         
@@ -443,7 +443,7 @@ class QuestionnaireFormView(TemplateView):
         context["measurement_right"]=[
             {"name":"trust4","question":"Your degree of trust in the model?","left":"not at all","right":"very strong"},
             {"name":"trust5","question":"I can rely on the system to function properly","left":"not at all","right":"very strong"},
-            {"name":"workload","question":"Please select your workload level.","left":"not at all","right":"very strong"},
+            {"name":"workload","question":"Please select your workload level.","left":"Very low","right":"Very high"},
             {"name":"NASATLX1_mental","question":"How mentally demanding was the task?","left":"Very low","right":"Very high"},
             {"name":"NASATLX2_physical","question":"How physically demanding was the task?","left":"Very low","right":"Very high"},
             {"name":"NASATLX3_temporal","question":"How hurried or rushed was the pace of the task?","left":"Very low","right":"Very high"},

@@ -37,23 +37,27 @@
     <div id="wrapper" class="page-header mb-3 container">
               
         
-        <h2>Consent section</h2>                
+        <h2>Consent section</h2>  
+        
+        <div style="float: center;">
+          <input type="checkbox" name="check1" value="False" id="mycheck" onclick="handleClick(this)">
+            <label for="mycheck">Please confirm that you have read the consent form and fully understand your rights.</label>
+        </div>  
+        
         <form action="https://virginiatech.qualtrics.com/jfe/form/SV_cvjhA08jCrEvcDH" target="_blank">
             <input type="submit" value="View Consent Form" class="col-md-7"/>
         </form>
-        <br>
-        <h2>Please watch the training video</h2>
-        
-        <iframe width="896" height="504" src="https://www.youtube.com/embed/NyeSzbHD8GA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        <br>
+                
         
       <div>
         <form action="consentform_action" method="post" id="quiz">
           {% csrf_token %}
-            <div style="float: center;">
-              <input type="checkbox" name="check1" value="False" id="mycheck" onclick="handleClick(this)">
-                <label for="mycheck">Please confirm that you have read the consent form and fully understand your rights.</label>
-            </div>
+            
+        <br>
+        <h2>Please watch the training video</h2>        
+        <iframe width="896" height="504" src="https://www.youtube.com/embed/NyeSzbHD8GA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <br>
+            
             
           <div>
             <input type="submit" value="Start Experiment" id="agree" class="col-md-7" disabled/>
@@ -72,7 +76,10 @@
     </div>
     <script>
       function handleClick(cb){
-        bt = document.getElementById("agree");
+          bt = document.getElementById("agree");
+          bt.disabled=false;
+          /*
+           
         if(cb.checked){
           bt.disabled=false;
             cb.value="Ture";
@@ -82,6 +89,8 @@
           bt.disabled=true;
             cb.value="False";
         }
+          */
+       
 
       }
       function dismissAddAnotherPopup(win) {

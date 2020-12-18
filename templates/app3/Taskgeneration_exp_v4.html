@@ -205,6 +205,7 @@
       //let height=900*1.5;
       let m_d=new Date();
       let m_scale=15;//15
+      let m_minsegmentcnt=90;
       let m_experimentres={
         "scenario":null,
         "lostpersontype":null,
@@ -260,8 +261,10 @@
         "duration":0,
         "totalrounds":0,
         "resolution":{"width":screen.width,"height":screen.height},
-        "segmentnumber":54,
-        "targetcellindex":0//,"allpolygons":null
+        "segmentnumber":93,        
+        "targetcellindex":0,//,"allpolygons":null
+        "minsegments":93,
+        "firstround":7
       };
 
       // update to db at each assignment
@@ -326,7 +329,7 @@
       let epsg4326_voronoiarr=[];
 
       const visualization_Segmentheat_Layer = new GraphicsLayer({
-        opacity:0.7
+        opacity:0.6
       });
       
       const graphicInitLayer= new GraphicsLayer();
@@ -335,7 +338,7 @@
       });
 
       const visualization_Contourmap_Layer = new GraphicsLayer({
-        opacity:0.7
+        opacity:0.5
       });      
     
       //0.7
@@ -438,7 +441,10 @@
           area_extent=textent;
           wholearea=geometryEngine.planarArea(Polygon.fromExtent(textent));
         }
-        let npoints=2*Math.round(wholearea/m_exp_variables.eacharea+0.5);          
+        let npoints=2*Math.round(wholearea/m_exp_variables.eacharea+0.5); 
+        if (npoints<m_minsegmentcnt){
+            npoints=m_minsegmentcnt;
+        }
         //wholearea=wholetask.area;//metric   240  : acre  60
           
         //let npoints=80;
@@ -1504,6 +1510,7 @@
             }
              for(let i=0;i<mid_data[i_hr].length;i++){
                let t_color= m_lpdata_tra_colormap[m_exp_variables.colormap][(11-i_hr)*9];
+                 t_color=[125,125,125,0.1];
                if (i_hr>=t_data.length){
                  i_hr=t_data.length-1;
                  t_color=[125,125,125,0.1];
@@ -1599,7 +1606,7 @@
             //first round radius:1, second:2,third:3
             // area: 1: 3: 5:7:9
 
-            let t_firstround=6;
+            let t_firstround=6;//6
             let arr=[];
             let i=0;
             let npt=0;

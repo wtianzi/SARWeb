@@ -89,6 +89,8 @@ urlpatterns = [
     path('translateshapefiletogeojson',TemplateView.as_view(template_name="app3/Translate_shapefile_to_geojson.html")),
     path('realdatalocation',TemplateView.as_view(template_name="app3/realdatalocation.html")),
     path('realdatalocationfiltered',TemplateView.as_view(template_name="app3/realdatalocation_filtered.html")),
+    path('word',TemplateView.as_view(template_name="app3/words.html")),
+    path('words',TemplateView.as_view(template_name="app3/word-spell.html")),
     #path('index',TaskIndexView.asView()),
 ]
 

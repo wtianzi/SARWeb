@@ -156,13 +156,13 @@ var g_experiment={
     {'index':32,'lpt':2,'loc':1,'vt':0},
 
 
-    {'index':33,'lpt':2,'loc':1,'vt':0},
+    {'index':33,'lpt':2,'loc':6,'vt':0},
     {'index':34,'lpt':2,'loc':5,'vt':2},
     {'index':35,'lpt':2,'loc':3,'vt':1},
     {'index':36,'lpt':2,'loc':8,'vt':3},
     {'index':37,'lpt':2,'loc':7,'vt':0},
     {'index':38,'lpt':2,'loc':4,'vt':2},
-    {'index':39,'lpt':2,'loc':6,'vt':3},
+    {'index':39,'lpt':2,'loc':1,'vt':3},
     {'index':40,'lpt':2,'loc':2,'vt':1},
 
 
@@ -188,8 +188,8 @@ var g_experiment={
 
     {'index':57,'lpt':2,'loc':1,'vt':1},
     {'index':58,'lpt':2,'loc':8,'vt':2},
-    {'index':59,'lpt':2,'loc':4,'vt':0},
-    {'index':60,'lpt':2,'loc':6,'vt':3},
+    {'index':59,'lpt':2,'loc':6,'vt':0},
+    {'index':60,'lpt':2,'loc':4,'vt':3},
     {'index':61,'lpt':2,'loc':2,'vt':0},
     {'index':62,'lpt':2,'loc':3,'vt':3},
     {'index':63,'lpt':2,'loc':7,'vt':1},
@@ -219,10 +219,10 @@ var g_experiment={
     {'index':81,'lpt':2,'loc':2,'vt':0},
     {'index':82,'lpt':2,'loc':7,'vt':3},
     {'index':83,'lpt':2,'loc':8,'vt':2},
-    {'index':84,'lpt':2,'loc':3,'vt':1},
+    {'index':84,'lpt':2,'loc':1,'vt':1},
     {'index':85,'lpt':2,'loc':5,'vt':2},
     {'index':86,'lpt':2,'loc':4,'vt':3},
-    {'index':87,'lpt':2,'loc':1,'vt':0},
+    {'index':87,'lpt':2,'loc':3,'vt':0},
     {'index':88,'lpt':2,'loc':6,'vt':1},
 
 
@@ -237,11 +237,11 @@ var g_experiment={
 
 
     {'index':97,'lpt':2,'loc':7,'vt':3},
-    {'index':98,'lpt':2,'loc':3,'vt':2},    
+    {'index':98,'lpt':2,'loc':8,'vt':2},    
     {'index':99,'lpt':2,'loc':2,'vt':1},
     {'index':100,'lpt':2,'loc':4,'vt':0},
     {'index':101,'lpt':2,'loc':6,'vt':1},
-    {'index':102,'lpt':2,'loc':8,'vt':0},
+    {'index':102,'lpt':2,'loc':3,'vt':0},
     {'index':103,'lpt':2,'loc':1,'vt':3},
     {'index':104,'lpt':2,'loc':5,'vt':2},
 
@@ -266,13 +266,13 @@ var g_experiment={
     {'index':120,'lpt':2,'loc':4,'vt':3},
 
 
-    {'index':121,'lpt':2,'loc':5,'vt':0},
+    {'index':121,'lpt':2,'loc':3,'vt':0},
     {'index':122,'lpt':2,'loc':2,'vt':1},
     {'index':123,'lpt':2,'loc':4,'vt':3},
     {'index':124,'lpt':2,'loc':6,'vt':2},
     {'index':125,'lpt':2,'loc':7,'vt':0},
     {'index':126,'lpt':2,'loc':1,'vt':3},
-    {'index':127,'lpt':2,'loc':3,'vt':2},
+    {'index':127,'lpt':2,'loc':5,'vt':2},
     {'index':128,'lpt':2,'loc':8,'vt':1},
 
 
@@ -337,12 +337,12 @@ var g_experiment={
 
 
     {'index':177,'lpt':2,'loc':4,'vt':2},
-    {'index':178,'lpt':2,'loc':3,'vt':3},    
+    {'index':178,'lpt':2,'loc':6,'vt':3},    
     {'index':179,'lpt':2,'loc':2,'vt':0},
     {'index':180,'lpt':2,'loc':8,'vt':1},
     {'index':181,'lpt':2,'loc':1,'vt':1},
     {'index':182,'lpt':2,'loc':7,'vt':2},
-    {'index':183,'lpt':2,'loc':6,'vt':0},
+    {'index':183,'lpt':2,'loc':3,'vt':0},
     {'index':184,'lpt':2,'loc':5,'vt':3},
 
 
@@ -356,13 +356,13 @@ var g_experiment={
     {'index':192,'lpt':2,'loc':4,'vt':1},
 
 
-    {'index':193,'lpt':2,'loc':3,'vt':3},
+    {'index':193,'lpt':2,'loc':6,'vt':3},
     {'index':194,'lpt':2,'loc':2,'vt':2},
     {'index':195,'lpt':2,'loc':1,'vt':0},
     {'index':196,'lpt':2,'loc':7,'vt':1},
     {'index':197,'lpt':2,'loc':4,'vt':2},
     {'index':198,'lpt':2,'loc':8,'vt':3},
-    {'index':199,'lpt':2,'loc':6,'vt':0},
+    {'index':199,'lpt':2,'loc':3,'vt':0},
     {'index':200,'lpt':2,'loc':5,'vt':1},
 
 

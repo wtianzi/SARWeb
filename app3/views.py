@@ -2,9 +2,9 @@ from django.shortcuts import render,redirect
 from django.views.generic import TemplateView, ListView
 from django.views.generic.edit import FormView
 from django.http import HttpResponse,HttpResponseRedirect
-from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage,ParticipantStatusModel,QuestionnaireModel,DemographicsModel,PostExpSurveyModel
+from .models import Person,Task,GPSData,DataStorage,ClueMedia,WaypointsData,GPShistoricalData,ExperimentDataStorage,ParticipantStatusModel,QuestionnaireModel,DemographicsModel,PostExpSurveyModel,WebapplicationModel
 import json
-from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm,ConsentForm,DemographicsForm,PostExpSurveyForm
+from .forms import DemoForm,TaskAssignmentForm,QuestionnaireForm,ConsentForm,DemographicsForm,PostExpSurveyForm,WebapplicationForm
 from django.urls import reverse
 from django.template import loader
 from django.core import serializers
@@ -429,7 +429,7 @@ class QuestionnaireFormView(TemplateView):
         #context["measurements"]=["trust","transparency","workload"]
         #print(context)
         context["measurement_left"]=[            
-            {"name":"transparency","question":"Model transparency: Do you know in general how the model works?","left":"not at all","right":"very strong"},
+            {"name":"transparency","question":"Model transparency: Do you know in general how the model works?","left":"very little","right":"very much"},
             {"name":"trans1","question":"I understand what the model shows by this visualization.","left":"not at all","right":"very strong"},
             {"name":"trans2","question":"It is easy to notice the distribution of the lost person in the area by this visualization.","left":"not at all","right":"very strong"},
             {"name":"trans3","question":"I understand why the model looks like this.","left":"not at all","right":"very strong"},
@@ -438,9 +438,7 @@ class QuestionnaireFormView(TemplateView):
             {"name":"trust","question":"Please select your trust of the system.","left":"not at all","right":"very strong"},
             {"name":"trust1","question":"To what extent does the model predict lost person location properly?","left":"not at all","right":"very strong"},
             {"name":"trust2","question":"To what extent can the model’s behavior be predicted from moment to moment?","left":"not at all","right":"very strong"},
-            {"name":"trust3","question":"To what extent can you count on the model to do its job?","left":"not at all","right":"very strong"}
-            ]
-        context["measurement_right"]=[
+            {"name":"trust3","question":"To what extent can you count on the model to do its job?","left":"not at all","right":"very strong"},
             {"name":"trust4","question":"Your degree of trust in the model?","left":"not at all","right":"very strong"},
             {"name":"trust5","question":"I can rely on the system to function properly","left":"not at all","right":"very strong"},
             {"name":"workload","question":"Please select your workload level.","left":"Very low","right":"Very high"},
@@ -450,6 +448,22 @@ class QuestionnaireFormView(TemplateView):
             {"name":"NASATLX4_performance","question":"How successful were you in accomplishing what you were asked to do?","left":"Very low","right":"Very high"},
             {"name":"NASATLX5_effort","question":"How hard did you have to work to accomplish your level of performance?","left":"Very low","right":"Very high"},
             {"name":"NASATLX6_frustration","question":"How insecure, discouraged, irritated, stressed, and annoyed were you?","left":"Very low","right":"Very high"}
+            ]
+        context["measurement_right"]=[
+            {"name":"q1","question":"The location where the lost person was found is representative of a lost person of this type, given the landscape and initial planning point (i.e., mission base).","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q2","question":"The location where the lost person was found is representative of how far a lost person of this type would travel, given the landscape and initial planning point.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q3","question":"The location where the lost person was found is representative of the direction a lost person of this type would travel, given the landscape and initial planning point.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q4","question":"This visualization is helpful for decision making that SAR professionals and volunteers perform to conduct searches.","left":"Strongly Disagree","right":"Strongly Agree"},
+            
+            {"name":"q5","question":"This visualization captures most likely location(s)/area(s) for finding the lost person at different time of the SAR mission.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q6","question":"This visualization intuitively presents where the lost person would likely be at different time of the SAR mission.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q7","question":"This visualization captures representative travel speed or mobility of the lost person.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q8","question":"This visualization intuitively presents how fast the lost person travels.","left":"Strongly Disagree","right":"Strongly Agree"},
+            
+            {"name":"q9","question":"This visualization captures representative directions of travel of the lost person.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q10","question":"This visualization intuitively presents which directions the lost person travels.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q11","question":"This visualization captures most likely travel route(s) of the lost person.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q12","question":"I would recommend this visualization to my SAR colleagues for their missions.","left":"Strongly Disagree","right":"Strongly Agree"}
             ]
         return context
 
@@ -474,6 +488,59 @@ class QuestionnaireFormView(TemplateView):
       opener.dismissAddAnotherPopup(window);
    </script>''')
 
+class WebapplicationFormView(TemplateView):
+    template_name="app3/questionnaire_task.html"
+    context={"form":{"participantid":"0"}}
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context["participant_id"] = kwargs['participant_id']
+        context["task_id"] = kwargs['task_id']
+        context["scene_id"] = kwargs['scene_id']
+        context["title"] = int(context["scene_id"])
+        #context["measurements"]=["trust","transparency","workload"]
+        #print(context)
+        context["measurement_left"]=[            
+            {"name":"q1","question":"The web application is useful for SAR professionals and volunteers in conducting their missions.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q2","question":"The map division function provides effective search areas for tasking.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q3","question":"The map division function could save time for task assignment.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q4","question":"The map division function is flexible for customizing search areas for tasking.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q5","question":"The map division function is easy and intuitive to use for creating search areas.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q6","question":"The task assigning function based on search areas produces useful assignments for search teams.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q7","question":"The task assigning function based on search areas could save time for producing task assignments.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q8","question":"The task assigning function is flexible for customizing task assignments.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q9","question":"The task assigning function is easy and intuitive to use for producing task assignments.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q10","question":"This web application complements existing SAR tools.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q11","question":"This web application is easy to learn.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q12","question":"This web application is easy to use.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q13","question":"I would recommend this web application to my SAR colleagues.","left":"Strongly Disagree","right":"Strongly Agree"}
+            ]
+        context["measurement_right"]=[
+            
+            ]
+        return context
+
+    def FormToDB(request):
+        form=WebapplicationForm(request.POST or None)
+        #print(form)
+        #print(form.errors)
+        if form.is_valid():
+            #print(form)
+            form.save()
+        sid=request.POST.get("sceneid")        
+        sid=sid.rstrip('/')
+        if int(sid)>=8:
+            pid=request.POST.get("participantid") 
+            #context={"participantid":pid}
+            #return render(request,'app3/exp_survey_postexp.html',context)
+            return redirect(reverse('survey_postexperiment',kwargs={"participantid":pid}))
+            
+        context={'form': form,"flag":"success"}
+        return  HttpResponse('''
+   <script type="text/javascript">
+      opener.dismissAddAnotherPopup(window);
+   </script>''')
+    
 class DownloadDataView(TemplateView):
     template_name="app3/downloaddata.html"
     context={}

@@ -185,6 +185,21 @@ class QuestionnaireModel(models.Model):
     NASATLX4_performance=models.IntegerField(blank=True,null=True)
     NASATLX5_effort=models.IntegerField(blank=True,null=True)
     NASATLX6_frustration=models.IntegerField(blank=True,null=True)
+    
+    q1=models.IntegerField(blank=True,null=True)
+    q2=models.IntegerField(blank=True,null=True)
+    q3=models.IntegerField(blank=True,null=True)
+    q4=models.IntegerField(blank=True,null=True)
+    
+    q5=models.IntegerField(blank=True,null=True)
+    q6=models.IntegerField(blank=True,null=True)
+    q7=models.IntegerField(blank=True,null=True)
+    q8=models.IntegerField(blank=True,null=True)
+    
+    q9=models.IntegerField(blank=True,null=True)
+    q10=models.IntegerField(blank=True,null=True)
+    q11=models.IntegerField(blank=True,null=True)
+    q12=models.IntegerField(blank=True,null=True)
 
     created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
@@ -192,6 +207,33 @@ class QuestionnaireModel(models.Model):
     def __str__(self):
         return str(self.id)
 
+class WebapplicationModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    participantid=models.CharField(max_length=100, blank=True, null=True)
+    taskid=models.CharField(max_length=100, blank=True, null=True)
+    sceneid=models.CharField(max_length=100, blank=True, null=True)
+    
+    q1=models.IntegerField(blank=True,null=True)
+    q2=models.IntegerField(blank=True,null=True)
+    q3=models.IntegerField(blank=True,null=True)
+
+    q4=models.IntegerField(blank=True,null=True)
+    q5=models.IntegerField(blank=True,null=True)
+    q6=models.IntegerField(blank=True,null=True)
+    q7=models.IntegerField(blank=True,null=True)
+    q8=models.IntegerField(blank=True,null=True)
+
+    q9=models.IntegerField(blank=True,null=True)
+    q10=models.IntegerField(blank=True,null=True)
+    q11=models.IntegerField(blank=True,null=True)
+    q12=models.IntegerField(blank=True,null=True)
+    q13=models.IntegerField(blank=True,null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)
+
+    def __str__(self):
+        return str(self.id)
 class ParticipantStatusModel(models.Model):
     id = models.AutoField(primary_key=True)
     participantid=models.CharField(max_length=100, blank=True, null=True) # a unix time

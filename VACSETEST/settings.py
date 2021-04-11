@@ -36,7 +36,7 @@ ALLOWED_HOSTS = [
     '192.168.1.124',
     'ubuntu18:8000',
     '73.152.214.220',
-    
+    '192.168.0.224',
 ]
 
 
@@ -97,7 +97,7 @@ WSGI_APPLICATION = 'VACSETEST.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE':'django.db.backends.mysql',
-        'NAME':'exp_sarweb',
+        'NAME':'exp_pro_sarweb',
         'USER': 'sarusr',
         'PASSWORD':'saradmin',
         'HOST':'0.0.0.0',

@@ -2,7 +2,7 @@
 {% load static %}
 <html>
   <head>
-    <title> Questionnaire</title>
+    <title> Web Application Survey </title>
     <link href='//fonts.googleapis.com/css?family=Lobster&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html">
@@ -59,7 +59,7 @@
   </head>
 <body>
 <div id="wrapper" class="page-header mb-3">
-  <h1 class="text-center" id="scenetitle">Web Application Survey (Scene {{title}})</h1>
+  <h1 class="text-center" id="scenetitle">Application Rating</h1>
 
   <form action="questionnaire_action" method="post" target="_blank" id="quiz">
     {% csrf_token %}
@@ -67,11 +67,6 @@
       <label >Participant ID:</label>
       <input type="text" class=".asd"  value={{participant_id}} name="participantid" readonly/>
 
-      <label >Task ID:</label>
-      <input type="text" class=".asd"  value={{task_id}} name="taskid" readonly/>
-
-      <label >Scene ID:</label>
-      <input type="text" class=".asd"  value={{scene_id}} name="sceneid" readonly/>
     </div>
     <div class="container-fluid text-center">
 

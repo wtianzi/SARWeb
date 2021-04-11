@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.generic import TemplateView
 from . import views
-from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView,ConsentFormView,SurveyPostEFormView,DemogrphicsView
+from app3.views import IndexView,TaskGenerationView,TaskGenerationFormView,TaskassignmentExperimentView,TaskassignmentFullView,TaskIndexView,QuestionnaireFormView,ConsentFormView,SurveyPostEFormView,DemogrphicsView, WebapplicationFormView
 from app3.views import DownloadDataView
 from django.conf.urls import url
 from rest_framework import routers
@@ -30,6 +30,9 @@ urlpatterns = [
     path('experiment/survey_postexperiment',SurveyPostEFormView.as_view(),name="survey_postexperiment"),
     url(r'^experiment/survey_postexperiment/\w+/action$', SurveyPostEFormView.FormToDB,name="survey_postexperiment"),
     url(r'^experiment/survey_postexperiment/(?P<participantid>\w+)/$',SurveyPostEFormView.as_view(),name="survey_postexperiment"),
+    
+    path('experiment/survey_postexp_webapp',WebapplicationFormView.as_view(),name="survey_postexp_webapp"),
+    url(r'^experiment/survey_postexp_webapp/(?P<participantid>\w+)/$',SurveyPostEFormView.as_view(),name="survey_postexp_webapp"),
     
     path('experiment/exp_thanks',TemplateView.as_view(template_name="app3/exp_thanks.html"),name="exp_thanks"),
     

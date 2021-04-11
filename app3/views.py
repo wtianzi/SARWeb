@@ -480,7 +480,9 @@ class QuestionnaireFormView(TemplateView):
             pid=request.POST.get("participantid") 
             #context={"participantid":pid}
             #return render(request,'app3/exp_survey_postexp.html',context)
-            return redirect(reverse('survey_postexperiment',kwargs={"participantid":pid}))
+            
+            #return redirect(reverse('survey_postexperiment',kwargs={"participantid":pid}))
+            return redirect(reverse('survey_postexp_webapp',kwargs={"participantid":pid}))
             
         context={'form': form,"flag":"success"}
         return  HttpResponse('''
@@ -489,17 +491,12 @@ class QuestionnaireFormView(TemplateView):
    </script>''')
 
 class WebapplicationFormView(TemplateView):
-    template_name="app3/questionnaire_task.html"
+    template_name="app3/exp_survey_postexp_webapplication.html"
     context={"form":{"participantid":"0"}}
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context["participant_id"] = kwargs['participant_id']
-        context["task_id"] = kwargs['task_id']
-        context["scene_id"] = kwargs['scene_id']
-        context["title"] = int(context["scene_id"])
-        #context["measurements"]=["trust","transparency","workload"]
-        #print(context)
         context["measurement_left"]=[            
             {"name":"q1","question":"The web application is useful for SAR professionals and volunteers in conducting their missions.","left":"Strongly Disagree","right":"Strongly Agree"},
             {"name":"q2","question":"The map division function provides effective search areas for tasking.","left":"Strongly Disagree","right":"Strongly Agree"},
@@ -527,19 +524,7 @@ class WebapplicationFormView(TemplateView):
         if form.is_valid():
             #print(form)
             form.save()
-        sid=request.POST.get("sceneid")        
-        sid=sid.rstrip('/')
-        if int(sid)>=8:
-            pid=request.POST.get("participantid") 
-            #context={"participantid":pid}
-            #return render(request,'app3/exp_survey_postexp.html',context)
-            return redirect(reverse('survey_postexperiment',kwargs={"participantid":pid}))
-            
-        context={'form': form,"flag":"success"}
-        return  HttpResponse('''
-   <script type="text/javascript">
-      opener.dismissAddAnotherPopup(window);
-   </script>''')
+        return redirect(reverse('survey_postexperiment',kwargs={"participantid":pid}))
     
 class DownloadDataView(TemplateView):
     template_name="app3/downloaddata.html"

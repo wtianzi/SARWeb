@@ -210,8 +210,6 @@ class QuestionnaireModel(models.Model):
 class WebapplicationModel(models.Model):
     id = models.AutoField(primary_key=True)
     participantid=models.CharField(max_length=100, blank=True, null=True)
-    taskid=models.CharField(max_length=100, blank=True, null=True)
-    sceneid=models.CharField(max_length=100, blank=True, null=True)
     
     q1=models.IntegerField(blank=True,null=True)
     q2=models.IntegerField(blank=True,null=True)
@@ -295,6 +293,14 @@ class PostExpSurveyModel(models.Model):
     q10=models.TextField( blank=True,null=True)
     
     q11=models.TextField( blank=True,null=True)
+    q12=models.TextField( blank=True,null=True)
+    q13=models.TextField( blank=True,null=True)
+    q14=models.TextField( blank=True,null=True)
+    q15=models.TextField( blank=True,null=True)
+    
+    q16=models.TextField( blank=True,null=True)
+    q17=models.TextField( blank=True,null=True)
+    q18=models.TextField( blank=True,null=True)
 
     created_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True,blank=True, null=True)

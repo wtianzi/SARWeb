@@ -491,12 +491,12 @@ class QuestionnaireFormView(TemplateView):
    </script>''')
 
 class WebapplicationFormView(TemplateView):
-    template_name="app3/exp_survey_postexp_webapplication.html"
+    template_name="app3/exp_survey_postexp_rating.html"
     context={"form":{"participantid":"0"}}
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context["participant_id"] = kwargs['participant_id']
+        context["participantid"] = kwargs['participantid']
         context["measurement_left"]=[            
             {"name":"q1","question":"The web application is useful for SAR professionals and volunteers in conducting their missions.","left":"Strongly Disagree","right":"Strongly Agree"},
             {"name":"q2","question":"The map division function provides effective search areas for tasking.","left":"Strongly Disagree","right":"Strongly Agree"},
@@ -524,6 +524,8 @@ class WebapplicationFormView(TemplateView):
         if form.is_valid():
             #print(form)
             form.save()
+        #print(reverse('survey_postexperiment',kwargs={"participantid":pid}))
+        pid=request.POST.get("participantid")
         return redirect(reverse('survey_postexperiment',kwargs={"participantid":pid}))
     
 class DownloadDataView(TemplateView):

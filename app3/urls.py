@@ -32,7 +32,10 @@ urlpatterns = [
     url(r'^experiment/survey_postexperiment/(?P<participantid>\w+)/$',SurveyPostEFormView.as_view(),name="survey_postexperiment"),
     
     path('experiment/survey_postexp_webapp',WebapplicationFormView.as_view(),name="survey_postexp_webapp"),
-    url(r'^experiment/survey_postexp_webapp/(?P<participantid>\w+)/$',SurveyPostEFormView.as_view(),name="survey_postexp_webapp"),
+    url(r'^experiment/survey_postexp_webapp/(?P<participantid>\w+)/$',WebapplicationFormView.as_view(),name="survey_postexp_webapp"),
+    url(r'^experiment/survey_postexp_webapp/\w+/action$', WebapplicationFormView.FormToDB,name="survey_postexp_webapp"),
+    path('rating_action', WebapplicationFormView.FormToDB),
+    url(r'^experiment/survey_postexp_webapp/\w+/rating_action$',WebapplicationFormView.FormToDB,name="rating_action"),
     
     path('experiment/exp_thanks',TemplateView.as_view(template_name="app3/exp_thanks.html"),name="exp_thanks"),
     

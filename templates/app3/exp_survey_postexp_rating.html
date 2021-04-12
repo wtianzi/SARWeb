@@ -61,11 +61,11 @@
 <div id="wrapper" class="page-header mb-3">
   <h1 class="text-center" id="scenetitle">Application Rating</h1>
 
-  <form action="questionnaire_action" method="post" target="_blank" id="quiz">
+  <form action="rating_action" method="post" target="_blank" id="quiz">
     {% csrf_token %}
     <div class="mx-auto">
       <label >Participant ID:</label>
-      <input type="text" class=".asd"  value={{participant_id}} name="participantid" readonly/>
+      <input type="text" class=".asd"  value={{participantid}} name="participantid" readonly/>
 
     </div>
     <div class="container-fluid text-center">

@@ -59,7 +59,7 @@
   </head>
 <body>
 <div id="wrapper" class="page-header mb-3">
-  <h1 class="text-center" id="scenetitle">Application Rating</h1>
+  <h1 class="text-center" id="scenetitle">Web Application Rating</h1>
 
   <form action="rating_action" method="post" target="_blank" id="quiz">
     {% csrf_token %}
@@ -127,9 +127,9 @@
         </div>
     </div>
     </div>
-
+<br>
     <div class="container-fluid">
-      <div class="col-md-12 text-right">
+      <div class="col-md-12 text-center">
         <button  type="submit" id="submit" onclick="tabulateAnswers()">Submit Your Answers</button>
         <button type="reset" id="reset" onclick="resetAnswer()">Reset</button>
       </div>

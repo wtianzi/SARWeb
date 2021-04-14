@@ -429,18 +429,18 @@ class QuestionnaireFormView(TemplateView):
         #context["measurements"]=["trust","transparency","workload"]
         #print(context)
         context["measurement_left"]=[            
-            {"name":"transparency","question":"Model transparency: Do you know in general how the model works?","left":"very little","right":"very much"},
-            {"name":"trans1","question":"I understand what the model shows by this visualization.","left":"not at all","right":"very strong"},
-            {"name":"trans2","question":"It is easy to notice the distribution of the lost person in the area by this visualization.","left":"not at all","right":"very strong"},
-            {"name":"trans3","question":"I understand why the model looks like this.","left":"not at all","right":"very strong"},
-            {"name":"trans4","question":"I’m confident my choice is the best under the circumstances.","left":"not at all","right":"very strong"},
+            {"name":"transparency","question":"Model transparency: Do you know in general how the model works?","left":"Very little","right":"very much"},
+            {"name":"trans1","question":"I understand what the model shows by this visualization.","left":"Not agree","right":"Agree"},
+            {"name":"trans2","question":"It is easy to notice the distribution of the lost person in the area by this visualization.","left":"Not agree","right":"Agree"},
+            {"name":"trans3","question":"I understand why the model looks like this.","left":"Not agree","right":"Agree"},
+            {"name":"trans4","question":"I’m confident my choice is the best under the circumstances.","left":"Not agree","right":"Agree"},
             {"name":"trans5","question":"I understand how the system will assist me with decisions I have to make.","left":"Not agree","right":"Agree"},
-            {"name":"trust","question":"Please select your trust of the system.","left":"not at all","right":"very strong"},
-            {"name":"trust1","question":"To what extent does the model predict lost person location properly?","left":"not at all","right":"very strong"},
-            {"name":"trust2","question":"To what extent can the model’s behavior be predicted from moment to moment?","left":"not at all","right":"very strong"},
-            {"name":"trust3","question":"To what extent can you count on the model to do its job?","left":"not at all","right":"very strong"},
-            {"name":"trust4","question":"Your degree of trust in the model?","left":"not at all","right":"very strong"},
-            {"name":"trust5","question":"I can rely on the system to function properly","left":"not at all","right":"very strong"},
+            {"name":"trust","question":"I trust the system.","left":"Not agree","right":"Agree"},
+            {"name":"trust1","question":"To what extent does the model predict lost person location properly?","left":"Not at all","right":"Very high"},
+            {"name":"trust2","question":"To what extent can the model’s behavior be predicted from moment to moment?","left":"Not at all","right":"Very high"},
+            {"name":"trust3","question":"To what extent can you count on the model to do its job?","left":"Not at all","right":"Very high"},
+            {"name":"trust4","question":"Your degree of trust in the model?","left":"Not at all","right":"Very high"},
+            {"name":"trust5","question":"I can rely on the system to function properly","left":"not at all","right":"Very high"},
             {"name":"workload","question":"Please select your workload level.","left":"Very low","right":"Very high"},
             {"name":"NASATLX1_mental","question":"How mentally demanding was the task?","left":"Very low","right":"Very high"},
             {"name":"NASATLX2_physical","question":"How physically demanding was the task?","left":"Very low","right":"Very high"},
@@ -450,20 +450,20 @@ class QuestionnaireFormView(TemplateView):
             {"name":"NASATLX6_frustration","question":"How insecure, discouraged, irritated, stressed, and annoyed were you?","left":"Very low","right":"Very high"}
             ]
         context["measurement_right"]=[
-            {"name":"q1","question":"The location where the lost person was found is representative of a lost person of this type, given the landscape and initial planning point (i.e., mission base).","left":"Strongly Disagree","right":"Strongly Agree"},
-            {"name":"q2","question":"The location where the lost person was found is representative of how far a lost person of this type would travel, given the landscape and initial planning point.","left":"Strongly Disagree","right":"Strongly Agree"},
-            {"name":"q3","question":"The location where the lost person was found is representative of the direction a lost person of this type would travel, given the landscape and initial planning point.","left":"Strongly Disagree","right":"Strongly Agree"},
-            {"name":"q4","question":"This visualization is helpful for decision making that SAR professionals and volunteers perform to conduct searches.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q1","question":"The location where the lost person was found is representative of a lost person of this type, given the landscape and initial planning point (i.e., mission base).","left":"Disagree","right":"Agree"},
+            {"name":"q2","question":"The location where the lost person was found is representative of how far a lost person of this type would travel, given the landscape and initial planning point.","left":"Disagree","right":"Agree"},
+            {"name":"q3","question":"The location where the lost person was found is representative of the direction a lost person of this type would travel, given the landscape and initial planning point.","left":"Disagree","right":"Agree"},
+            {"name":"q4","question":"This visualization is helpful for decision making that SAR professionals and volunteers perform to conduct searches.","left":"Disagree","right":"Agree"},
             
-            {"name":"q5","question":"This visualization captures most likely location(s)/area(s) for finding the lost person at different time of the SAR mission.","left":"Strongly Disagree","right":"Strongly Agree"},
-            {"name":"q6","question":"This visualization intuitively presents where the lost person would likely be at different time of the SAR mission.","left":"Strongly Disagree","right":"Strongly Agree"},
-            {"name":"q7","question":"This visualization captures representative travel speed or mobility of the lost person.","left":"Strongly Disagree","right":"Strongly Agree"},
-            {"name":"q8","question":"This visualization intuitively presents how fast the lost person travels.","left":"Strongly Disagree","right":"Strongly Agree"},
+            {"name":"q5","question":"This visualization captures most likely location(s)/area(s) for finding the lost person at different time of the SAR mission.","left":"Disagree","right":"Agree"},
+            {"name":"q6","question":"This visualization intuitively presents where the lost person would likely be at different time of the SAR mission.","left":"Disagree","right":"Agree"},
+            {"name":"q7","question":"This visualization captures representative travel speed or mobility of the lost person.","left":"Strongly Disagree","right":"Agree"},
+            {"name":"q8","question":"This visualization intuitively presents how fast the lost person travels.","left":"Disagree","right":"Agree"},
             
-            {"name":"q9","question":"This visualization captures representative directions of travel of the lost person.","left":"Strongly Disagree","right":"Strongly Agree"},
-            {"name":"q10","question":"This visualization intuitively presents which directions the lost person travels.","left":"Strongly Disagree","right":"Strongly Agree"},
-            {"name":"q11","question":"This visualization captures most likely travel route(s) of the lost person.","left":"Strongly Disagree","right":"Strongly Agree"},
-            {"name":"q12","question":"I would recommend this visualization to my SAR colleagues for their missions.","left":"Strongly Disagree","right":"Strongly Agree"}
+            {"name":"q9","question":"This visualization captures representative directions of travel of the lost person.","left":"Disagree","right":"Agree"},
+            {"name":"q10","question":"This visualization intuitively presents which directions the lost person travels.","left":"Disagree","right":"Agree"},
+            {"name":"q11","question":"This visualization captures most likely travel route(s) of the lost person.","left":"Disagree","right":"Agree"},
+            {"name":"q12","question":"I would recommend this visualization to my SAR colleagues for their missions.","left":"Disagree","right":"Agree"}
             ]
         return context
 

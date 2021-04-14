@@ -40,7 +40,7 @@
         <form action="action" method="post" id="quiz">
           {% csrf_token %}
             <div class="input-group">
-                <label for="age" class="col-md-4 input-group-addon my-auto">Age: </label>
+                <label for="age" class="input-group-addon my-auto">Age: </label>
                 <select id="age" name="age">
                     <option value="1">12~17</option>
                     <option value="2" selected>18~24</option>
@@ -54,7 +54,7 @@
             </div>
             
             <div class="input-group">
-            <label for="gender" class="col-md-4 input-group-addon my-auto">Gender:</label>
+            <label for="gender" class="input-group-addon my-auto">Gender:</label>
                 <select id="gender" name="gender">
                     <option value="1">Male</option>
                     <option value="2">Female</option>
@@ -62,7 +62,7 @@
                 </select>
             </div>
             <div class="input-group">
-                <label for="education" class="col-md-4 input-group-addon my-auto">Highest level of education (including current):</label>
+                <label for="education" class="input-group-addon my-auto">Highest level of education (including current):</label>
                 <select id="education" name="education">
                     <option value="1">High school</option>
                     <option value="2">Associate Undergraduate</option>
@@ -71,7 +71,7 @@
                 </select>
             </div>
             <div class="input-group">
-                <label for="sart" class="col-md-4 input-group-addon my-auto">Search and Rescue Training:</label>
+                <label for="sart" class="input-group-addon my-auto" >Search and Rescue Training:</label>
                 <select id="sart" name="sart">
                     <option value="1">Management</option>
                     <option value="2">Tracker</option>
@@ -84,7 +84,7 @@
             
             <div id="sarprof">
                 <div>
-                    <label for="q1" class="col-md-4 input-group-addon">Have you worked on any Search and Rescue operations in the last three years? </label>
+                    <label for="q1"  class="input-group-addon my-auto">Have you worked on any Search and Rescue operations in the last three years? </label>
                     <select id="q1" name="q1">
                         <option value="1">Yes</option>
                         <option value="2">No</option>
@@ -92,29 +92,29 @@
                 </div>
 
                 <div>
-                    <label for="q2">If yes, approximately how many?</label>
+                    <label for="q2"  class="input-group-addon my-auto">If yes, approximately how many?</label>
                     <input type="text" id="q2" name="q2"/>
                 </div>
 
                 <div>
-                    <label for="q3">How many Search and Rescue operations have you participated in total?</label>
+                    <label for="q3" class="input-group-addon my-auto">How many Search and Rescue operations have you participated in total?</label>
                     <input type="text" id="q3" name="q3"/>
                 </div>
 
                 <div>
                     <label for="q4">If you have one, briefly describe your typical roll on a Search and Rescue Operation? </label>
                     <br>
-                    <textarea rows="4" cols="100" placeholder="Ex: tracker, K9 tracker, management, searcher, runner, etc" id="q4" name="q4"></textarea>
+                    <textarea rows="2" cols="140" placeholder="Ex: tracker, K9 tracker, management, searcher, runner, etc" id="q4" name="q4"></textarea>
                 </div>
 
                 <div>
                     <label for="q5">Do you have any medical certifications?</label>
                     <br>
-                    <textarea rows="4" cols="100" placeholder="First Aid, Wilderness First Responder, EMT, etc." id="q5" name="q5"></textarea>
+                    <textarea rows="2" cols="140" placeholder="First Aid, Wilderness First Responder, EMT, etc." id="q5" name="q5"></textarea>
                 </div>
 
                 <div>
-                    <label for="q6">Have you acted as management on any Search and Rescue operations? </label>
+                    <label for="q6" class="input-group-addon my-auto">Have you acted as management on any Search and Rescue operations? </label>
                     <select id="q6" name="q6">
                         <option value="1">Yes</option>
                         <option value="2">No</option>
@@ -122,7 +122,7 @@
                 </div>
 
                 <div>
-                    <label for="q7">How many years of your employment/volunteering or education is associated with Search and Rescue?</label>
+                    <label for="q7" class="input-group-addon my-auto">How many years of your employment/volunteering or education is associated with Search and Rescue?</label>
                     <input type="text" id="q7" name="q7"/>
                 </div>
 
@@ -135,15 +135,15 @@
                 </div>
 
                 <div>
-                    <label for="q9">If so, please list the software you have used.</label>
+                    <label for="q9">If so, please list the software you have used and briefly describe your experience</label>
                     <br>
-                    <textarea rows="1" cols="100" id="q9" name="q9"></textarea>
+                    <textarea rows="2" cols="140" id="q9" name="q9"></textarea>
                 </div>
 
-                <div>
-                    <label for="q10">If you answered ‘Yes’ to the previous question, please briefly describe your experience:</label>
+                <div hidden>
+                    <label for="q10" >If you answered ‘Yes’ to the previous question, please briefly describe your experience:</label>
                     <br>
-                    <textarea rows="4" cols="100" id="q10" name="q10"></textarea>
+                    <textarea rows="1" cols="140" id="q10" name="q10"></textarea>
                 </div>
             </div>
             
@@ -156,9 +156,7 @@
           <div class="text-center">
               <input type="submit" value="Next step: Training" id="nextstep" onclick="dismissAddAnotherPopup(this)" class="col-md-4"/>            
           </div>
-        
-            
-            
+                    
         </form>
 
           

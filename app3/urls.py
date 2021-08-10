@@ -14,7 +14,7 @@ router.register(r'waypointsdata', views.WaypointsDataViewSet,basename="waypoints
 router.register(r'gpshistoricaldata', views.GPShistoricalDataViewSet,basename="gpshistoricaldata")
 
 urlpatterns = [
-    path('', TaskGenerationView.as_view(),name='mapdivisioninit'),
+    path('', TaskGenerationView.as_view(),name='sarwebinit'),
 
     url(r'^experiment/task/$', TaskassignmentExperimentView.as_view(),name='experiment'),
     url(r'^experiment/task/(?P<participantid>\w+)/$',TaskassignmentExperimentView.as_view(),name="experiment"),
@@ -22,26 +22,26 @@ urlpatterns = [
 
     path('experiment/consentform',ConsentFormView.as_view(),name='consentform'),
     path('experiment/consentform_action', ConsentFormView.FormToDB),
-    
+
     path('experiment/demos',DemogrphicsView.as_view(),name="demos"),
     url(r'^experiment/demos/(?P<participantid>\w+)/(?P<participantindex>\w+)/$',DemogrphicsView.as_view(),name="demos"),
     url(r'^experiment/demos/\w+/\w+/action$', DemogrphicsView.FormToDB,name="demos"),
-        
+
     path('experiment/survey_postexperiment',SurveyPostEFormView.as_view(),name="survey_postexperiment"),
     url(r'^experiment/survey_postexperiment/\w+/action$', SurveyPostEFormView.FormToDB,name="survey_postexperiment"),
     url(r'^experiment/survey_postexperiment/(?P<participantid>\w+)/$',SurveyPostEFormView.as_view(),name="survey_postexperiment"),
-    
+
     path('experiment/survey_postexp_webapp',WebapplicationFormView.as_view(),name="survey_postexp_webapp"),
     url(r'^experiment/survey_postexp_webapp/(?P<participantid>\w+)/$',WebapplicationFormView.as_view(),name="survey_postexp_webapp"),
     url(r'^experiment/survey_postexp_webapp/\w+/action$', WebapplicationFormView.FormToDB,name="survey_postexp_webapp"),
     path('rating_action', WebapplicationFormView.FormToDB),
     url(r'^experiment/survey_postexp_webapp/\w+/rating_action$',WebapplicationFormView.FormToDB,name="rating_action"),
-    
+
     path('experiment/exp_thanks',TemplateView.as_view(template_name="app3/exp_thanks.html"),name="exp_thanks"),
-    
+
     path('downloaddata', DownloadDataView.as_view(),name='downloaddata'),
     path('downloaddatadetails',TemplateView.as_view(template_name="app3/downloaddata_details.html"),name='downloaddata'),
-    
+
     url(r'^qndata/$',DownloadDataView.questionnairedata,name="qndata"),
     url(r'^viewqndata/$',DownloadDataView.questionnaireview,name="viewqndata"),
     url(r'^viewqnall/$',DownloadDataView.questionnaireviewall,name="viewqnall"),
@@ -85,7 +85,7 @@ urlpatterns = [
     url(r'^readfile$',TemplateView.as_view(template_name="app3/readfile.html"), name="readfile"),
     path('api-auth/', include('rest_framework.urls')),
     path('layerquerytest',TemplateView.as_view(template_name="app3/layerquerytest.html")),
-    
+
     url(r'^watershed/$',TemplateView.as_view(template_name="app3/watershed_segmentation.html"),name="watershed"),
     url(r'^watershed/(?P<bobid>\w+)/$',TemplateView.as_view(template_name="app3/watershed_getlinearfeature.html"),name="watershed"),
     path('heatmapringdownload',TemplateView.as_view(template_name="app3/Taskgeneration_download.html")),

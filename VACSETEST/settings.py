@@ -27,16 +27,9 @@ DEBUG = True
 USE_TZ = True
 ALLOWED_HOSTS = [
     '127.0.0.1',
-    '172.29.85.39',
-    '172.29.56.174',
-    '73.152.188.24',
-    '0.0.0.0',
-    'localhost',
-    '192.168.1.147',
-    '192.168.1.124',
-    'ubuntu18:8000',
-    '73.152.214.220',
     '192.168.0.224',
+    '108.247.0.162',
+    '192.168.1.70',
 ]
 
 
@@ -96,15 +89,11 @@ WSGI_APPLICATION = 'VACSETEST.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE':'django.db.backends.mysql',
-        'NAME':'exp_pro_sarweb',
-        'USER': 'sarusr',
-        'PASSWORD':'saradmin',
-        'HOST':'0.0.0.0',
-        'PORT':'3306', 
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
     'sqlite3': {
-        
+
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
@@ -114,8 +103,16 @@ DATABASES = {
         'USER': 'sarusr',
         'PASSWORD':'saradmin',
         'HOST':'127.0.0.1',
-        'PORT':'3306',             
-    }
+        'PORT':'3306',
+    },
+    'sarpro': {
+        'ENGINE':'django.db.backends.mysql',
+        'NAME':'exp_pro_sarweb',
+        'USER': 'sarusr',
+        'PASSWORD':'saradmin',
+        'HOST':'0.0.0.0',
+        'PORT':'3306',
+    },
 }
 
 

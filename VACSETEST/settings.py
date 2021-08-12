@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
     '192.168.0.224',
     '108.247.0.162',
     '192.168.1.70',
+    '192.168.1.76',
 ]
 
 
@@ -89,8 +90,12 @@ WSGI_APPLICATION = 'VACSETEST.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE':'django.db.backends.mysql',
+        'NAME':'exp_pro_sarweb',
+        'USER': 'sarusr',
+        'PASSWORD':'saradmin',
+        'HOST':'127.0.0.1',
+        'PORT':'3306',
     },
     'sqlite3': {
 

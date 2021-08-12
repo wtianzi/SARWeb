@@ -10,6 +10,12 @@
 - SQLite as database
 - DJango REST freamwork is needed
 
+0811
+Professional page to be changed:
+1. subjective questionnaire (per task) http://192.168.1.76:8000/questionnaireform/1628714166137/16/8/
+2. 
+
+
 https://sar.caslab.ece.vt.edu/
 http://sar.caslab.ece.vt.edu/experiment
 

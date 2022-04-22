@@ -2,7 +2,7 @@ asn1crypto==0.24.0
 cffi==1.12.1
 cryptography==3.3.2
 cycler==0.10.0
-Django==2.2.20
+Django==2.2.28
 djangorestframework==3.9.4
 kiwisolver==1.1.0
 matplotlib==3.1.1
